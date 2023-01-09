@@ -1,3 +1,5 @@
 # Science-Park-Thunder-Fingers
 
-test :)
+Sources:
+
+- https://ah.proglab.nl/cases/lectures-en-lesroosters
