@@ -1,5 +1,5 @@
 class Student(object):
-    """Object to store studenten
+    """Object to store student information and course enrolment.
 
 
     # TODO #5

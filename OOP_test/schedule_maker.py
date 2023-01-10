@@ -1,15 +1,15 @@
 # First test program to make schedules with object oriented programming.
 
 import csv
-from vakken import Course
-from zalen import Room
-from studenten import Student
+from courses import Course
+from rooms import Room
+from students import Student
 
 # Load csv files
 class Schedule:
     def __init__(self) -> None:
-        # TODO #1 maybe it's more practical (eventually) to abstract names with ID's (integers)
-        # courses is a dictionary that holds course name with corresponding info
+        # TODO #1 Maybe it's more practical (eventually) to abstract names with ID's (integers)
+        # Courses is a dictionary that holds course name with corresponding info
         self.courses: dict[str, Course] = {}
 
         # Rooms is a dictionary that hold all rooms with corresponding capacity
@@ -19,13 +19,13 @@ class Schedule:
         self.students: dict[int, Student] = {}
 
         # Load course structures
-        self.load_courses("OOB_data/vakken.csv")
+        self.load_courses("problem_data/vakken.csv")
 
         # Load room structures
-        self.load_rooms("OOB_data/zalen.csv")
+        self.load_rooms("problem_data/zalen.csv")
 
         # Load student structures
-        self.load_students("OOB_data/studenten_en_vakken.csv")
+        self.load_students("problem_data/studenten_en_vakken.csv")
 
     def load_courses(self, filename) -> None:
         with open(filename) as csvfile:

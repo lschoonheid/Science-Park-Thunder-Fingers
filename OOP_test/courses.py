@@ -23,11 +23,11 @@ class Course(object):
         # Lectures
         self.num_lec = num_lec
 
-        # Werkcolleges & Max studenten per werkcollege
+        # Tutorials & Max students per tutorial
         self.num_tut = num_tut
         self.max_stud_tut = max_stud_tut
 
-        # Practica & Max studenten per practicum
+        # Practicals & Max students per practical
         self.num_prac = num_prac
         self.max_stud_prac = max_stud_prac
 
