@@ -1,15 +1,22 @@
-# Object to store studenten
-
 class Student(object):
+    """Object to store studenten
 
-    def __init__(self, surname: str, firstname: str, std_id: int, courses: list[str]) -> None:
+
+    # TODO #5
+    Args:
+        object (_type_): _description_
+    """
+
+    def __init__(self, surname: str, first_name: str, std_id: int, courses: list[str]) -> None:
         self.surname = surname
-        self.firstname = firstname
+        self.first_name = first_name
         self.std_id = std_id
         self.courses = courses
-    
+
     def __repr__(self) -> str:
-        return f'{self.surname}, {self.firstname} ({self.std_id}): {self.courses}'
+        """Output representation of information."""
+        return f"{self.surname}, {self.first_name} ({self.std_id}): {self.courses}"
 
     def __str__(self) -> str:
-        return f'{self.surname}, {self.firstname} ({self.std_id}): {self.courses}'
+        """Output information to string."""
+        return f"{self.surname}, {self.first_name} ({self.std_id}): {self.courses}"

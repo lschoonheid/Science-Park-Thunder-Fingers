@@ -1,11 +1,12 @@
-# Object to store zalen
-
 class Room(object):
+    """Object to store room information.
 
-    def __init__(self, room_id: str, room_capacity: int) -> None:
+    #TODO #3
+    Args:
+        object (_type_): _description_
+    """
 
-        self.room_id = room_id
-        self.room_capacity = room_capacity
+    def __init__(self, id: str, capacity: int) -> None:
 
-    
-
+        self.id = id
+        self.capacity = capacity
