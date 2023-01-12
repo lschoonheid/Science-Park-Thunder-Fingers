@@ -7,7 +7,9 @@ __pycache__/
 *.so
 
 # Mapjes
-OOP_test/problem_data
+# ISSUE: #11 Ik denk dat de input data wel op de github zou moeten staan?
+# data/
+output/
 
 # Distribution / packaging
 .Python
@@ -131,3 +133,6 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# VS Code files
+.vscode/

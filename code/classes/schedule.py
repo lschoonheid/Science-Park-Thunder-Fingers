@@ -1,11 +1,12 @@
 # First test program to make schedules with object oriented programming.
 
 import csv
-from courses import Course
-from rooms import Room
-from students import Student
+from course import Course
+from room import Room
+from student import Student
 
 # Load csv files
+# TODO: #8 build representation of graph
 class Schedule:
     def __init__(self) -> None:
         # TODO #1 Maybe it's more practical (eventually) to abstract names with ID's (integers)
@@ -18,6 +19,7 @@ class Schedule:
         # Students is a dictionary that hold all students by student number with corresponding info
         self.students: dict[int, Student] = {}
 
+        # TODO: #7 do this in main.py
         # Load course structures
         self.load_courses("problem_data/vakken.csv")
 
@@ -34,12 +36,12 @@ class Schedule:
             next(csv_reader)
             for row in csv_reader:
                 subject = row[0]
-                num_lec = row[1]
-                num_tut = row[2]
-                max_stud_tut = row[3]
-                num_prac = row[4]
-                max_stud_prac = row[5]
-                expected_stud = row[6]
+                num_lec = int(row[1])
+                num_tut = int(row[2])
+                max_stud_tut = int(row[3])
+                num_prac = int(row[4])
+                max_stud_prac = int(row[5])
+                expected_stud = int(row[6])
                 course = {
                     subject: Course(subject, num_lec, num_tut, max_stud_tut, num_prac, max_stud_prac, expected_stud)
                 }
@@ -52,7 +54,7 @@ class Schedule:
             next(csv_reader)
             for row in csv_reader:
                 room_id = row[0]
-                room_capacity = row[1]
+                room_capacity = int(row[1])
                 room = {room_id: Room(room_id, room_capacity)}
                 self.rooms.update(room)
 
@@ -64,7 +66,7 @@ class Schedule:
             for row in csv_reader:
                 surname = row[0]
                 firstname = row[1]
-                std_id = row[2]
+                std_id = int(row[2])
                 courses = [i for i in row[3:7] if i]
                 student = {std_id: Student(surname, firstname, std_id, courses)}
                 self.students.update(student)
