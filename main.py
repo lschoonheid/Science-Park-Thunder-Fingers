@@ -3,7 +3,7 @@ Interface for executing scheduler program.
 
 Execute: `python3 main.py -h` for usage.
 
-Student: Anna Neefjes, Julia TODO, #17 Laszlo Schoonheid
+Student: Anna Neefjes, Julia Geisler, Laszlo Schoonheid
 Course: Algoritmen en Heuristieken 2023
 """
 
