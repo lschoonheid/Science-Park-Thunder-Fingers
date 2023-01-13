@@ -1,3 +1,6 @@
+from .course import Course
+
+
 class Student(object):
     """Object to store student information and course enrolment.
 
@@ -20,7 +23,7 @@ class Student(object):
         self.std_id = std_id
         self.courses = {}
 
-    def add_course(self, course):
+    def add_course(self, course: Course):
         self.courses[course.id] = course
 
     def __repr__(self) -> str:

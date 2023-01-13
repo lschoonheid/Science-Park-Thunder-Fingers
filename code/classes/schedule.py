@@ -18,29 +18,26 @@ class Schedule:
         # TODO: #18 replace by timeslot? (the relevant node)
         self.rooms: dict[int, Room] = {}
 
+        # keeps track of uids assigned to named nodes
+        self._course_uid: dict[str, int] = {}
+        self._student_uid: dict[int, int] = {}
+
         self.load_nodes(stud_prefs_path, courses_path, rooms_path)
+        self.load_neighbours(stud_prefs_path)
 
-    def load_nodes(self, stud_prefs_path, courses_path, rooms_path):
-        node_id = 0
+        print(self.students[0])
 
-        for student in csv_to_dicts(stud_prefs_path):
-            self.add_student(node_id, student)
-            node_id += 1
-
-        for course in csv_to_dicts(courses_path):
-            self.add_course(node_id, course)
-            node_id += 1
-
-        for room in csv_to_dicts(rooms_path):
-            self.add_room(node_id, room)
-            node_id += 1
-
-    def add_student(self, uid: int, student: dict) -> None:
+    def _add_student(self, uid: int, student: dict) -> None:
         s = student
-        self.students[uid] = Student(uid, s["Achternaam"], s["Voornaam"], int(s["Stud.Nr."]))
+        stud_no = int(s["Stud.Nr."])
 
-    def add_course(self, uid: int, course: dict, replace_blank=True) -> None:
+        # values = list(student.values())[0:3])
+        self.students[uid] = Student(uid, s["Achternaam"], s["Voornaam"], stud_no)
+        self._student_uid[stud_no] = uid
+
+    def _add_course(self, uid: int, course: dict, replace_blank=True) -> None:
         c = course
+        name = c["Vak"]
 
         # Replace blank datavalues with valid values
         non_strict_tags = ["Max. stud. Werkcollege", "Max. stud. Practicum"]
@@ -51,7 +48,7 @@ class Schedule:
 
         self.courses[uid] = Course(
             uid,
-            c["Vak"],
+            name,
             int(c["#Hoorcolleges"]),
             int(c["#Werkcolleges"]),
             int(c["Max. stud. Werkcollege"]),
@@ -60,6 +57,45 @@ class Schedule:
             int(c["Verwacht"]),
         )
 
-    def add_room(self, uid: int, room: dict) -> None:
+        self._course_uid[name] = uid
+
+    def _add_room(self, uid: int, room: dict) -> None:
         r = room
         self.rooms[uid] = Room(uid, r["\ufeffZaalnummber"], r["Max. capaciteit"])
+
+    def load_nodes(self, stud_prefs_path: str, courses_path: str, rooms_path: str):
+        """
+        Load all the nodes into the graph.
+        """
+        node_id = 0
+
+        for student in csv_to_dicts(stud_prefs_path):
+            self._add_student(node_id, student)
+            node_id += 1
+
+        for course in csv_to_dicts(courses_path):
+            self._add_course(node_id, course)
+            node_id += 1
+
+        for room in csv_to_dicts(rooms_path):
+            self._add_room(node_id, room)
+            node_id += 1
+
+    def load_neighbours(self, stud_prefs_path):
+        """
+        Load all the neighbours into the loaded nodes.
+        """
+        for student in csv_to_dicts(stud_prefs_path):
+            stud_uid = self._student_uid[int(student["Stud.Nr."])]
+
+            # Get course choices from student
+            choice_keys = list(student.keys())[-5:]
+            # Clean empty strings
+            choices_dirty = [student[choice] for choice in choice_keys]
+            choices = list(filter(lambda c: c != "", choices_dirty))
+
+            # Add courses to student
+            for course_name in choices:
+                course_id = self._course_uid[course_name]
+                course = self.courses[course_id]
+                self.students[stud_uid].add_course(course)

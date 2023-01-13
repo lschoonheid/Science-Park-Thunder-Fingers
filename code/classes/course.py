@@ -36,3 +36,7 @@ class Course(object):
 
         # Expected students per subject
         self.expected_stud = expected_stud
+
+    def __repr__(self) -> str:
+        """Output name to string"""
+        return self.subject
