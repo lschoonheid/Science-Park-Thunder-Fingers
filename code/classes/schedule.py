@@ -19,13 +19,11 @@ class Schedule:
         self.rooms: dict[int, Room] = {}
 
         # keeps track of uids assigned to named nodes
-        self._course_uid: dict[str, int] = {}
-        self._student_uid: dict[int, int] = {}
+        self._course_catalog: dict[str, int] = {}
+        self._student_catalog: dict[int, int] = {}
 
         self.load_nodes(stud_prefs_path, courses_path, rooms_path)
         self.load_neighbours(stud_prefs_path)
-
-        print(self.students[0])
 
     def _add_student(self, uid: int, student: dict) -> None:
         s = student
@@ -33,7 +31,7 @@ class Schedule:
 
         # values = list(student.values())[0:3])
         self.students[uid] = Student(uid, s["Achternaam"], s["Voornaam"], stud_no)
-        self._student_uid[stud_no] = uid
+        self._student_catalog[stud_no] = uid
 
     def _add_course(self, uid: int, course: dict, replace_blank=True) -> None:
         c = course
@@ -56,8 +54,7 @@ class Schedule:
             int(c["Max. stud. Practicum"]),
             int(c["Verwacht"]),
         )
-
-        self._course_uid[name] = uid
+        self._course_catalog[name] = uid
 
     def _add_room(self, uid: int, room: dict) -> None:
         r = room
@@ -86,7 +83,7 @@ class Schedule:
         Load all the neighbours into the loaded nodes.
         """
         for student in csv_to_dicts(stud_prefs_path):
-            stud_uid = self._student_uid[int(student["Stud.Nr."])]
+            stud_uid = self._student_catalog[int(student["Stud.Nr."])]
 
             # Get course choices from student
             choice_keys = list(student.keys())[-5:]
@@ -96,6 +93,6 @@ class Schedule:
 
             # Add courses to student
             for course_name in choices:
-                course_id = self._course_uid[course_name]
+                course_id = self._course_catalog[course_name]
                 course = self.courses[course_id]
                 self.students[stud_uid].add_course(course)
