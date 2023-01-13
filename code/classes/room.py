@@ -6,7 +6,7 @@ class Room(object):
         object (_type_): _description_
     """
 
-    def __init__(self, uid: str, capacity: int) -> None:
-
+    def __init__(self, uid: int, name: str, capacity: int) -> None:
         self.id = uid
+        self.name = name
         self.capacity = capacity

@@ -8,6 +8,7 @@ class Course(object):
 
     def __init__(
         self,
+        uid: int,
         subject: str,
         num_lec: int,
         num_tut: int,
@@ -16,6 +17,8 @@ class Course(object):
         max_stud_prac: int,
         expected_stud: int,
     ) -> None:
+        # Course node id
+        self.id = uid
 
         # Subject name
         self.subject = subject

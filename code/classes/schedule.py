@@ -1,76 +1,65 @@
 # First test program to make schedules with object oriented programming.
 
-import csv
-from course import Course
-from room import Room
-from student import Student
+from .course import Course
+from .room import Room
+from .student import Student
+from ..modules.helpers import csv_to_dicts
 
 # Load csv files
 # TODO: #8 build representation of graph
 class Schedule:
-    def __init__(self) -> None:
-        # TODO #1 Maybe it's more practical (eventually) to abstract names with ID's (integers)
-        # Courses is a dictionary that holds course name with corresponding info
-        self.courses: dict[str, Course] = {}
-
-        # Rooms is a dictionary that hold all rooms with corresponding capacity
-        self.rooms: dict[str, Room] = {}
-
+    def __init__(self, stud_prefs_path: str, courses_path: str, rooms_path: str) -> None:
+        # self.nodes: dict[int, (Student, Course, Room)] = {}
         # Students is a dictionary that hold all students by student number with corresponding info
         self.students: dict[int, Student] = {}
+        # Courses is a dictionary that holds course name with corresponding info
+        self.courses: dict[int, Course] = {}
+        # Rooms is a dictionary that hold all rooms with corresponding capacity
+        # TODO: #18 replace by timeslot? (the relevant node)
+        self.rooms: dict[int, Room] = {}
 
-        # TODO: #7 do this in main.py
-        # Load course structures
-        self.load_courses("problem_data/vakken.csv")
+        self.load_nodes(stud_prefs_path, courses_path, rooms_path)
 
-        # Load room structures
-        self.load_rooms("problem_data/zalen.csv")
+    def load_nodes(self, stud_prefs_path, courses_path, rooms_path):
+        node_id = 0
 
-        # Load student structures
-        self.load_students("problem_data/studenten_en_vakken.csv")
+        for student in csv_to_dicts(stud_prefs_path):
+            self.add_student(node_id, student)
+            node_id += 1
 
-    def load_courses(self, filename) -> None:
-        with open(filename) as csvfile:
-            csv_reader = csv.reader(csvfile, delimiter=",")
-            # skip header
-            next(csv_reader)
-            for row in csv_reader:
-                subject = row[0]
-                num_lec = int(row[1])
-                num_tut = int(row[2])
-                max_stud_tut = int(row[3])
-                num_prac = int(row[4])
-                max_stud_prac = int(row[5])
-                expected_stud = int(row[6])
-                course = {
-                    subject: Course(subject, num_lec, num_tut, max_stud_tut, num_prac, max_stud_prac, expected_stud)
-                }
-                self.courses.update(course)
+        for course in csv_to_dicts(courses_path):
+            self.add_course(node_id, course)
+            node_id += 1
 
-    def load_rooms(self, filename) -> None:
-        with open(filename) as csvfile:
-            csv_reader = csv.reader(csvfile, delimiter=",")
-            # skip header
-            next(csv_reader)
-            for row in csv_reader:
-                room_id = row[0]
-                room_capacity = int(row[1])
-                room = {room_id: Room(room_id, room_capacity)}
-                self.rooms.update(room)
+        for room in csv_to_dicts(rooms_path):
+            self.add_room(node_id, room)
+            node_id += 1
 
-    def load_students(self, filename) -> None:
-        with open(filename) as csvfile:
-            csv_reader = csv.reader(csvfile, delimiter=",")
-            # skip header
-            next(csv_reader)
-            for row in csv_reader:
-                surname = row[0]
-                firstname = row[1]
-                std_id = int(row[2])
-                courses = [i for i in row[3:7] if i]
-                student = {std_id: Student(surname, firstname, std_id, courses)}
-                self.students.update(student)
+    def add_student(self, uid: int, student: dict) -> None:
+        s = student
+        self.students[uid] = Student(uid, s["Achternaam"], s["Voornaam"], int(s["Stud.Nr."]))
 
+    def add_course(self, uid: int, course: dict, replace_blank=True) -> None:
+        c = course
 
-if __name__ == "__main__":
-    schedule = Schedule()
+        # Replace blank datavalues with valid values
+        non_strict_tags = ["Max. stud. Werkcollege", "Max. stud. Practicum"]
+        if replace_blank:
+            for tag in non_strict_tags:
+                if c[tag] == "":
+                    c[tag] = 0
+
+        self.courses[uid] = Course(
+            uid,
+            c["Vak"],
+            int(c["#Hoorcolleges"]),
+            int(c["#Werkcolleges"]),
+            int(c["Max. stud. Werkcollege"]),
+            int(c["#Practica"]),
+            int(c["Max. stud. Practicum"]),
+            int(c["Verwacht"]),
+        )
+
+    def add_room(self, uid: int, room: dict) -> None:
+        r = room
+        self.rooms[uid] = Room(uid, r["\ufeffZaalnummber"], r["Max. capaciteit"])
