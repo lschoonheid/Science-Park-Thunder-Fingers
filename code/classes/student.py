@@ -23,8 +23,9 @@ class Student(object):
         self.std_id = std_id
         self.courses = {}
 
-    def add_course(self, course: Course):
-        self.courses[course.id] = course
+    def add_neighbor(self, neighbor: Course):
+        if type(neighbor) is Course:
+            self.courses[neighbor.id] = neighbor
 
     def __repr__(self) -> str:
         """Output representation of information."""

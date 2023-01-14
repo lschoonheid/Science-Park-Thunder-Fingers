@@ -1,3 +1,6 @@
+from typing import Type
+
+
 class Course(object):
     """Object to store course information.
 
@@ -12,9 +15,9 @@ class Course(object):
         subject: str,
         num_lec: int,
         num_tut: int,
-        max_stud_tut: int,
+        max_stud_tut: int | None,
         num_prac: int,
-        max_stud_prac: int,
+        max_stud_prac: int | None,
         expected_stud: int,
     ) -> None:
         # Course node id

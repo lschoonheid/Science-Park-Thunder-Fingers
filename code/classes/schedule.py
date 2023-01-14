@@ -38,20 +38,21 @@ class Schedule:
         name = c["Vak"]
 
         # Replace blank datavalues with valid values
-        non_strict_tags = ["Max. stud. Werkcollege", "Max. stud. Practicum"]
         if replace_blank:
-            for tag in non_strict_tags:
+            for tag in list(c.keys())[1:]:
                 if c[tag] == "":
-                    c[tag] = 0
+                    c[tag] = None
+                else:
+                    c[tag] = int(c[tag])
 
         self.courses[uid] = Course(
             uid,
             name,
             int(c["#Hoorcolleges"]),
             int(c["#Werkcolleges"]),
-            int(c["Max. stud. Werkcollege"]),
+            c["Max. stud. Werkcollege"],
             int(c["#Practica"]),
-            int(c["Max. stud. Practicum"]),
+            c["Max. stud. Practicum"],
             int(c["Verwacht"]),
         )
         self._course_catalog[name] = uid
@@ -95,4 +96,4 @@ class Schedule:
             for course_name in choices:
                 course_id = self._course_catalog[course_name]
                 course = self.courses[course_id]
-                self.students[stud_uid].add_course(course)
+                self.students[stud_uid].add_neighbor(course)
