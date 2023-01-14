@@ -1,4 +1,4 @@
-from typing import Type
+# from .student import Student
 
 
 class Course(object):
@@ -39,6 +39,14 @@ class Course(object):
 
         # Expected students per subject
         self.expected_stud = expected_stud
+
+        # self.students: dict[int, Student] = {}
+        self.students = {}
+
+    # def add_neighbor(self, node: Student):
+    def add_neighbor(self, node):
+        # if type(node) is Student:
+        self.students[node.id] = node
 
     def __repr__(self) -> str:
         """Output name to string"""

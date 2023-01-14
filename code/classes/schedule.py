@@ -79,21 +79,26 @@ class Schedule:
             self._add_room(node_id, room)
             node_id += 1
 
+    def connect_nodes(self, node1, node2):
+        node1.add_neighbor(node2)
+        node2.add_neighbor(node1)
+
     def load_neighbours(self, stud_prefs_path):
         """
         Load all the neighbours into the loaded nodes.
         """
-        for student in csv_to_dicts(stud_prefs_path):
-            stud_uid = self._student_catalog[int(student["Stud.Nr."])]
+        for student_dict in csv_to_dicts(stud_prefs_path):
+            stud_uid = self._student_catalog[int(student_dict["Stud.Nr."])]
 
             # Get course choices from student
-            choice_keys = list(student.keys())[-5:]
+            choice_keys = list(student_dict.keys())[-5:]
             # Clean empty strings
-            choices_dirty = [student[choice] for choice in choice_keys]
+            choices_dirty = [student_dict[choice] for choice in choice_keys]
             choices = list(filter(lambda c: c != "", choices_dirty))
 
             # Add courses to student
             for course_name in choices:
                 course_id = self._course_catalog[course_name]
                 course = self.courses[course_id]
-                self.students[stud_uid].add_neighbor(course)
+                student = self.students[stud_uid]
+                self.connect_nodes(course, student)

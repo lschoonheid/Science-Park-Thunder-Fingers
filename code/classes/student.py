@@ -23,9 +23,9 @@ class Student(object):
         self.std_id = std_id
         self.courses = {}
 
-    def add_neighbor(self, neighbor: Course):
-        if type(neighbor) is Course:
-            self.courses[neighbor.id] = neighbor
+    def add_neighbor(self, node: Course):
+        assert type(node) is Course, "Can only add courses to student neighbors"
+        self.courses[node.id] = node
 
     def __repr__(self) -> str:
         """Output representation of information."""
