@@ -14,12 +14,12 @@ class Student(object):
         self,
         uid: int,
         surname: str,
-        first_name: str,
+        name: str,
         std_id: int,
     ) -> None:
         self.id = uid
         self.surname = surname
-        self.first_name = first_name
+        self.name = name
         self.std_id = std_id
         self.courses = {}
 
@@ -29,8 +29,8 @@ class Student(object):
 
     def __repr__(self) -> str:
         """Output representation of information."""
-        return f"{self.surname}, {self.first_name} ({self.std_id}): {self.courses}"
+        return f"{self.surname}, {self.name} ({self.std_id}): {self.courses}"
 
     def __str__(self) -> str:
         """Output information to string."""
-        return f"{self.surname}, {self.first_name} ({self.std_id}): {self.courses}"
+        return f"{self.surname}, {self.name} ({self.std_id}): {self.courses}"

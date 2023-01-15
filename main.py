@@ -29,7 +29,7 @@ def main(
 
     # Driver code
     G = GraphVisualization(schedule)
-    G.visualize()
+    G.visualize(False)
 
 
 if __name__ == "__main__":

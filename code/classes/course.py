@@ -12,7 +12,7 @@ class Course(object):
     def __init__(
         self,
         uid: int,
-        subject: str,
+        name: str,
         num_lec: int,
         num_tut: int,
         max_stud_tut: int | None,
@@ -23,8 +23,8 @@ class Course(object):
         # Course node id
         self.id = uid
 
-        # Subject name
-        self.subject = subject
+        # name name
+        self.name = name
 
         # Lectures
         self.num_lec = num_lec
@@ -50,4 +50,4 @@ class Course(object):
 
     def __repr__(self) -> str:
         """Output name to string"""
-        return self.subject
+        return self.name
