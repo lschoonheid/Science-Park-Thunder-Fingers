@@ -12,6 +12,7 @@ import argparse
 
 # from code.modules.helpers import csv_to_dicts
 from code.classes.schedule import Schedule
+from code.visualisation.visualize import GraphVisualization
 
 
 # TODO: write interface code to execute complete program from command line
@@ -23,6 +24,12 @@ def main(
     """Interface for executing scheduling program."""
 
     schedule = Schedule(stud_prefs_path, courses_path, rooms_path)
+    # print(schedule.students)
+    print(schedule.edges)
+
+    # Driver code
+    G = GraphVisualization(schedule)
+    G.visualize()
 
 
 if __name__ == "__main__":

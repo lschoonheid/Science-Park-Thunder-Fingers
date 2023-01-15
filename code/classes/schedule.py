@@ -17,6 +17,10 @@ class Schedule:
         # Rooms is a dictionary that hold all rooms with corresponding capacity
         # TODO: #18 replace by timeslot? (the relevant node)
         self.rooms: dict[int, Room] = {}
+        # Contains all nodes
+        self.nodes: dict[int, Student | Course | Room] = {}
+        # Contains all edges as [uid1, uid2]
+        self.edges: list[tuple[int, int]] = []
 
         # keeps track of uids assigned to named nodes
         self._course_catalog: dict[str, int] = {}
@@ -79,6 +83,10 @@ class Schedule:
             self._add_room(node_id, room)
             node_id += 1
 
+        self.nodes.update(self.students)
+        self.nodes.update(self.courses)
+        self.nodes.update(self.rooms)
+
     def connect_nodes(self, node1, node2):
         node1.add_neighbor(node2)
         node2.add_neighbor(node1)
@@ -88,7 +96,7 @@ class Schedule:
         Load all the neighbours into the loaded nodes.
         """
         for student_dict in csv_to_dicts(stud_prefs_path):
-            stud_uid = self._student_catalog[int(student_dict["Stud.Nr."])]
+            stud_id = self._student_catalog[int(student_dict["Stud.Nr."])]
 
             # Get course choices from student
             choice_keys = list(student_dict.keys())[-5:]
@@ -100,5 +108,6 @@ class Schedule:
             for course_name in choices:
                 course_id = self._course_catalog[course_name]
                 course = self.courses[course_id]
-                student = self.students[stud_uid]
+                student = self.students[stud_id]
                 self.connect_nodes(course, student)
+                self.edges.append((stud_id, course_id))
