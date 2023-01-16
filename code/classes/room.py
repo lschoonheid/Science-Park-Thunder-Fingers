@@ -11,6 +11,13 @@ class Room(object):
         self.node_type = "Room"
         self.name = name
         self.capacity = capacity
+        self.timeslots = {}
+
+    def add_neighbor(self, node):
+        if node.node_type == "Timeslot":
+            self.timeslots[node.id] = node
+        else:
+            print("Error in adding neighbor!")
 
     def __repr__(self) -> str:
-        return f"room {self.name}"
+        return f"{self.name}"

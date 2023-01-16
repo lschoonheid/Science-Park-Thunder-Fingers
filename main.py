@@ -13,6 +13,7 @@ import argparse
 # from code.modules.helpers import csv_to_dicts
 from code.classes.schedule import Schedule
 from code.visualisation.visualize import GraphVisualization
+from code.algorithms.random import connect_random
 
 
 # TODO: write interface code to execute complete program from command line
@@ -24,8 +25,9 @@ def main(
     """Interface for executing scheduling program."""
 
     schedule = Schedule(stud_prefs_path, courses_path, rooms_path)
-    # print(schedule.students)
-    print(schedule.edges)
+
+    # make random schedule
+    connect_random(schedule, i_max=5)
 
     G = GraphVisualization(schedule)
     G.visualize(replace_id=False)

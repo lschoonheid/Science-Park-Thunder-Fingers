@@ -52,6 +52,8 @@ class Course(object):
             self.students[node.id] = node
         elif node.node_type == "Activity":
             self.activities[node.id] = node
+        else:
+            print("Error in adding neighbor!")
 
     def __repr__(self) -> str:
         """Output name to string"""

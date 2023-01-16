@@ -21,6 +21,8 @@ class Activity:
             self.timeslots[node.id] = node
         elif node.node_type == "Student":
             self.students[node.id] = node
+        else:
+            print("Error in adding neighbor!")
 
     def __repr__(self) -> str:
         return f"{self.type} of {self.course}"

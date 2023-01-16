@@ -22,11 +22,20 @@ class Student(object):
         self.name = name
         self.surname = surname
         self.std_id = std_id
-        self.courses = {}
 
-    def add_neighbor(self, node: Course):
-        assert type(node) is Course, "Can only add courses to student neighbors"
-        self.courses[node.id] = node
+        self.courses = {}
+        self.activities = {}
+        self.timeslots = {}
+
+    def add_neighbor(self, node):
+        if node.node_type == "Course":
+            self.courses[node.id] = node
+        elif node.node_type == "Activity":
+            self.activities[node.id] = node
+        elif node.node_type == "Timeslot":
+            self.timeslots[node.id] = node
+        else:
+            print("Error in adding neighbor!")
 
     def __repr__(self) -> str:
         """Output representation of information."""

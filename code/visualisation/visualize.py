@@ -24,12 +24,19 @@ class GraphVisualization:
     #     temp = [a, b]
     #     self.edges.append(temp)
 
+    def print_nodes(self):
+        """Print nodes in rows to terminal"""
+        print("\n")
+        print("Nodes by id:")
+        for id in self.schedule.nodes.keys():
+            print(f"{id}: {self.schedule.nodes[id]}")
+        print("\n")
+
     def visualize(self, replace_id: bool = False, show_bipartite: bool = False):
         """In visualize function G is an object of class Graph given by networkx G.add_edges_from(visual).
         Creates a graph with a given list."""
-        # Print nodes in rows to terminal
-        for id in self.schedule.nodes.keys():
-            print(f"{id}: {self.schedule.nodes[id]}")
+        self.print_nodes()
+
         _edges_vis = []
         if replace_id:
             for edge in self.edges:

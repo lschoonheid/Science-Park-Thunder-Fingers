@@ -77,6 +77,10 @@ class Schedule:
         self.rooms[uid] = Room(uid, r["\ufeffZaalnummber"], r["Max. capaciteit"])
         self.nodes[uid] = self.rooms[uid]
 
+    def _add_timeslot(self, uid: int, timeslot: dict) -> None:
+        self.timeslots[uid] = Timeslot(uid, **timeslot)
+        self.nodes[uid] = self.timeslots[uid]
+
     def load_nodes(self, stud_prefs_path: str, courses_path: str, rooms_path: str):
         """
         Load all the nodes into the graph.
@@ -118,10 +122,20 @@ class Schedule:
                 self.connect_nodes(course, self.activities[node_id])
                 node_id += 1
 
+        #  Add rooms
         for room in csv_to_dicts(rooms_path):
             self._add_room(node_id, room)
             node_id += 1
 
+        # Add timeslots
+        for room in self.rooms.values():
+            for day in range(5):
+                # TODO only add evening period for biggest room
+                for period in range(0, 6, 2):
+                    timeslot = {"day": day, "period": period}
+                    self._add_timeslot(node_id, timeslot)
+                    self.connect_nodes(room, self.timeslots[node_id])
+                    node_id += 1
         # self.nodes.update(self.students)
         # self.nodes.update(self.courses)
         # self.nodes.update(self.activities)
