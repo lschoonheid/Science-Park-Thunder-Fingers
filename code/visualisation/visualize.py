@@ -5,7 +5,7 @@
 from ..classes.schedule import Schedule
 import networkx as nx
 import matplotlib.pyplot as plt
-from pyvis.network import Network
+from pyvis.network import Network as PyvisNetwork
 
 # TODO: #24 cleanup function
 # Defining a Class
@@ -41,59 +41,66 @@ class GraphVisualization:
         _edges_vis = self.edges
 
         G = nx.Graph()
-        if show_bipartite:
-            nodes_students = list(self.schedule.students.keys())
-            nodes_courses = list(self.schedule.students.keys())
-            G.add_nodes_from(nodes_students, bipartite=0)
-            G.add_nodes_from(nodes_courses, bipartite=1)
-            # nx.draw_networkx(G) - plots the graph
+        # if show_bipartite:
+        #     nodes_students = list(self.schedule.students.keys())
+        #     nodes_courses = list(self.schedule.students.keys())
+        #     G.add_nodes_from(nodes_students, bipartite=0)
+        #     G.add_nodes_from(nodes_courses, bipartite=1)
+        #     # nx.draw_networkx(G) - plots the graph
 
-            nx.draw_networkx(
-                G,
-                pos=nx.drawing.layout.bipartite_layout(G, nodes_courses),
-                width=2,
+        #     nx.draw_networkx(
+        #         G,
+        #         pos=nx.drawing.layout.bipartite_layout(G, nodes_courses),
+        #         width=2,
+        #     )
+        # else:
+        for student in self.schedule.students.values():
+            G.add_node(student.id, title=student.name, label=student.node_type, color="blue")
+        for course in self.schedule.courses.values():
+            G.add_node(course.id, title=course.name, label=course.node_type, color="red", value=len(course.students))
+        for course in self.schedule.courses.values():
+            G.add_node(course.id, title=course.name, label=course.node_type, color="red", value=len(course.students))
+        for activity in self.schedule.activities.values():
+            G.add_node(
+                activity.id,
+                title=str(activity),
+                label=activity.node_type,
+                color="orange",
+                value=len(activity.students),
+                bipartite=1,
             )
-        else:
-            for student in self.schedule.students.values():
-                G.add_node(student.id, title=student.name, label=student.node_type, color="blue")
-            for course in self.schedule.courses.values():
-                G.add_node(
-                    course.id, title=course.name, label=course.node_type, color="red", value=len(course.students)
-                )
-            for course in self.schedule.courses.values():
-                G.add_node(
-                    course.id, title=course.name, label=course.node_type, color="red", value=len(course.students)
-                )
-            for activity in self.schedule.activities.values():
-                G.add_node(
-                    activity.id,
-                    title=str(activity),
-                    label=activity.node_type,
-                    color="orange",
-                    value=len(activity.students),
-                    bipartite=1,
-                )
-            for room in self.schedule.rooms.values():
-                G.add_node(room.id, title=room.name, label=room.node_type, color="purple", value=len(room.timeslots))
-            for timeslot in self.schedule.timeslots.values():
-                G.add_node(
-                    timeslot.id,
-                    title=str(timeslot),
-                    label=timeslot.node_type,
-                    color="green",
-                    value=len(timeslot.activities),
-                    bipartite=0,
-                )
-
-            G.add_edges_from(_edges_vis)
-            nx.draw_networkx(
-                G,
-                # pos=nx.drawing.layout.bipartite_layout(G, self.schedule.timeslots),
+        for room in self.schedule.rooms.values():
+            G.add_node(room.id, title=room.name, label=room.node_type, color="purple", value=len(room.timeslots))
+        for timeslot in self.schedule.timeslots.values():
+            G.add_node(
+                timeslot.id,
+                title=str(timeslot),
+                label=timeslot.node_type,
+                color="green",
+                value=len(timeslot.activities),
+                bipartite=0,
             )
 
-        net = Network()
+        G.add_edges_from(_edges_vis)
+        nx.draw_networkx(
+            G,
+            # pos=nx.drawing.layout.bipartite_layout(G, self.schedule.timeslots),
+            pos=nx.drawing.layout.shell_layout(
+                G,
+                [
+                    self.schedule.students,
+                    self.schedule.courses,
+                    self.schedule.activities,
+                    self.schedule.rooms,
+                    self.schedule.timeslots,
+                ],
+                scale=5,
+            ),
+        )
+
+        net = PyvisNetwork()
         net.from_nx(G)
         net.show("output/graph.html")
         print("View output/graph.html in your browser")
 
-        # plt.show()
+        plt.show()
