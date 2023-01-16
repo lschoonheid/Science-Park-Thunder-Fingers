@@ -10,9 +10,7 @@ def connect_random(schedule: Schedule, i_max: int = 5):
     for i in range(i_max):
         student: Student = random.choice(list(schedule.students.values()))
 
-        course: Course = random.choice(list(student.courses.values()))
-        activity: Activity = random.choice(list(course.activities.values()))
-        schedule.connect_nodes(student, activity)
+        activity: Activity = random.choice(list(student.activities.values()))
 
         timeslot: Timeslot = random.choice(list(schedule.timeslots.values()))
         schedule.connect_nodes(student, timeslot)

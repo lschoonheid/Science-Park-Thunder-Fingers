@@ -150,6 +150,7 @@ class Schedule:
         """
         Load all the neighbours into the loaded nodes.
         """
+        # Load neighbors from CSV
         for student_dict in csv_to_dicts(stud_prefs_path):
             stud_id = self._student_catalog[int(student_dict["Stud.Nr."])]
 
@@ -165,3 +166,9 @@ class Schedule:
                 course = self.courses[course_id]
                 student = self.students[stud_id]
                 self.connect_nodes(course, student)
+
+        # Infer neighbors from graph
+        for student in self.students.values():
+            for course in student.courses.values():
+                for activity in course.activities.values():
+                    self.connect_nodes(student, activity)
