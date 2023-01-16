@@ -64,4 +64,4 @@ class GraphVisualization:
 
         net = Network(notebook=False)
         net.from_nx(G)
-        net.show("example.html")
+        net.show("output/example.html")
