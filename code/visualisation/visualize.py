@@ -32,18 +32,13 @@ class GraphVisualization:
             print(f"{id}: {self.schedule.nodes[id]}")
         print("\n")
 
-    def visualize(self, replace_id: bool = False, show_bipartite: bool = False):
+    def visualize(self, print_nodes: bool = False, show_bipartite: bool = False):
         """In visualize function G is an object of class Graph given by networkx G.add_edges_from(visual).
         Creates a graph with a given list."""
-        self.print_nodes()
+        if print_nodes:
+            self.print_nodes()
 
-        _edges_vis = []
-        if replace_id:
-            for edge in self.edges:
-                names = [self.schedule.nodes[id].__str__ for id in edge]
-                _edges_vis.append(names)
-        else:
-            _edges_vis = self.edges
+        _edges_vis = self.edges
 
         G = nx.Graph()
         if show_bipartite:
@@ -76,6 +71,7 @@ class GraphVisualization:
                     label=activity.node_type,
                     color="orange",
                     value=len(activity.students),
+                    bipartite=1,
                 )
             for room in self.schedule.rooms.values():
                 G.add_node(room.id, title=room.name, label=room.node_type, color="purple", value=len(room.timeslots))
@@ -86,20 +82,18 @@ class GraphVisualization:
                     label=timeslot.node_type,
                     color="green",
                     value=len(timeslot.activities),
+                    bipartite=0,
                 )
 
-            # G.add_nodes_from(self.schedule.nodes)
             G.add_edges_from(_edges_vis)
-            nx.draw_networkx(G)
+            nx.draw_networkx(
+                G,
+                # pos=nx.drawing.layout.bipartite_layout(G, self.schedule.timeslots),
+            )
 
-        # # TEST
-        # _edges_vis.append((nodes_courses[0], nodes_rooms[0]))
-
-        # plt.show() - displays the graph
-
-        net = Network(notebook=False)
+        net = Network()
         net.from_nx(G)
-        net.show("output/example.html")
-        print("See output/example.html for graph")
+        net.show("output/graph.html")
+        print("View output/graph.html in your browser")
 
         # plt.show()

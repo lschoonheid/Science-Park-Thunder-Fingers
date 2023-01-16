@@ -31,7 +31,7 @@ def main(
     connect_random(schedule, i_max=20)
 
     G = GraphVisualization(schedule)
-    G.visualize(replace_id=False)
+    G.visualize()
 
     schedule_to_csv(schedule)
 
