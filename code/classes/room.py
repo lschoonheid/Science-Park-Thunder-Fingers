@@ -8,5 +8,9 @@ class Room(object):
 
     def __init__(self, uid: int, name: str, capacity: int) -> None:
         self.id = uid
+        self.node_type = "Room"
         self.name = name
         self.capacity = capacity
+
+    def __repr__(self) -> str:
+        return f"room {self.name}"
