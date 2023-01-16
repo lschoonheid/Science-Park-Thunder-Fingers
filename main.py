@@ -27,9 +27,8 @@ def main(
     # print(schedule.students)
     print(schedule.edges)
 
-    # Driver code
     G = GraphVisualization(schedule)
-    G.visualize(False)
+    G.visualize(replace_id=False)
 
 
 if __name__ == "__main__":

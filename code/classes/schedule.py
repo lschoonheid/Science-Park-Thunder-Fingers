@@ -3,6 +3,8 @@
 from .course import Course
 from .room import Room
 from .student import Student
+from .activity import Activity
+from .timeslot import Timeslot
 from ..modules.helpers import csv_to_dicts
 
 # Load csv files
@@ -14,11 +16,14 @@ class Schedule:
         self.students: dict[int, Student] = {}
         # Courses is a dictionary that holds course name with corresponding info
         self.courses: dict[int, Course] = {}
+        self.activities: dict[int, Activity] = {}
+        self.timeslots: dict[int, Timeslot] = {}
         # Rooms is a dictionary that hold all rooms with corresponding capacity
-        # TODO: #18 replace by timeslot? (the relevant node)
         self.rooms: dict[int, Room] = {}
+
         # Contains all nodes
-        self.nodes: dict[int, Student | Course | Room] = {}
+        # TODO: make parenmt 'Node' class
+        self.nodes: dict[int, Student | Course | Activity | Room | Timeslot] = {}
         # Contains all edges as [uid1, uid2]
         self.edges: list[tuple[int, int]] = []
 
@@ -35,6 +40,7 @@ class Schedule:
 
         # values = list(student.values())[0:3])
         self.students[uid] = Student(uid, s["Achternaam"], s["Voornaam"], stud_no)
+        self.nodes[uid] = self.students[uid]
         self._student_catalog[stud_no] = uid
 
     def _add_course(self, uid: int, course: dict, replace_blank=True) -> None:
@@ -59,11 +65,17 @@ class Schedule:
             c["Max. stud. Practicum"],
             int(c["Verwacht"]),
         )
+        self.nodes[uid] = self.courses[uid]
         self._course_catalog[name] = uid
+
+    def _add_activity(self, uid: int, activity: dict) -> None:
+        self.activities[uid] = Activity(uid, **activity)
+        self.nodes[uid] = self.activities[uid]
 
     def _add_room(self, uid: int, room: dict) -> None:
         r = room
         self.rooms[uid] = Room(uid, r["\ufeffZaalnummber"], r["Max. capaciteit"])
+        self.nodes[uid] = self.rooms[uid]
 
     def load_nodes(self, stud_prefs_path: str, courses_path: str, rooms_path: str):
         """
@@ -79,17 +91,46 @@ class Schedule:
             self._add_course(node_id, course)
             node_id += 1
 
+        # Add children activities to courses and vice versa
+        for course in self.courses.values():
+            for i in range(course.num_lec):
+                activity = {
+                    "type": f"hc{i+1}",
+                    "capacity": None,
+                }
+                self._add_activity(node_id, activity)
+                self.connect_nodes(course, self.activities[node_id])
+                node_id += 1
+            for i in range(course.num_tut):
+                activity = {
+                    "type": f"wc{i+1}",
+                    "capacity": course.max_stud_tut,
+                }
+                self._add_activity(node_id, activity)
+                self.connect_nodes(course, self.activities[node_id])
+                node_id += 1
+            for i in range(course.num_prac):
+                activity = {
+                    "type": f"p{i+1}",
+                    "capacity": course.max_stud_prac,
+                }
+                self._add_activity(node_id, activity)
+                self.connect_nodes(course, self.activities[node_id])
+                node_id += 1
+
         for room in csv_to_dicts(rooms_path):
             self._add_room(node_id, room)
             node_id += 1
 
-        self.nodes.update(self.students)
-        self.nodes.update(self.courses)
-        self.nodes.update(self.rooms)
+        # self.nodes.update(self.students)
+        # self.nodes.update(self.courses)
+        # self.nodes.update(self.activities)
+        # self.nodes.update(self.rooms)
 
     def connect_nodes(self, node1, node2):
         node1.add_neighbor(node2)
         node2.add_neighbor(node1)
+        self.edges.append((node1.id, node2.id))
 
     def load_neighbours(self, stud_prefs_path):
         """
@@ -110,4 +151,3 @@ class Schedule:
                 course = self.courses[course_id]
                 student = self.students[stud_id]
                 self.connect_nodes(course, student)
-                self.edges.append((stud_id, course_id))

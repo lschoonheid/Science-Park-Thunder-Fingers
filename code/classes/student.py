@@ -18,8 +18,9 @@ class Student(object):
         std_id: int,
     ) -> None:
         self.id = uid
-        self.surname = surname
+        self.node_type = "Student"
         self.name = name
+        self.surname = surname
         self.std_id = std_id
         self.courses = {}
 
@@ -29,7 +30,8 @@ class Student(object):
 
     def __repr__(self) -> str:
         """Output representation of information."""
-        return f"{self.surname}, {self.name} ({self.std_id}): {self.courses}"
+        # return f"{self.surname}, {self.name} ({self.std_id}): {self.courses}"
+        return f"{self.surname}, {self.name}"
 
     def __str__(self) -> str:
         """Output information to string."""

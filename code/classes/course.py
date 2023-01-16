@@ -22,6 +22,7 @@ class Course(object):
     ) -> None:
         # Course node id
         self.id = uid
+        self.node_type = "Course"
 
         # name name
         self.name = name
@@ -40,13 +41,17 @@ class Course(object):
         # Expected students per subject
         self.expected_stud = expected_stud
 
+        self.activities = {}
+
         # self.students: dict[int, Student] = {}
         self.students = {}
 
     # def add_neighbor(self, node: Student):
     def add_neighbor(self, node):
-        # if type(node) is Student:
-        self.students[node.id] = node
+        if node.node_type == "Student":
+            self.students[node.id] = node
+        elif node.node_type == "Activity":
+            self.activities[node.id] = node
 
     def __repr__(self) -> str:
         """Output name to string"""
