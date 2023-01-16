@@ -22,8 +22,8 @@ def schedule_to_csv(schedule: Schedule, output_path: str = "output/Schedule_outp
 
         # write the data
         for student in schedule.students.values():
-            for activity in student.activities.values():
-                for timeslot in student.timeslots.values():
+            for timeslot in student.timeslots.values():
+                for activity in timeslot.activities.values():
                     data = [
                         student.name,
                         activity.course.name,
