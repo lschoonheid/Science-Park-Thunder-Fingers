@@ -2,7 +2,6 @@
 
 import csv
 import random
-# from ..modules.helpers import csv_to_dicts
 from code.classes.schedule import Schedule
 
 def main(
@@ -14,14 +13,11 @@ def main(
 
     schedule = Schedule(stud_prefs_path, courses_path, rooms_path)
 
-    #link random course to random room
-    # first_test_output = schedule.connect_nodes(random.choice(list(schedule.courses)), random.choice(list(schedule.rooms)))
+    # link random course to random room
+    # schedule.connect_nodes(random.choice(list(schedule.courses)), random.choice(list(schedule.rooms)))
 
-    # 'activiteit', , 'dag', 'tijdslot' add when implemented elsewhere
-    field_names = ['student', 'vak', 'zaal']
-
-
-    print(schedule.nodes)
+    # 'dag', 'tijdslot' add when implemented elsewhere
+    field_names = ['student', 'vak', 'activiteit', 'zaal']
 
     with open('output/Schedule_output.csv', 'w') as csvfile:
         writer = csv.writer(csvfile)
@@ -35,11 +31,14 @@ def main(
         studenten = [student.name for student in schedule.students.values()]
         # extract courses
         student_courses = [student.courses for student in schedule.students.values()]
+        # extract activities
+        course_activities = [course.activities for course in schedule.courses.values()]
         # extract rooms
         all_rooms = list(schedule.rooms.values())
 
         for i in range(4):
-            data = [studenten[i],random.choice(list(student_courses[i].values())), random.choice(all_rooms)]
+            ran_course = random.choice(list(student_courses[i].values()))
+            data = [studenten[i],ran_course.name, random.choice(list(ran_course.activities.values())).type, random.choice(all_rooms).name]
             writer.writerow(data)
 
 
