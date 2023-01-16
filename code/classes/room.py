@@ -10,3 +10,7 @@ class Room(object):
         self.id = uid
         self.name = name
         self.capacity = capacity
+
+    def __repr__(self) -> str:
+        """Output name to string"""
+        return self.name
