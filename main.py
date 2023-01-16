@@ -14,6 +14,7 @@ import argparse
 from code.classes.schedule import Schedule
 from code.visualisation.visualize import GraphVisualization
 from code.algorithms.random import connect_random
+from sched_csv_output import schedule_to_csv
 
 
 # TODO: write interface code to execute complete program from command line
@@ -28,6 +29,8 @@ def main(
 
     # make random schedule
     connect_random(schedule, i_max=5)
+
+    schedule_to_csv(schedule)
 
     G = GraphVisualization(schedule)
     G.visualize(replace_id=False)
