@@ -28,12 +28,12 @@ def main(
     schedule = Schedule(stud_prefs_path, courses_path, rooms_path)
 
     # make random schedule
-    connect_random(schedule, i_max=5)
-
-    schedule_to_csv(schedule)
+    connect_random(schedule, i_max=20)
 
     G = GraphVisualization(schedule)
     G.visualize(replace_id=False)
+
+    schedule_to_csv(schedule)
 
 
 if __name__ == "__main__":

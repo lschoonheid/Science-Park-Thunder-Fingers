@@ -34,24 +34,7 @@ def schedule_to_csv(schedule: Schedule, output_path: str = "output/Schedule_outp
                     ]
                     writer.writerow(data)
 
-        # # extract students
-        # students = [student.name for student in schedule.students.values()]
-        # # extract courses
-        # student_courses = [student.courses for student in schedule.students.values()]
-        # # extract activities
-        # course_activities = [course.activities for course in schedule.courses.values()]
-        # # extract rooms
-        # all_rooms = list(schedule.rooms.values())
-
-        # for i in range(4):
-        #     ran_course = random.choice(list(student_courses[i].values()))
-        #     data = [
-        #         students[i],
-        #         ran_course.name,
-        #         random.choice(list(ran_course.activities.values())).type,
-        #         random.choice(all_rooms).name,
-        #     ]
-        #     writer.writerow(data)
+        print(f"output saved to {output_path}")
 
 
 if __name__ == "__main__":

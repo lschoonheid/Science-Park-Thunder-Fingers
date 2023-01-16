@@ -59,7 +59,36 @@ class GraphVisualization:
                 width=2,
             )
         else:
-            G.add_nodes_from(self.schedule.nodes)
+            for student in self.schedule.students.values():
+                G.add_node(student.id, title=student.name, label=student.node_type, color="blue")
+            for course in self.schedule.courses.values():
+                G.add_node(
+                    course.id, title=course.name, label=course.node_type, color="red", value=len(course.students)
+                )
+            for course in self.schedule.courses.values():
+                G.add_node(
+                    course.id, title=course.name, label=course.node_type, color="red", value=len(course.students)
+                )
+            for activity in self.schedule.activities.values():
+                G.add_node(
+                    activity.id,
+                    title=str(activity),
+                    label=activity.node_type,
+                    color="orange",
+                    value=len(activity.students),
+                )
+            for room in self.schedule.rooms.values():
+                G.add_node(room.id, title=room.name, label=room.node_type, color="purple", value=len(room.timeslots))
+            for timeslot in self.schedule.timeslots.values():
+                G.add_node(
+                    timeslot.id,
+                    title=str(timeslot),
+                    label=timeslot.node_type,
+                    color="green",
+                    value=len(timeslot.activities),
+                )
+
+            # G.add_nodes_from(self.schedule.nodes)
             G.add_edges_from(_edges_vis)
             nx.draw_networkx(G)
 
@@ -67,8 +96,10 @@ class GraphVisualization:
         # _edges_vis.append((nodes_courses[0], nodes_rooms[0]))
 
         # plt.show() - displays the graph
-        plt.show()
 
         net = Network(notebook=False)
         net.from_nx(G)
         net.show("output/example.html")
+        print("See output/example.html for graph")
+
+        # plt.show()
