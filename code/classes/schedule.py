@@ -22,10 +22,10 @@ class Schedule:
         self.rooms: dict[int, Room] = {}
 
         # Contains all nodes
-        # TODO: make parenmt 'Node' class
+        # TODO: #22 make parenmt 'Node' class
         self.nodes: dict[int, Student | Course | Activity | Room | Timeslot] = {}
         # Contains all edges as [uid1, uid2]
-        self.edges: list[tuple[int, int]] = []
+        self.edges: set[tuple[int, int]] = set()
 
         # keeps track of uids assigned to named nodes
         self._course_catalog: dict[str, int] = {}
@@ -130,7 +130,7 @@ class Schedule:
         # Add timeslots
         for room in self.rooms.values():
             for day in range(5):
-                # TODO only add evening period for biggest room
+                # TODO #21 only add evening period for biggest room
                 for period in range(0, 6, 2):
                     timeslot = {"day": day, "period": period}
                     self._add_timeslot(node_id, timeslot)
@@ -144,7 +144,8 @@ class Schedule:
     def connect_nodes(self, node1, node2):
         node1.add_neighbor(node2)
         node2.add_neighbor(node1)
-        self.edges.append((node1.id, node2.id))
+        # TODO #20 check whether (node2.id, node1.id) is already in it
+        self.edges.add((node1.id, node2.id))
 
     def load_neighbours(self, stud_prefs_path):
         """

@@ -7,7 +7,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 from pyvis.network import Network
 
-
+# TODO: cleanup function
 # Defining a Class
 class GraphVisualization:
     def __init__(
