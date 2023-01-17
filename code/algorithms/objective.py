@@ -4,7 +4,7 @@ from ..classes.student import Student
 
 # TODO: #15 Implement objective function which couples a score to a schedule
 class Objective:
-    # TODO: complete list below
+    # TODO: #26 complete list below
     """
     Check for:
      - overbooked timeslots (over room capacity)
