@@ -7,8 +7,7 @@ from .activity import Activity
 from .timeslot import Timeslot
 from ..modules.helpers import csv_to_dicts
 
-# Load csv files
-# TODO: #8 build representation of graph
+
 class Schedule:
     """Class representation of schedule graph. Contains all nodes and edges."""
 
@@ -49,7 +48,6 @@ class Schedule:
         c = course
         # TODO: #25 There is one course that is referenced as "Zoeken, sturen en bewegen" in `vakken.csv` but as "Zoeken sturen en bewegen" in `studenten_en_vakken.csv`.
         name = c["Vak"].replace(",", "")
-        print(name)
 
         # Replace blank datavalues with valid values
         if replace_blank:
