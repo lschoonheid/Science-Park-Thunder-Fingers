@@ -131,12 +131,18 @@ class Schedule:
 
         # Add timeslots
         for room in self.rooms.values():
+            period_range: int = 4
+            # De grootste zaal heeft ook een avondslot van 17:00-19:00
+            if room.name == "C0.110":
+                period_range = 5
+
             for day in range(5):
-                # TODO #21 only add evening period for biggest room
-                for period in range(0, 6, 2):
-                    timeslot = {"day": day, "period": period}
-                    self._add_timeslot(node_id, timeslot)
-                    self.connect_nodes(room, self.timeslots[node_id])
+                for period in range(period_range):
+                    timeslot_dict = {"day": day, "period": period}
+                    self._add_timeslot(node_id, timeslot_dict)
+                    timeslot = self.timeslots[node_id]
+                    self.connect_nodes(room, timeslot)
+                    print(timeslot)
                     node_id += 1
 
     def connect_nodes(self, node1, node2):
@@ -147,9 +153,11 @@ class Schedule:
         # Sort so the tuple of pairing (id1, id2) is unique
         edge = (min(node1.id, node2.id), max((node1.id, node2.id)))
 
-        # TODO #20 check whether (node2.id, node1.id) is already in it
-        # assert edge not in self.edges, "Connection already made"
+        # Return true if connection can be made, return false if connection already exists
+        if edge in self.edges:
+            return False
         self.edges.add(edge)
+        return True
 
     def load_neighbours(self, stud_prefs_path):
         """
