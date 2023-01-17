@@ -1,9 +1,8 @@
-class Room(object):
-    """Object to store room information.
+class Room:
+    """Node that represents a room.
 
-    #TODO #3
-    Args:
-        object (_type_): _description_
+    Is linked with:
+    - timeslots
     """
 
     def __init__(self, uid: int, name: str, capacity: int) -> None:

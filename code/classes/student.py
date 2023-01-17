@@ -1,13 +1,10 @@
-from .course import Course
+class Student:
+    """Node that represents a student..
 
-
-class Student(object):
-    """Object to store student information and course enrolment.
-
-
-    #TODO #5
-    Args:
-        object (_type_): _description_
+    Is linked with:
+    - courses
+    - activities
+    - timeslots
     """
 
     def __init__(

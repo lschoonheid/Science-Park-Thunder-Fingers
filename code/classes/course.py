@@ -1,12 +1,12 @@
 # from .student import Student
 
 
-class Course(object):
-    """Object to store course information.
+class Course:
+    """Node that represents a course.
 
-    #TODO #2
-    Args:
-        object (_type_): _description_
+    Is linked with:
+    - activities
+    - students
     """
 
     def __init__(

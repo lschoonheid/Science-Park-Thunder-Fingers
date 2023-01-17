@@ -1,8 +1,6 @@
 from ..classes.schedule import Schedule
 
 from ..classes.student import Student
-from ..classes.activity import Activity
-from ..classes.timeslot import Timeslot
 
 # TODO: #15 Implement objective function which couples a score to a schedule
 class Objective:

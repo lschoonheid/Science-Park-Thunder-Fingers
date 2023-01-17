@@ -4,6 +4,13 @@ from .student import Student
 
 
 class Activity:
+    """Node that represents an activity. Eg: `wc1 of analyise`'.
+
+    Is linked with:
+    - timeslots
+    - students
+    """
+
     def __init__(self, uid: int, type: str, capacity: int | None) -> None:
         self.id = uid
         self.node_type = "Activity"

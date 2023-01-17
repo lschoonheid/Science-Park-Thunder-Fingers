@@ -10,6 +10,8 @@ from ..modules.helpers import csv_to_dicts
 # Load csv files
 # TODO: #8 build representation of graph
 class Schedule:
+    """Class representation of schedule graph. Contains all nodes and edges."""
+
     def __init__(self, stud_prefs_path: str, courses_path: str, rooms_path: str) -> None:
         # self.nodes: dict[int, (Student, Course, Room)] = {}
         # Students is a dictionary that hold all students by student number with corresponding info
@@ -138,6 +140,7 @@ class Schedule:
                     node_id += 1
 
     def connect_nodes(self, node1, node2):
+        """Connect two nodes. Symmetrically adds neighbor to nodes and fails if conn"""
         node1.add_neighbor(node2)
         node2.add_neighbor(node1)
 

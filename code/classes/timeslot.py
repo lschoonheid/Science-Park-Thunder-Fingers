@@ -2,6 +2,14 @@ from .room import Room
 
 
 class Timeslot:
+    """Node that represents a timeslot. Eg: `Room A1, period 9-11 on friday`'.
+
+    Is linked with:
+    - one room
+    - students
+    - activities
+    """
+
     def __init__(self, uid: int, day: int, period: int) -> None:
         self.id = uid
         self.node_type = "Timeslot"
