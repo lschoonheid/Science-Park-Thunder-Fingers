@@ -32,41 +32,40 @@ class GraphVisualization:
         if print_nodes:
             self.print_nodes()
 
-        _edges_vis = self.edges
-
+        # Initialize Networkx graph
         G = nx.Graph()
 
+        # Define iterables for hierarchal structure
+        shown_nodes = [
+            self.schedule.courses.values(),
+            self.schedule.activities.values(),
+            self.schedule.timeslots.values(),
+            self.schedule.students.values(),
+            # self.schedule.rooms.values(),
+        ]
+        hidden_nodes = [self.schedule.rooms.values()]
+        colors = ["blue", "red", "orange", "green", "purple"]
+        assert len(colors) >= len(shown_nodes), "Not enough colors available for levels."
+
         # Add all nodes with relevant metadata to networkx graph
-        for student in self.schedule.students.values():
-            G.add_node(student.id, title=student.name, label="Student", color="blue")
-        for course in self.schedule.courses.values():
-            G.add_node(course.id, title=course.name, label="Course", color="red", value=len(course.students))
-        for activity in self.schedule.activities.values():
-            G.add_node(
-                activity.id,
-                title=str(activity),
-                label="Activity",
-                color="orange",
-                value=len(activity.students),
-                bipartite=1,
-            )
-        for room in self.schedule.rooms.values():
-            G.add_node(room.id, title=room.name, label="Room", color="purple")
-        for timeslot in self.schedule.timeslots.values():
-            G.add_node(
-                timeslot.id,
-                title=str(timeslot),
-                label="Timeslot",
-                color="green",
-                value=len(timeslot.activities),
-                bipartite=0,
-            )
+        for (category, color, level) in zip(shown_nodes, colors, range(len(shown_nodes))):
+            for node in category:
+                title = f"""ID: {node.id}
+                Type: {type(node).__name__}
+                label: {str(node)}
+                """
+                G.add_node(node.id, title=title, label=str(node), color=color, level=level)
+
+        # Add hidden nodes
+        for category in hidden_nodes:
+            for node in category:
+                G.add_node(node.id, level=len(shown_nodes), hidden=True)
 
         # Add all adges to networkx graph
-        G.add_edges_from(_edges_vis)
+        G.add_edges_from(self.edges, physics=True)
 
         # Output interactive visualization to html file with pyvis
-        net = PyvisNetwork()
+        net = PyvisNetwork(layout=True, height="900px")
         net.from_nx(G)
         net.show("output/graph.html")
         print("View output/graph.html in your browser")
