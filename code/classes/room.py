@@ -1,4 +1,7 @@
-class Room:
+from .node import Node
+
+
+class Room(Node):
     """Node that represents a room.
 
     Is linked with:
@@ -7,16 +10,13 @@ class Room:
 
     def __init__(self, uid: int, name: str, capacity: int) -> None:
         self.id = uid
-        self.node_type = "Room"
+
+        # Metadata
         self.name = name
         self.capacity = capacity
+
+        # Neighbors
         self.timeslots = {}
 
-    def add_neighbor(self, node):
-        if node.node_type == "Timeslot":
-            self.timeslots[node.id] = node
-        else:
-            print("Error in adding neighbor!")
-
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return f"{self.name}"

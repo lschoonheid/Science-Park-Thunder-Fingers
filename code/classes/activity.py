@@ -1,9 +1,10 @@
+from .node import Node
 from .course import Course
 from .timeslot import Timeslot
 from .student import Student
 
 
-class Activity:
+class Activity(Node):
     """Node that represents an activity. Eg: `wc1 of analyise`'.
 
     Is linked with:
@@ -11,25 +12,17 @@ class Activity:
     - students
     """
 
-    def __init__(self, uid: int, type: str, capacity: int | None) -> None:
+    def __init__(self, uid: int, act_type: str, capacity: int | None) -> None:
         self.id = uid
-        self.node_type = "Activity"
-        self.type = type
+
+        # Metadata
+        self.act_type = act_type
         self.capacity = capacity
-        self.course: Course
+
+        # Neighbors
+        self.courses: dict[int, Course] = {}
         self.timeslots: dict[int, Timeslot] = {}
         self.students: dict[int, Student] = {}
 
-    def add_neighbor(self, node):
-        # if type(node) is Timeslot:
-        if node.node_type == "Course":
-            self.course = node
-        elif node.node_type == "Timeslot":
-            self.timeslots[node.id] = node
-        elif node.node_type == "Student":
-            self.students[node.id] = node
-        else:
-            print("Error in adding neighbor!")
-
-    def __repr__(self) -> str:
-        return f"{self.type} of {self.course}"
+    def __str__(self) -> str:
+        return f"{self.act_type} of {str(*(self.courses.values()))}"

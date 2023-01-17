@@ -1,7 +1,7 @@
-# from .student import Student
+from .node import Node
 
 
-class Course:
+class Course(Node):
     """Node that represents a course.
 
     Is linked with:
@@ -20,41 +20,21 @@ class Course:
         max_stud_prac: int | None,
         expected_stud: int,
     ) -> None:
-        # Course node id
         self.id = uid
-        self.node_type = "Course"
 
-        # name name
+        # Metadata
         self.name = name
-
-        # Lectures
-        self.num_lec = num_lec
-
-        # Tutorials & Max students per tutorial
-        self.num_tut = num_tut
+        self.num_lec = num_lec  # lectures
+        self.num_tut = num_tut  # tutorials
         self.max_stud_tut = max_stud_tut
-
-        # Practicals & Max students per practical
-        self.num_prac = num_prac
+        self.num_prac = num_prac  # practicals
         self.max_stud_prac = max_stud_prac
-
-        # Expected students per subject
         self.expected_stud = expected_stud
 
+        # Neighbors
         self.activities = {}
-
-        # self.students: dict[int, Student] = {}
         self.students = {}
 
-    # def add_neighbor(self, node: Student):
-    def add_neighbor(self, node):
-        if node.node_type == "Student":
-            self.students[node.id] = node
-        elif node.node_type == "Activity":
-            self.activities[node.id] = node
-        else:
-            print("Error in adding neighbor!")
-
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         """Output name to string"""
         return self.name

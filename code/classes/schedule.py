@@ -101,7 +101,7 @@ class Schedule:
         for course in self.courses.values():
             for i in range(course.num_lec):
                 activity = {
-                    "type": f"hc{i+1}",
+                    "act_type": f"hc{i+1}",
                     "capacity": None,
                 }
                 self._add_activity(node_id, activity)
@@ -109,7 +109,7 @@ class Schedule:
                 node_id += 1
             for i in range(course.num_tut):
                 activity = {
-                    "type": f"wc{i+1}",
+                    "act_type": f"wc{i+1}",
                     "capacity": course.max_stud_tut,
                 }
                 self._add_activity(node_id, activity)
@@ -117,7 +117,7 @@ class Schedule:
                 node_id += 1
             for i in range(course.num_prac):
                 activity = {
-                    "type": f"p{i+1}",
+                    "act_type": f"p{i+1}",
                     "capacity": course.max_stud_prac,
                 }
                 self._add_activity(node_id, activity)
@@ -142,13 +142,12 @@ class Schedule:
                     self._add_timeslot(node_id, timeslot_dict)
                     timeslot = self.timeslots[node_id]
                     self.connect_nodes(room, timeslot)
-                    print(timeslot)
                     node_id += 1
 
     def connect_nodes(self, node1, node2):
-        """Connect two nodes. Symmetrically adds neighbor to nodes and fails if conn"""
-        node1.add_neighbor(node2)
-        node2.add_neighbor(node1)
+        """Connect two nodes by adding neighbor to both nodes symmetrically.
+        - returns `True` if connection was made
+        - returns `False` if connection already exists."""
 
         # Sort so the tuple of pairing (id1, id2) is unique
         edge = (min(node1.id, node2.id), max((node1.id, node2.id)))
@@ -156,6 +155,9 @@ class Schedule:
         # Return true if connection can be made, return false if connection already exists
         if edge in self.edges:
             return False
+
+        node1.add_neighbor(node2)
+        node2.add_neighbor(node1)
         self.edges.add(edge)
         return True
 

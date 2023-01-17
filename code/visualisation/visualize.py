@@ -38,25 +38,25 @@ class GraphVisualization:
 
         # Add all nodes with relevant metadata to networkx graph
         for student in self.schedule.students.values():
-            G.add_node(student.id, title=student.name, label=student.node_type, color="blue")
+            G.add_node(student.id, title=student.name, label="Student", color="blue")
         for course in self.schedule.courses.values():
-            G.add_node(course.id, title=course.name, label=course.node_type, color="red", value=len(course.students))
+            G.add_node(course.id, title=course.name, label="Course", color="red", value=len(course.students))
         for activity in self.schedule.activities.values():
             G.add_node(
                 activity.id,
                 title=str(activity),
-                label=activity.node_type,
+                label="Activity",
                 color="orange",
                 value=len(activity.students),
                 bipartite=1,
             )
         for room in self.schedule.rooms.values():
-            G.add_node(room.id, title=room.name, label=room.node_type, color="purple")
+            G.add_node(room.id, title=room.name, label="Room", color="purple")
         for timeslot in self.schedule.timeslots.values():
             G.add_node(
                 timeslot.id,
                 title=str(timeslot),
-                label=timeslot.node_type,
+                label="Timeslot",
                 color="green",
                 value=len(timeslot.activities),
                 bipartite=0,
