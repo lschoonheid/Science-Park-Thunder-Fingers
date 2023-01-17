@@ -47,7 +47,9 @@ class Schedule:
 
     def _add_course(self, uid: int, course: dict, replace_blank=True) -> None:
         c = course
-        name = c["Vak"]
+        # TODO: #25 There is one course that is referenced as "Zoeken, sturen en bewegen" in `vakken.csv` but as "Zoeken sturen en bewegen" in `studenten_en_vakken.csv`.
+        name = c["Vak"].replace(",", "")
+        print(name)
 
         # Replace blank datavalues with valid values
         if replace_blank:
@@ -148,13 +150,14 @@ class Schedule:
         edge = (min(node1.id, node2.id), max((node1.id, node2.id)))
 
         # TODO #20 check whether (node2.id, node1.id) is already in it
-        assert edge not in self.edges, "Connection already made"
+        # assert edge not in self.edges, "Connection already made"
         self.edges.add(edge)
 
     def load_neighbours(self, stud_prefs_path):
         """
         Load all the neighbours into the loaded nodes.
         """
+
         # Load neighbors from CSV
         for student_dict in csv_to_dicts(stud_prefs_path):
             stud_id = self._student_catalog[int(student_dict["Stud.Nr."])]

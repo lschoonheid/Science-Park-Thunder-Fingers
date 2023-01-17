@@ -33,5 +33,3 @@ class Activity:
 
     def __repr__(self) -> str:
         return f"{self.type} of {self.course}"
-
-    # assert type(node) is Timeslot, "Can only add timeslot to activity as neighbor"

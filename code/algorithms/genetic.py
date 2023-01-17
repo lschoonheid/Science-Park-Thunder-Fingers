@@ -18,14 +18,14 @@ class GeneticAlgorithm:
             child = copy.deepcopy(child)
             children.append(child)
 
-        print("chidlren id's:")
-        for child in children:
-            print(id(child))
+        # print("chidlren id's:")
+        # for child in children:
+        #     print(id(child))
 
-        for child in children:
-            print(f"student id's of child {id(child)}")
-            for student in child.students:
-                print(id(student))
+        # for child in children:
+        #     print(f"student id's of child {id(child)}")
+        #     for student in child.students:
+        #         print(id(student))
 
     def run(self, n_children: int = 5):
         self.make_children(self.protoype, n_children)
