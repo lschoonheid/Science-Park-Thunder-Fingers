@@ -33,9 +33,9 @@ def random(schedule):
 
 # TODO: write interface code to execute complete program from command line
 def main(
-    stud_prefs_path: str = "data/studenten_en_vakken.csv",
-    courses_path: str = "data/vakken.csv",
-    rooms_path: str = "data/zalen.csv",
+    stud_prefs_path: str,
+    courses_path: str,
+    rooms_path: str,
 ):
     """Interface for executing scheduling program."""
 
@@ -49,9 +49,14 @@ if __name__ == "__main__":
     # Create a command line argument parser
     parser = argparse.ArgumentParser(description="Make a schedule.")
 
-    parser.add_argument("--prefs", dest="stud_prefs_path", help="Path to student enrolments csv.")
-    parser.add_argument("--courses", dest="courses_path", help="Path to courses csv.")
-    parser.add_argument("--rooms", dest="rooms_path", help="Path to rooms csv.")
+    parser.add_argument(
+        "--prefs",
+        dest="stud_prefs_path",
+        default="data/studenten_en_vakken_subset.csv",
+        help="Path to student enrolments csv.",
+    )
+    parser.add_argument("--courses", dest="courses_path", default="data/vakken_subset.csv", help="Path to courses csv.")
+    parser.add_argument("--rooms", dest="rooms_path", default="data/zalen_subset.csv", help="Path to rooms csv.")
 
     # Read arguments from command line
     args = parser.parse_args()
