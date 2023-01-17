@@ -13,8 +13,22 @@ import argparse
 # from code.modules.helpers import csv_to_dicts
 from code.classes.schedule import Schedule
 from code.visualisation.visualize import GraphVisualization
-from code.algorithms.random import connect_random
+from code.algorithms.genetic import GeneticAlgorithm
+from code.algorithms.randomize import connect_random
+from code.algorithms.objective import Objective
 from sched_csv_output import schedule_to_csv
+
+
+def random(schedule):
+    # make random schedule
+    connect_random(schedule, i_max=20)
+    objective = Objective(schedule)
+    objective.get_score()
+
+    G = GraphVisualization(schedule)
+    G.visualize()
+
+    schedule_to_csv(schedule)
 
 
 # TODO: write interface code to execute complete program from command line
@@ -25,15 +39,9 @@ def main(
 ):
     """Interface for executing scheduling program."""
 
-    schedule = Schedule(stud_prefs_path, courses_path, rooms_path)
-
-    # make random schedule
-    connect_random(schedule, i_max=20)
-
-    G = GraphVisualization(schedule)
-    G.visualize()
-
-    schedule_to_csv(schedule)
+    protoype = Schedule(stud_prefs_path, courses_path, rooms_path)
+    ga = GeneticAlgorithm(protoype)
+    ga.run(2)
 
 
 if __name__ == "__main__":
