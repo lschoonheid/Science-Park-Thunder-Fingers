@@ -37,11 +37,10 @@ class GraphVisualization:
 
         # Define iterables for hierarchal structure
         shown_nodes = [
+            self.schedule.students.values(),
             self.schedule.courses.values(),
             self.schedule.activities.values(),
             self.schedule.timeslots.values(),
-            self.schedule.students.values(),
-            # self.schedule.rooms.values(),
         ]
         hidden_nodes = [self.schedule.rooms.values()]
         colors = ["blue", "red", "orange", "green", "purple"]
@@ -61,11 +60,13 @@ class GraphVisualization:
             for node in category:
                 G.add_node(node.id, level=len(shown_nodes), hidden=True)
 
-        # Add all adges to networkx graph
-        G.add_edges_from(self.edges, physics=True)
+        # Add all edges to networkx graph
+        G.add_edges_from(self.edges)
 
         # Output interactive visualization to html file with pyvis
         net = PyvisNetwork(layout=True, height="900px")
+        net.options.physics.enabled = True
+        net.options.layout.set_separation(500)
         net.from_nx(G)
         net.show("output/graph.html")
         print("View output/graph.html in your browser")
