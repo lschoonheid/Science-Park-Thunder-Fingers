@@ -58,8 +58,6 @@ class GraphVisualization:
             G.add_node(student.id, title=student.name, label=student.node_type, color="blue")
         for course in self.schedule.courses.values():
             G.add_node(course.id, title=course.name, label=course.node_type, color="red", value=len(course.students))
-        for course in self.schedule.courses.values():
-            G.add_node(course.id, title=course.name, label=course.node_type, color="red", value=len(course.students))
         for activity in self.schedule.activities.values():
             G.add_node(
                 activity.id,
@@ -70,7 +68,7 @@ class GraphVisualization:
                 bipartite=1,
             )
         for room in self.schedule.rooms.values():
-            G.add_node(room.id, title=room.name, label=room.node_type, color="purple", value=len(room.timeslots))
+            G.add_node(room.id, title=room.name, label=room.node_type, color="purple")
         for timeslot in self.schedule.timeslots.values():
             G.add_node(
                 timeslot.id,
@@ -103,4 +101,4 @@ class GraphVisualization:
         net.show("output/graph.html")
         print("View output/graph.html in your browser")
 
-        plt.show()
+        # plt.show()

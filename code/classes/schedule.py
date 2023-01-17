@@ -136,16 +136,17 @@ class Schedule:
                     self._add_timeslot(node_id, timeslot)
                     self.connect_nodes(room, self.timeslots[node_id])
                     node_id += 1
-        # self.nodes.update(self.students)
-        # self.nodes.update(self.courses)
-        # self.nodes.update(self.activities)
-        # self.nodes.update(self.rooms)
 
     def connect_nodes(self, node1, node2):
         node1.add_neighbor(node2)
         node2.add_neighbor(node1)
+
+        # Sort so the tuple of pairing (id1, id2) is unique
+        edge = (min(node1.id, node2.id), max((node1.id, node2.id)))
+
         # TODO #20 check whether (node2.id, node1.id) is already in it
-        self.edges.add((node1.id, node2.id))
+        assert edge not in self.edges, "Connection already made"
+        self.edges.add(edge)
 
     def load_neighbours(self, stud_prefs_path):
         """
