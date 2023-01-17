@@ -6,9 +6,10 @@ import networkx as nx
 import matplotlib.pyplot as plt
 from pyvis.network import Network as PyvisNetwork
 
-# TODO: #24 cleanup function
-# Defining a Class
+
 class GraphVisualization:
+    """Visualize schedule as a graph."""
+
     def __init__(
         self,
         schedule: Schedule,
@@ -17,21 +18,15 @@ class GraphVisualization:
         # edges is a list which stores the set of edges that constitutes a graph
         self.edges = schedule.edges
 
-    # addEdge function inputs the vertices of an
-    # edge and appends it to the visual list
-    # def addEdge(self, a, b):
-    #     temp = [a, b]
-    #     self.edges.append(temp)
-
     def print_nodes(self):
-        """Print nodes in rows to terminal"""
+        """Print nodes with id's in rows to terminal"""
         print("\n")
         print("Nodes by id:")
         for id in self.schedule.nodes.keys():
             print(f"{id}: {self.schedule.nodes[id]}")
         print("\n")
 
-    def visualize(self, print_nodes: bool = False, show_bipartite: bool = False):
+    def visualize(self, print_nodes: bool = False, plot: bool = False):
         """In visualize function G is an object of class Graph given by networkx G.add_edges_from(visual).
         Creates a graph with a given list."""
         if print_nodes:
@@ -40,19 +35,8 @@ class GraphVisualization:
         _edges_vis = self.edges
 
         G = nx.Graph()
-        # if show_bipartite:
-        #     nodes_students = list(self.schedule.students.keys())
-        #     nodes_courses = list(self.schedule.students.keys())
-        #     G.add_nodes_from(nodes_students, bipartite=0)
-        #     G.add_nodes_from(nodes_courses, bipartite=1)
-        #     # nx.draw_networkx(G) - plots the graph
 
-        #     nx.draw_networkx(
-        #         G,
-        #         pos=nx.drawing.layout.bipartite_layout(G, nodes_courses),
-        #         width=2,
-        #     )
-        # else:
+        # Add all nodes with relevant metadata to networkx graph
         for student in self.schedule.students.values():
             G.add_node(student.id, title=student.name, label=student.node_type, color="blue")
         for course in self.schedule.courses.values():
@@ -78,26 +62,29 @@ class GraphVisualization:
                 bipartite=0,
             )
 
+        # Add all adges to networkx graph
         G.add_edges_from(_edges_vis)
-        nx.draw_networkx(
-            G,
-            # pos=nx.drawing.layout.bipartite_layout(G, self.schedule.timeslots),
-            pos=nx.drawing.layout.shell_layout(
-                G,
-                [
-                    self.schedule.students,
-                    self.schedule.courses,
-                    self.schedule.activities,
-                    self.schedule.rooms,
-                    self.schedule.timeslots,
-                ],
-                scale=5,
-            ),
-        )
 
+        # Output interactive visualization to html file with pyvis
         net = PyvisNetwork()
         net.from_nx(G)
         net.show("output/graph.html")
         print("View output/graph.html in your browser")
 
-        # plt.show()
+        if plot:
+            # Plot matplotlib graph in shell configuration
+            nx.draw_networkx(
+                G,
+                pos=nx.drawing.layout.shell_layout(
+                    G,
+                    [
+                        self.schedule.students,
+                        self.schedule.courses,
+                        self.schedule.activities,
+                        self.schedule.rooms,
+                        self.schedule.timeslots,
+                    ],
+                    scale=5,
+                ),
+            )
+            plt.show()
