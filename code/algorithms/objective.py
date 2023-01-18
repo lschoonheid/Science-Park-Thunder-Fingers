@@ -1,8 +1,9 @@
 from ..classes.schedule import Schedule
-from ..classes.node import Node
+from ..classes.node import Node, NodeSC
 from ..classes.student import Student
 from ..classes.timeslot import Timeslot
-from typing import Type, Callable
+from typing import Callable
+
 
 # TODO: #15 Implement objective function which couples a score to a schedule
 # TODO: #27 see if some functions can be cached
@@ -53,7 +54,7 @@ class Statistics:
                 print(f"HARD CONSTRAINT: Overbooked timeslot: {timeslot} has {bookings}")
         return overbookings
 
-    def count_all(self, nodes_dict: dict, count_function: Callable[[Type[Node]], int]):
+    def count_all(self, nodes_dict: dict[int, NodeSC], count_function: Callable[[NodeSC], int]):
         count = 0
         for node in nodes_dict.values():
             count += count_function(node)

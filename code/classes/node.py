@@ -1,3 +1,6 @@
+from typing import TypeVar
+
+
 class Node:
     """Base class of node."""
 
@@ -32,3 +35,7 @@ class Node:
 
     def __str__(self) -> str:
         return f"{type(self).__name__} {self.id} at {hex(id(self))}"
+
+
+# class Node or subclass of Node
+NodeSC = TypeVar("NodeSC", bound=Node)
