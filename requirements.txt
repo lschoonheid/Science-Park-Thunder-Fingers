@@ -3,3 +3,4 @@ tqdm>=4.64.1
 matplotlib>=3.5.2
 networkx>=3.0
 pyvis>=1.16
+beautifulsoup4>=4.11

@@ -5,6 +5,7 @@ from ..classes.schedule import Schedule
 import networkx as nx
 import matplotlib.pyplot as plt
 from pyvis.network import Network as PyvisNetwork
+from .fix_webpage import fix_webpage
 
 
 class GraphVisualization:
@@ -26,7 +27,7 @@ class GraphVisualization:
             print(f"{id}: {self.schedule.nodes[id]}")
         print("\n")
 
-    def visualize(self, print_nodes: bool = False, plot: bool = False):
+    def visualize(self, print_nodes: bool = False, output_folder: str = "output", plot: bool = False):
         """In visualize function G is an object of class Graph given by networkx G.add_edges_from(visual).
         Creates a graph with a given list."""
         if print_nodes:
@@ -72,15 +73,21 @@ class GraphVisualization:
         G.add_edges_from(self.edges)
 
         # Output interactive visualization to html file with pyvis
-        net = PyvisNetwork(layout=True, height="900px")
+        do_filter_menu = True
+
+        net = PyvisNetwork(layout=True, height="900px", filter_menu=do_filter_menu)
         net.from_nx(G)
         net.options.physics.enabled = True
         net.repulsion()
         net.options.edges.smooth.enabled = False
         net.options.layout.set_separation(500)
         net.options.layout.hierarchical.sortMethod = "directed"
-        net.show("output/graph.html")
-        print("View output/graph.html in your browser")
+        net.show(f"{output_folder}/graph.html")
+
+        if do_filter_menu:
+            fix_webpage(output_folder, net)
+
+        print(f"View {output_folder}/graph.html in your browser")
 
         if plot:
             # Plot matplotlib graph in shell configuration
