@@ -18,7 +18,7 @@ from code.algorithms.objective import Objective
 from sched_csv_output import schedule_to_csv
 
 
-def make_random(stud_prefs_path: str, courses_path: str, rooms_path: str, i_max=100):
+def make_random(stud_prefs_path: str, courses_path: str, rooms_path: str, i_max=50):
     """Make random schedule."""
     randomizer = Randomize()
     schedule = Schedule(stud_prefs_path, courses_path, rooms_path)

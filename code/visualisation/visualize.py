@@ -55,6 +55,12 @@ class GraphVisualization:
                 Type: {type(node).__name__}
                 label: {str(node)}
                 """
+                for neighbor_tag in ["activities", "students", "timeslots"]:
+                    if hasattr(node, neighbor_tag):
+                        title += f"{neighbor_tag}: [\n"
+                        for neighbor in getattr(node, neighbor_tag).values():
+                            title += f"    {neighbor.id}: {neighbor} \n"
+                        title += "]\n"
                 G.add_node(node.id, title=title, label=str(node), color=color, level=level)
 
         # Add hidden nodes

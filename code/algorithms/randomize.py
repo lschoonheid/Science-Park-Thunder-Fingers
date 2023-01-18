@@ -19,6 +19,11 @@ class Randomize:
             schedule.connect_nodes(student, timeslot)
             schedule.connect_nodes(activity, timeslot)
 
+    def timeslot_has_activity(self, timeslot: Timeslot):
+        if len(timeslot.activities) > 0:
+            return True
+        return False
+
     def can_book_student(self, student: Student, timeslot: Timeslot):
         new_moment = (timeslot.day, timeslot.period)
         for booked_timeslot in student.timeslots.values():
@@ -45,10 +50,13 @@ class Randomize:
             bool,
         ],
         negation=False,
-        _recursion_limit=1000,
+        _recursion_limit=10000,
         _combination_set: set | None = None,
     ):
-        assert _recursion_limit > 0, "Reached recursion limit"
+        # assert _recursion_limit > 0, "Reached recursion limit"
+        if _recursion_limit == 0:
+            print("ERROR: reached recursion depth limit!")
+            return None
 
         # Initialization
         if not _combination_set:
@@ -87,7 +95,18 @@ class Randomize:
         # print(f"found condition: {condition_value} for{node1, node2} with {_recursion_limit} recursions left")
         return node1, node2
 
-    def assign_activities_timeslots(self, schedule: Schedule):
+    def assign_activities_timeslots_once(self, schedule: Schedule):
+        # Make shuffled list of timeslots so they will be picked randomly
+        activities_shuffled = list(schedule.activities.values())
+        random.shuffle(activities_shuffled)
+        timelots = list(schedule.timeslots.values())
+        for activity in activities_shuffled:
+            draw = self.draw_uniform_recursive([activity], timelots, lambda a, t: self.timeslot_has_activity(t), negation=True)  # type: ignore
+            if draw:
+                timeslot = draw[1]
+                schedule.connect_nodes(activity, timeslot)
+
+    def assign_activities_timeslots_uniform(self, schedule: Schedule):
         # Make shuffled list of timeslots so they will be picked randomly
         timeslots_shuffled = list(schedule.timeslots.values())
         random.shuffle(timeslots_shuffled)
@@ -127,6 +146,7 @@ class Randomize:
                 print(f"ERROR: Could no longer find available timeslots for {activity} after {i} iterations.")
                 break
 
+            # TODO: fix this part
             # Pick student that does not have a timeslot for this activity
             draw_student = self.draw_uniform_recursive(
                 students_linked, [activity], self.student_has_activity_assigned, negation=True  # type: ignore
@@ -158,6 +178,7 @@ class Randomize:
 
             """
 
+            # student = random.choice(students_linked)
             timeslot = random.choice(timeslots_available)
 
             # TODO: prevent drawing if student already has assigned timeslot for this
@@ -184,8 +205,12 @@ class Randomize:
     def uniform_strict(self, schedule: Schedule, i_max: int = 1000):
         """Make a completely random schedule solution"""
 
-        self.assign_activities_timeslots(schedule)
-        return self.assign_students_timeslots(schedule, i_max)
+        self.assign_activities_timeslots_once(schedule)
+
+        got_solution = self.assign_students_timeslots(schedule, i_max)
+        if not got_solution:
+            self.uniform_strict(schedule, i_max)
+        return got_solution
 
 
 # TODO try pseudo-ku algorithm

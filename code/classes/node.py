@@ -12,6 +12,8 @@ class Node:
 
     def add_neighbor(self, node):
         match type(node).__name__:
+            # case type(self).__name__:
+            #     print("ERROR: Not allowed to connect same-level nodes")
             case "Course":
                 self.courses[node.id] = node
             case "Activity":
