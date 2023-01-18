@@ -5,6 +5,7 @@ from ..classes.schedule import Schedule
 import networkx as nx
 import matplotlib.pyplot as plt
 from pyvis.network import Network as PyvisNetwork
+from .fix_webpage import fix_webpage
 
 
 class GraphVisualization:
@@ -26,7 +27,7 @@ class GraphVisualization:
             print(f"{id}: {self.schedule.nodes[id]}")
         print("\n")
 
-    def visualize(self, print_nodes: bool = False, plot: bool = False):
+    def visualize(self, print_nodes: bool = False, output_folder: str = "output", plot: bool = False):
         """In visualize function G is an object of class Graph given by networkx G.add_edges_from(visual).
         Creates a graph with a given list."""
         if print_nodes:
@@ -37,14 +38,13 @@ class GraphVisualization:
 
         # Define iterables for hierarchal structure
         shown_nodes = [
+            self.schedule.courses.values(),
             self.schedule.activities.values(),
             self.schedule.timeslots.values(),
             self.schedule.students.values(),
-        ]
-        hidden_nodes = [
-            self.schedule.courses.values(),
             self.schedule.rooms.values(),
         ]
+        hidden_nodes = []
         colors = ["blue", "red", "orange", "green", "purple"]
         assert len(colors) >= len(shown_nodes), "Not enough colors available for levels."
 
@@ -53,7 +53,8 @@ class GraphVisualization:
             for node in category:
                 title = f"""ID: {node.id}
                 Type: {type(node).__name__}
-                label: {str(node)}
+                Level: {level}
+                Label: {str(node)}
                 """
                 for neighbor_tag in ["activities", "students", "timeslots"]:
                     if hasattr(node, neighbor_tag):
@@ -72,15 +73,21 @@ class GraphVisualization:
         G.add_edges_from(self.edges)
 
         # Output interactive visualization to html file with pyvis
-        net = PyvisNetwork(layout=True, height="900px")
+        do_filter_menu = True
+        net = PyvisNetwork(layout=True, height="900px", filter_menu=do_filter_menu)
         net.from_nx(G)
         net.options.physics.enabled = True
         net.repulsion()
         net.options.edges.smooth.enabled = False
         net.options.layout.set_separation(500)
         net.options.layout.hierarchical.sortMethod = "directed"
-        net.show("output/graph.html")
-        print("View output/graph.html in your browser")
+        net.show(f"{output_folder}/graph.html")
+
+        if do_filter_menu:
+            # Filter menu function is broken, this function repairs it.
+            fix_webpage(output_folder, net)
+
+        print(f"View {output_folder}/graph.html in your browser")
 
         if plot:
             # Plot matplotlib graph in shell configuration

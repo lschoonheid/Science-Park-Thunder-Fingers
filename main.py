@@ -14,7 +14,7 @@ from code.classes import *
 from code.visualisation.visualize import GraphVisualization
 from code.algorithms.genetic import GeneticAlgorithm
 from code.algorithms.randomize import *
-from code.algorithms.objective import Objective
+from code.algorithms.objective import Statistics
 from sched_csv_output import schedule_to_csv
 
 
@@ -28,7 +28,7 @@ def make_random(stud_prefs_path: str, courses_path: str, rooms_path: str, i_max=
     #     print("Restarting...\n\n")
     #     make_random(stud_prefs_path, courses_path, rooms_path, i_max)
 
-    objective = Objective(schedule)
+    objective = Statistics(schedule)
     objective.get_score()
     return schedule
 
