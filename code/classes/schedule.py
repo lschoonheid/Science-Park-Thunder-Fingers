@@ -11,16 +11,6 @@ from ..modules.helpers import csv_to_dicts
 # TODO: #8 build representation of graph
 class Schedule:
     def __init__(self, stud_prefs_path: str, courses_path: str, rooms_path: str) -> None:
-        # self.nodes: dict[int, (Student, Course, Room)] = {}
-        # Students is a dictionary that hold all students by student number with corresponding info
-        self.students: dict[int, Student] = {}
-        # Courses is a dictionary that holds course name with corresponding info
-        self.courses: dict[int, Course] = {}
-        self.activities: dict[int, Activity] = {}
-        self.timeslots: dict[int, Timeslot] = {}
-        # Rooms is a dictionary that hold all rooms with corresponding capacity
-        self.rooms: dict[int, Room] = {}
-
         # Contains all nodes
         # TODO: #22 make parenmt 'Node' class
         self.nodes: dict[int, Student | Course | Activity | Room | Timeslot] = {}
@@ -31,101 +21,131 @@ class Schedule:
         self._course_catalog: dict[str, int] = {}
         self._student_catalog: dict[int, int] = {}
 
-        self.load_nodes(stud_prefs_path, courses_path, rooms_path)
+        # Students is a dictionary that hold all students by student number with corresponding info
+        self.students: dict[int, Student] = self.load_student_nodes(stud_prefs_path)
+        # Courses is a dictionary that holds course name with corresponding info
+        self.courses: dict[int, Course] = self.load_course_nodes(courses_path)
+        self.activities: dict[int, Activity] = self.load_activity_nodes()
+        # Rooms is a dictionary that hold all rooms with corresponding capacity
+        self.rooms: dict[int, Room] = self.load_room_nodes(rooms_path)
+        self.timeslots: dict[int, Timeslot] = self.load_timslot_nodes()
+
         self.load_neighbours(stud_prefs_path)
 
-    def _add_student(self, uid: int, student: dict) -> None:
-        s = student
-        stud_no = int(s["Stud.Nr."])
+    def track_node_id(self):
+        return len(self.nodes)
 
-        # values = list(student.values())[0:3])
-        self.students[uid] = Student(uid, s["Achternaam"], s["Voornaam"], stud_no)
-        self.nodes[uid] = self.students[uid]
-        self._student_catalog[stud_no] = uid
-
-    def _add_course(self, uid: int, course: dict, replace_blank=True) -> None:
-        c = course
-        name = c["Vak"]
-
-        # Replace blank datavalues with valid values
-        if replace_blank:
-            for tag in list(c.keys())[1:]:
-                if c[tag] == "":
-                    c[tag] = None
-                else:
-                    c[tag] = int(c[tag])
-
-        self.courses[uid] = Course(
-            uid,
-            name,
-            int(c["#Hoorcolleges"]),
-            int(c["#Werkcolleges"]),
-            c["Max. stud. Werkcollege"],
-            int(c["#Practica"]),
-            c["Max. stud. Practicum"],
-            int(c["Verwacht"]),
-        )
-        self.nodes[uid] = self.courses[uid]
-        self._course_catalog[name] = uid
-
-    def _add_activity(self, uid: int, activity: dict) -> None:
-        self.activities[uid] = Activity(uid, **activity)
-        self.nodes[uid] = self.activities[uid]
-
-    def _add_room(self, uid: int, room: dict) -> None:
-        r = room
-        self.rooms[uid] = Room(uid, r["\ufeffZaalnummber"], r["Max. capaciteit"])
-        self.nodes[uid] = self.rooms[uid]
-
-    def _add_timeslot(self, uid: int, timeslot: dict) -> None:
-        self.timeslots[uid] = Timeslot(uid, **timeslot)
-        self.nodes[uid] = self.timeslots[uid]
-
-    def load_nodes(self, stud_prefs_path: str, courses_path: str, rooms_path: str):
+    def load_student_nodes(self, stud_prefs_path: str):
         """
-        Load all the nodes into the graph.
+        Load all student nodes into student dictionary in __init__
         """
-        node_id = 0
-
+        node_id = self.track_node_id()
+        students = {}
         for student in csv_to_dicts(stud_prefs_path):
-            self._add_student(node_id, student)
+            s = student
+            stud_no = int(s["Stud.Nr."])
+
+            students[node_id] = Student(node_id, s["Achternaam"], s["Voornaam"], stud_no)
+            self.nodes[node_id] = students[node_id]
+            self._student_catalog[stud_no] = node_id
             node_id += 1
+        return students
+
+    def load_course_nodes(self, courses_path: str):
+        """
+        Load all course nodes into course dictionary in __init__
+        """
+        node_id = self.track_node_id()
+        courses = {}
 
         for course in csv_to_dicts(courses_path):
-            self._add_course(node_id, course)
-            node_id += 1
+            c = course
+            name = c["Vak"]
+            replace_blank = True
+            # Replace blank datavalues with valid values
+            if replace_blank:
+                for tag in list(c.keys())[1:]:
+                    if c[tag] == "":
+                        c[tag] = None
+                    else:
+                        c[tag] = int(c[tag])
 
+            courses[node_id] = Course(
+                node_id,
+                name,
+                int(c["#Hoorcolleges"]),
+                int(c["#Werkcolleges"]),
+                c["Max. stud. Werkcollege"],
+                int(c["#Practica"]),
+                c["Max. stud. Practicum"],
+                int(c["Verwacht"]),
+            )
+            self.nodes[node_id] = courses[node_id]
+            self._course_catalog[name] = node_id
+            # self._add_course(node_id, course)
+            node_id += 1
+        return courses
+        
+    def load_activity_nodes(self):
+        """
+        Load all course nodes into course dictionary in __init__
+        """
+        node_id = self.track_node_id()
+        activities = {}
         # Add children activities to courses and vice versa
         for course in self.courses.values():
+            
             for i in range(course.num_lec):
                 activity = {
                     "type": f"hc{i+1}",
                     "capacity": None,
                 }
-                self._add_activity(node_id, activity)
-                self.connect_nodes(course, self.activities[node_id])
+                activities[node_id] = Activity(node_id, **activity)
+                self.nodes[node_id] = activities[node_id]
+                self.connect_nodes(course, activities[node_id])
                 node_id += 1
+            
             for i in range(course.num_tut):
                 activity = {
                     "type": f"wc{i+1}",
                     "capacity": course.max_stud_tut,
                 }
-                self._add_activity(node_id, activity)
-                self.connect_nodes(course, self.activities[node_id])
+                activities[node_id] = Activity(node_id, **activity)
+                self.nodes[node_id] = activities[node_id]
+                self.connect_nodes(course, activities[node_id])
                 node_id += 1
+            
             for i in range(course.num_prac):
                 activity = {
                     "type": f"p{i+1}",
                     "capacity": course.max_stud_prac,
                 }
-                self._add_activity(node_id, activity)
-                self.connect_nodes(course, self.activities[node_id])
+                activities[node_id] = Activity(node_id, **activity)
+                self.nodes[node_id] = activities[node_id]
+                self.connect_nodes(course, activities[node_id])
                 node_id += 1
+            
+        return activities
 
-        #  Add rooms
+    def load_room_nodes(self, rooms_path: str):
+        """
+        Load all room nodes into room dictionary in __init__
+        """
+        node_id = self.track_node_id()
+        rooms = {}
+
         for room in csv_to_dicts(rooms_path):
-            self._add_room(node_id, room)
+            r = room
+            rooms[node_id] = Room(node_id, r["\ufeffZaalnummber"], r["Max. capaciteit"])
+            self.nodes[node_id] = rooms[node_id]
+            # self._add_room(node_id, room)
             node_id += 1
+        
+        return rooms
+
+    def load_timslot_nodes(self):
+        node_id = self.track_node_id()
+        timeslots = {}
 
         # Add timeslots
         for room in self.rooms.values():
@@ -133,9 +153,13 @@ class Schedule:
                 # TODO #21 only add evening period for biggest room
                 for period in range(0, 6, 2):
                     timeslot = {"day": day, "period": period}
-                    self._add_timeslot(node_id, timeslot)
-                    self.connect_nodes(room, self.timeslots[node_id])
+                    timeslots[node_id] = Timeslot(node_id, **timeslot)
+                    self.nodes[node_id] = timeslots[node_id]
+                    # self._add_timeslot(node_id, timeslot)
+                    self.connect_nodes(room, timeslots[node_id])
                     node_id += 1
+
+        return timeslots
 
     def connect_nodes(self, node1, node2):
         node1.add_neighbor(node2)
