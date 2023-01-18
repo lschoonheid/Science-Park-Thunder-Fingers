@@ -87,7 +87,7 @@ class GraphVisualization:
             # Filter menu function is broken, this function repairs it.
             fix_webpage(output_folder, net)
 
-        print(f"View {output_folder}/graph.html in your browser")
+        print(f"\nView {output_folder}/graph.html in your browser")
 
         if plot:
             # Plot matplotlib graph in shell configuration

@@ -71,10 +71,10 @@ class Statistics:
         """Count overbooked `activity` for `timeslot`."""
         overbookings = len(timeslot.activities) - 1
         if overbookings > 0:
-            bookings = [str(timeslot) for timeslot in timeslot.activities.values()]
+            bookings = [str(activity) for activity in timeslot.activities.values()]
 
             if not quiet:
-                print(f"HARD CONSTRAINT: Overbooked timeslot: {timeslot} has {bookings}")
+                print(f"HARD CONSTRAINT: Overbooked timeslot: {timeslot.id} {timeslot} has {bookings}")
         return overbookings
 
     def aggregate(self, count_function: Callable[[NodeSC], int], nodes_dict: dict[int, NodeSC]):

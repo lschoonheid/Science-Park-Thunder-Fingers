@@ -1,8 +1,8 @@
 from ..classes.schedule import Schedule
+from ..classes.node import Node, NodeSC
 from ..classes.student import Student
 from ..classes.activity import Activity
 from ..classes.timeslot import Timeslot
-from ..classes.node import Node
 import random
 from tqdm import tqdm
 from typing import Callable
@@ -43,10 +43,10 @@ class Randomize:
 
     def draw_uniform_recursive(
         self,
-        nodes1: list[Node],
-        nodes2: list[Node],
+        nodes1: list[NodeSC],
+        nodes2: list[NodeSC],
         condition: Callable[
-            [Node, Node],
+            [NodeSC, NodeSC],
             bool,
         ],
         negation=False,
@@ -82,17 +82,29 @@ class Randomize:
         if combination in _combination_set:
             # Combination already tried, try again with different combination
             return self.draw_uniform_recursive(
-                nodes1, nodes2, condition, _recursion_limit=_recursion_limit - 1, _combination_set=_combination_set
+                nodes1,
+                nodes2,
+                condition,
+                negation=negation,
+                _recursion_limit=_recursion_limit - 1,
+                _combination_set=_combination_set,
             )
         elif not condition_value:
             _combination_set.add(combination)
             assert len(_combination_set) <= max_combinations, "Combination set out of order"
 
             return self.draw_uniform_recursive(
-                nodes1, nodes2, condition, _recursion_limit=_recursion_limit - 1, _combination_set=_combination_set
+                nodes1,
+                nodes2,
+                condition,
+                negation=negation,
+                _recursion_limit=_recursion_limit - 1,
+                _combination_set=_combination_set,
             )
 
-        # print(f"found condition: {condition_value} for{node1, node2} with {_recursion_limit} recursions left")
+        print(
+            f"found condition: {negation, condition(node1, node2), condition_value} for{node1, node2} with {_recursion_limit} recursions left"
+        )
         return node1, node2
 
     def assign_activities_timeslots_once(self, schedule: Schedule):
@@ -103,7 +115,9 @@ class Randomize:
         for activity in activities_shuffled:
             draw = self.draw_uniform_recursive([activity], timelots, lambda a, t: self.timeslot_has_activity(t), negation=True)  # type: ignore
             if draw:
-                timeslot = draw[1]
+                timeslot: Timeslot = draw[1]
+                if self.timeslot_has_activity(timeslot):
+                    print(timeslot.id, activity)
                 schedule.connect_nodes(activity, timeslot)
 
     def assign_activities_timeslots_uniform(self, schedule: Schedule):
@@ -121,6 +135,7 @@ class Randomize:
 
         # Try making connections for i_max iterations
         edges = set()
+        print("\n")
         for i in tqdm(range(i_max)):
             # print(i)
             if len(available_activities) == 0:
@@ -197,6 +212,7 @@ class Randomize:
             schedule.connect_nodes(student, timeslot)
             edges.add(edge)
         if len(available_activities) > 0:
+            print("\n")
             print(f"ERROR: could not finish schedule within {i_max} iterations.")
             print(f"ERROR: unfinished activities: {available_activities}")
             return False
