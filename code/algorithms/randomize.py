@@ -3,10 +3,11 @@ from ..classes.student import Student
 from ..classes.activity import Activity
 from ..classes.timeslot import Timeslot
 from ..classes.node import Node
-from typing import Type, Callable
 import random
+from tqdm import tqdm
+from typing import Callable
 
-
+# TODO: move constraint checks to Objective
 class Randomize:
     def connect_random(self, schedule: Schedule, i_max: int = 5):
         """Make a completely random schedule"""
@@ -26,46 +27,16 @@ class Randomize:
                 return False
         return True
 
-    def uniform_strict(self, schedule: Schedule, i_max: int = 200):
-        """Make a completely random schedule"""
+    def student_has_activity_assigned(self, student: Student, activity: Activity):
+        for assigned_slot in student.timeslots.values():
+            for activity_timeslot in activity.timeslots.values():
+                if assigned_slot.id == activity_timeslot.id:
+                    # Student already has assigned timeslot for activity
+                    return True
+        print(student, activity)
+        return False
 
-        # Make shuffled list of timeslots so they will be picked randomly
-        timeslots_shuffled = list(schedule.timeslots.values())
-        random.shuffle(timeslots_shuffled)
-
-        # Hard constraint to never double book a timeslot, so iterate over them
-        for i, timeslot in enumerate(timeslots_shuffled):
-            activity: Activity = random.choice(list(schedule.activities.values()))
-            schedule.connect_nodes(activity, timeslot)
-
-        # Try making connections for i_max iterations
-        for i in range(i_max):
-            print("===============================")
-            print(i)
-
-            # Choose random timeslot
-            timeslot = random.choice(timeslots_shuffled)
-
-            # Should be only one activity
-            assert len(timeslot.activities.values()) <= 1, "Hard constraint broken: one activity per timeslot."
-            for activity in timeslot.activities.values():
-                # Skip if timeslot has reached capacity
-                bookings = len(timeslot.students)
-                if bookings == activity.capacity or bookings == timeslot.room.capacity:
-                    continue
-
-                students = list(activity.students.values())
-
-                # TODO: prevent drawing if student already has assigned timeslot for this
-
-                draw = self.condition_draw_uniform(students, [timeslot], self.can_book_student)  # type: ignore
-                if not draw:
-                    continue
-
-                student = draw[0]
-                schedule.connect_nodes(student, timeslot)
-
-    def condition_draw_uniform(
+    def draw_uniform_recursive(
         self,
         nodes1: list[Node],
         nodes2: list[Node],
@@ -73,39 +44,141 @@ class Randomize:
             [Node, Node],
             bool,
         ],
-        recursion_limit=10,
+        negation=False,
+        _recursion_limit=1000,
         _combination_set: set | None = None,
     ):
-        assert recursion_limit > 0, "Reached recursion limit"
+        assert _recursion_limit > 0, "Reached recursion limit"
 
         # Initialization
         if not _combination_set:
             _combination_set = set()
 
         max_combinations = len(nodes1) * len(nodes2)
+        # print(f"{1000 - _recursion_limit}/{max_combinations}")
 
         if len(_combination_set) == max_combinations:
             # Reached all possible combinations
-            print("reached all combinations")
-            return False
+            return None
 
         node1 = random.choice(nodes1)
         node2 = random.choice(nodes2)
 
         combination = (node1.id, node2.id)
-        print(f"comb: {combination}")
+        condition_value = condition(node1, node2)
+        if negation:
+            # If boolean has to be mirrored, mirror it
+            condition_value = not condition_value
 
         # TODO: Possibly faster to generate all combinations and iterate?
         if combination in _combination_set:
             # Combination already tried, try again with different combination
-            return self.condition_draw_uniform(
-                nodes1, nodes2, condition, recursion_limit=recursion_limit - 1, _combination_set=_combination_set
+            return self.draw_uniform_recursive(
+                nodes1, nodes2, condition, _recursion_limit=_recursion_limit - 1, _combination_set=_combination_set
             )
-        elif not condition(node1, node2):
+        elif not condition_value:
             _combination_set.add(combination)
-            assert len(_combination_set) <= max_combinations
-            return self.condition_draw_uniform(
-                nodes1, nodes2, condition, recursion_limit=recursion_limit - 1, _combination_set=_combination_set
+            assert len(_combination_set) <= max_combinations, "Combination set out of order"
+
+            return self.draw_uniform_recursive(
+                nodes1, nodes2, condition, _recursion_limit=_recursion_limit - 1, _combination_set=_combination_set
             )
 
+        print(f"found condition: {condition_value} with {_recursion_limit} recursions left")
         return node1, node2
+
+    def uniform_strict(self, schedule: Schedule, i_max: int = 1000):
+        """Make a completely random schedule solution"""
+
+        # Make shuffled list of timeslots so they will be picked randomly
+        timeslots_shuffled = list(schedule.timeslots.values())
+        random.shuffle(timeslots_shuffled)
+
+        # Hard constraint to never double book a timeslot, so iterate over them
+        for timeslot in timeslots_shuffled:
+            activity: Activity = random.choice(list(schedule.activities.values()))
+            schedule.connect_nodes(activity, timeslot)
+
+        available_activities = list(schedule.activities.values())
+
+        # Try making connections for i_max iterations
+        edges = set()
+        for i in tqdm(range(i_max)):
+            print(i)
+            if len(available_activities) == 0:
+                print("Finished!")
+                break
+
+            # Take random unfinished activity
+            activity = random.choice(available_activities)
+
+            students_linked = list(activity.students.values())
+            timeslots_linked = list(activity.timeslots.values())
+
+            # Filter timeslots for available capacity
+            timeslots_available: list[Timeslot] = []
+            for timeslot in timeslots_linked:
+                # Skip if timeslot has reached capacity
+                bookings = len(timeslot.students)
+                if bookings == activity.capacity or bookings == timeslot.room.capacity:
+                    continue
+                timeslots_available.append(timeslot)
+
+            if len(timeslots_available) == 0:
+                print(f"ERROR: Could no longer find available timeslots for {activity} after {i} iterations.")
+                break
+
+            # Pick student that does not have a timeslot for this activity
+            draw_student = self.draw_uniform_recursive(
+                students_linked, [activity], self.student_has_activity_assigned, negation=True  # type: ignore
+            )
+
+            if not draw_student:
+                # No available students means this activity has been assigned to all its students, it's finished.
+                for index, test_activity in enumerate(available_activities):
+                    if activity == test_activity:
+                        # TODO: triple check if this is rightfully removed from list, as this brings algorithm closer to completion
+                        available_activities.pop(index)
+                continue
+
+            print(draw_student)
+            student: Student = draw_student[0]  # type: ignore
+
+            # TODO: improvement would be to first see if there is an available one (see commented code)
+            """
+            # Pick timeslot that student has still available
+            draw_timeslot = self.draw_uniform_recursive([student], timeslots_available, self.can_book_student, negation=False)  # type: ignore
+
+            # if not draw_timeslot:
+            #     print(
+            #         f"ERROR: Could no longer find available timeslots for {activity} for {student} after {i} iterations."
+            #     )
+                # TODO: draw anyway as second option
+            #     continue
+            timeslot: Timeslot = draw_timeslot[1]  # type: ignore
+
+            """
+
+            timeslot = random.choice(timeslots_available)
+
+            # Skip if timeslot is already linked to student
+            edge = (student.id, timeslot.id)
+            if edge in edges:
+                print("made it through?")
+                continue
+
+            # TODO: prevent drawing if student already has assigned timeslot for this
+            # TODO: somehow some students still pass this test
+            if self.student_has_activity_assigned(student, activity):
+                print("made it through still?")
+                continue
+
+            # Success
+            schedule.connect_nodes(student, timeslot)
+            edges.add(edge)
+        if len(available_activities) > 0:
+            print(f"ERROR: could not finish schedule within {i_max} iterations.")
+            print(f"ERROR: unfinished activities: {available_activities}")
+
+
+# TODO try pseudo-ku algorithm

@@ -18,7 +18,7 @@ from code.algorithms.objective import Objective
 from sched_csv_output import schedule_to_csv
 
 
-def randomize(schedule, i_max=20):
+def randomize(schedule, i_max=10000):
     """Make random schedule."""
     randomizer = Randomize()
     randomizer.uniform_strict(schedule, i_max=i_max)
