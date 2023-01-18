@@ -1,11 +1,10 @@
 from ..classes.schedule import Schedule
 
 from ..classes.student import Student
-from ..classes.activity import Activity
-from ..classes.timeslot import Timeslot
 
 # TODO: #15 Implement objective function which couples a score to a schedule
 class Objective:
+    # TODO: #26 complete list below
     """
     Check for:
      - overbooked timeslots (over room capacity)
@@ -25,8 +24,6 @@ class Objective:
         self.statistics: dict = {}
         self.score: float = 0
         self.schedule = schedule
-
-    # TODO: #23 first check whether schedule is at all valid (no doubly booked rooms etc.)
 
     # test for students with doubly booked timeslots
     def count_student_doubles(self, student: Student):

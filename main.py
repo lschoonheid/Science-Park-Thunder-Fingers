@@ -33,20 +33,30 @@ def random(schedule):
 
 # TODO: write interface code to execute complete program from command line
 def main(
-    stud_prefs_path: str = "data/studenten_en_vakken_subset.csv",
-    courses_path: str = "data/vakken_subset.csv",
-    rooms_path: str = "data/zalen.csv",
+    stud_prefs_path: str,
+    courses_path: str,
+    rooms_path: str,
 ):
     """Interface for executing scheduling program."""
 
     protoype = Schedule(stud_prefs_path, courses_path, rooms_path)
     ga = GeneticAlgorithm(protoype)
     ga.run(2)
+    random(protoype)
 
 
 if __name__ == "__main__":
     # Create a command line argument parser
     parser = argparse.ArgumentParser(description="Make a schedule.")
+
+    parser.add_argument(
+        "--prefs",
+        dest="stud_prefs_path",
+        default="data/studenten_en_vakken_subset.csv",
+        help="Path to student enrolments csv.",
+    )
+    parser.add_argument("--courses", dest="courses_path", default="data/vakken_subset.csv", help="Path to courses csv.")
+    parser.add_argument("--rooms", dest="rooms_path", default="data/zalen_subset.csv", help="Path to rooms csv.")
 
     # Read arguments from command line
     args = parser.parse_args()

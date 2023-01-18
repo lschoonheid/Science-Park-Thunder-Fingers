@@ -1,13 +1,13 @@
-from .course import Course
+from .node import Node
 
 
-class Student(object):
-    """Object to store student information and course enrolment.
+class Student(Node):
+    """Node that represents a student..
 
-
-    #TODO #5
-    Args:
-        object (_type_): _description_
+    Is linked with:
+    - courses
+    - activities
+    - timeslots
     """
 
     def __init__(
@@ -18,30 +18,21 @@ class Student(object):
         std_id: int,
     ) -> None:
         self.id = uid
-        self.node_type = "Student"
+
+        # Metadata
         self.name = name
         self.surname = surname
         self.std_id = std_id
 
+        # Neighbors
         self.courses = {}
         self.activities = {}
         self.timeslots = {}
 
-    def add_neighbor(self, node):
-        if node.node_type == "Course":
-            self.courses[node.id] = node
-        elif node.node_type == "Activity":
-            self.activities[node.id] = node
-        elif node.node_type == "Timeslot":
-            self.timeslots[node.id] = node
-        else:
-            print("Error in adding neighbor!")
-
     def __repr__(self) -> str:
         """Output representation of information."""
-        # return f"{self.surname}, {self.name} ({self.std_id}): {self.courses}"
-        return f"{self.surname}, {self.name}"
+        return f"{self.surname}, {self.name} ({self.std_id}): {self.courses}"
 
     def __str__(self) -> str:
-        """Output information to string."""
-        return f"{self.surname}, {self.name} ({self.std_id}): {self.courses}"
+        """Output name to string."""
+        return f"{self.surname}, {self.name}"

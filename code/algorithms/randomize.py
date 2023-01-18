@@ -7,7 +7,8 @@ import random
 
 
 def connect_random(schedule: Schedule, i_max: int = 5):
-    for i in range(i_max):
+    """Make a completely random schedule"""
+    for _ in range(i_max):
         student: Student = random.choice(list(schedule.students.values()))
 
         activity: Activity = random.choice(list(student.activities.values()))
