@@ -31,8 +31,9 @@ class Student(Node):
 
     def __repr__(self) -> str:
         """Output representation of information."""
-        return f"{self.surname}, {self.name} ({self.std_id}): {self.courses}"
+        # return f"{self.surname}, {self.name} ({self.std_id}): {self.courses}"
+        return f"{self.name}"
 
     def __str__(self) -> str:
         """Output name to string."""
-        return f"{self.surname}, {self.name}"
+        return f"{self.name} {self.surname}"

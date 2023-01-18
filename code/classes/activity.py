@@ -24,5 +24,8 @@ class Activity(Node):
         self.timeslots: dict[int, Timeslot] = {}
         self.students: dict[int, Student] = {}
 
+    def __repr__(self) -> str:
+        return f"{self.act_type} of {str(*(self.courses.values()))}"
+
     def __str__(self) -> str:
         return f"{self.act_type} of {str(*(self.courses.values()))}"
