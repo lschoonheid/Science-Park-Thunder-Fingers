@@ -36,10 +36,7 @@ def fix_webpage(output_folder: str, net: PyvisNetwork):
 
         # Broken links
         links = """<link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
-                        <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
-                    
-                        <script src="filterHighlight.js"></script>
-                        """
+                <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>"""
         linksSoup = BeautifulSoup(links, "html.parser")
 
         head = soup.find("head")

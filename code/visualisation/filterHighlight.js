@@ -10,13 +10,17 @@ function highlightFilter(filter, reset = false) {
     edges = new vis.DataSet(Object.values(allEdges));
   }
 
+  console.log(filter);
+
   if (filter.item == "node") {
     filteredNodes = Object.filter(allNodes, (obj) => {
-      if (obj[filter.property] in filter.value) {
+      if (filter.value.includes(obj[filter.property].toString())) {
+        console.log(obj[filter.property], filter.value);
         return true;
       }
       return false;
     });
+    console.log(filteredNodes);
     nodes = new vis.DataSet(Object.values(filteredNodes));
   } else if (filter.item == "edge") {
     filteredEdges = Object.filter(allEdges, (obj) => {

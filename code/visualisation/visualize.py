@@ -38,14 +38,13 @@ class GraphVisualization:
 
         # Define iterables for hierarchal structure
         shown_nodes = [
+            self.schedule.courses.values(),
             self.schedule.activities.values(),
             self.schedule.timeslots.values(),
             self.schedule.students.values(),
-        ]
-        hidden_nodes = [
-            self.schedule.courses.values(),
             self.schedule.rooms.values(),
         ]
+        hidden_nodes = []
         colors = ["blue", "red", "orange", "green", "purple"]
         assert len(colors) >= len(shown_nodes), "Not enough colors available for levels."
 
@@ -54,7 +53,8 @@ class GraphVisualization:
             for node in category:
                 title = f"""ID: {node.id}
                 Type: {type(node).__name__}
-                label: {str(node)}
+                Level: {level}
+                Label: {str(node)}
                 """
                 for neighbor_tag in ["activities", "students", "timeslots"]:
                     if hasattr(node, neighbor_tag):
@@ -74,7 +74,6 @@ class GraphVisualization:
 
         # Output interactive visualization to html file with pyvis
         do_filter_menu = True
-
         net = PyvisNetwork(layout=True, height="900px", filter_menu=do_filter_menu)
         net.from_nx(G)
         net.options.physics.enabled = True
@@ -85,6 +84,7 @@ class GraphVisualization:
         net.show(f"{output_folder}/graph.html")
 
         if do_filter_menu:
+            # Filter menu function is broken, this function repairs it.
             fix_webpage(output_folder, net)
 
         print(f"View {output_folder}/graph.html in your browser")
