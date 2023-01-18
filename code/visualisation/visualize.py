@@ -62,6 +62,10 @@ class GraphVisualization:
                         for neighbor in getattr(node, neighbor_tag).values():
                             title += f"    {neighbor.id}: {neighbor} \n"
                         title += "]\n"
+                title += f"""
+                
+                Attributes: {node.__dict__}
+                """
                 G.add_node(node.id, title=title, label=str(node), color=color, level=level)
 
         # Add hidden nodes

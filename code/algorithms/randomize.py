@@ -139,7 +139,7 @@ class Randomize:
         for i in tqdm(range(i_max)):
             # print(i)
             if len(available_activities) == 0:
-                print("Finished!")
+                print(f"Finished after  {i} iterations!")
                 break
 
             # Take random unfinished activity
