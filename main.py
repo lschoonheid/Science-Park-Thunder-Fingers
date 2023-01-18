@@ -10,25 +10,24 @@ Course: Algoritmen en Heuristieken 2023
 
 import argparse
 
-# from code.modules.helpers import csv_to_dicts
-from code.classes.schedule import Schedule
+from code.classes import *
 from code.visualisation.visualize import GraphVisualization
 from code.algorithms.genetic import GeneticAlgorithm
-from code.algorithms.randomize import connect_random
+from code.algorithms.randomize import *
 from code.algorithms.objective import Objective
 from sched_csv_output import schedule_to_csv
 
 
-def random(schedule):
-    # make random schedule
-    connect_random(schedule, i_max=20)
+def randomize(schedule, i_max=20):
+    """Make random schedule."""
+    randomizer = Randomize()
+    randomizer.uniform_strict(schedule, i_max=i_max)
     objective = Objective(schedule)
     objective.get_score()
 
-    G = GraphVisualization(schedule)
-    G.visualize()
-
     schedule_to_csv(schedule)
+
+    return schedule
 
 
 # TODO: write interface code to execute complete program from command line
@@ -42,7 +41,10 @@ def main(
     protoype = Schedule(stud_prefs_path, courses_path, rooms_path)
     ga = GeneticAlgorithm(protoype)
     ga.run(2)
-    random(protoype)
+    randomize(protoype)
+
+    G = GraphVisualization(protoype)
+    G.visualize()
 
 
 if __name__ == "__main__":

@@ -37,12 +37,14 @@ class GraphVisualization:
 
         # Define iterables for hierarchal structure
         shown_nodes = [
-            self.schedule.students.values(),
-            self.schedule.courses.values(),
             self.schedule.activities.values(),
             self.schedule.timeslots.values(),
+            self.schedule.students.values(),
         ]
-        hidden_nodes = [self.schedule.rooms.values()]
+        hidden_nodes = [
+            self.schedule.courses.values(),
+            self.schedule.rooms.values(),
+        ]
         colors = ["blue", "red", "orange", "green", "purple"]
         assert len(colors) >= len(shown_nodes), "Not enough colors available for levels."
 
@@ -65,9 +67,12 @@ class GraphVisualization:
 
         # Output interactive visualization to html file with pyvis
         net = PyvisNetwork(layout=True, height="900px")
-        net.options.physics.enabled = True
-        net.options.layout.set_separation(500)
         net.from_nx(G)
+        net.options.physics.enabled = True
+        net.repulsion()
+        net.options.edges.smooth.enabled = False
+        net.options.layout.set_separation(500)
+        net.options.layout.hierarchical.sortMethod = "directed"
         net.show("output/graph.html")
         print("View output/graph.html in your browser")
 
