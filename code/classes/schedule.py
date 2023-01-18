@@ -1,5 +1,6 @@
 # First test program to make schedules with object oriented programming.
 
+from .node import NodeSC
 from .course import Course
 from .room import Room
 from .student import Student
@@ -171,7 +172,7 @@ class Schedule:
 
         return timeslots
 
-    def connect_nodes(self, node1, node2):
+    def connect_nodes(self, node1: NodeSC, node2: NodeSC):
         """Connect two nodes by adding neighbor to both nodes symmetrically.
         - returns `True` if connection was made
         - returns `False` if connection already exists."""

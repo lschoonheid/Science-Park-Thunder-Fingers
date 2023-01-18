@@ -14,9 +14,9 @@ class Node:
         self.timeslots = {}
 
     def add_neighbor(self, node):
+        assert type(node) is not type(self), "Not allowed to connect nodes of same level."
+
         match type(node).__name__:
-            # case type(self).__name__:
-            #     print("ERROR: Not allowed to connect same-level nodes")
             case "Course":
                 self.courses[node.id] = node
             case "Activity":
