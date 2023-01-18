@@ -34,7 +34,7 @@ class Schedule:
         self.load_neighbours(stud_prefs_path)
 
     def track_node_id(self):
-        return len (self.nodes)
+        return len(self.nodes)
 
     def load_student_nodes(self, stud_prefs_path: str):
         """
@@ -51,7 +51,7 @@ class Schedule:
             self.nodes[node_id] = students[node_id]
             self._student_catalog[stud_no] = node_id
             node_id += 1
-        
+
         return students
 
     def load_course_nodes(self, courses_path: str):
@@ -66,7 +66,7 @@ class Schedule:
             c = course
             # TODO: #25 There is one course that is referenced as "Zoeken, sturen en bewegen" in `vakken.csv` but as "Zoeken sturen en bewegen" in `studenten_en_vakken.csv`.
             name = c["Vak"].replace(",", "")
-            
+
             # Replace blank datavalues with valid values
             if replace_blank:
                 for tag in list(c.keys())[1:]:
@@ -100,7 +100,7 @@ class Schedule:
         activities = {}
         # Add children activities to courses and vice versa
         for course in self.courses.values():
-            
+
             for i in range(course.num_lec):
                 activity = {
                     "act_type": f"hc{i+1}",
@@ -110,7 +110,7 @@ class Schedule:
                 self.nodes[node_id] = activities[node_id]
                 self.connect_nodes(course, activities[node_id])
                 node_id += 1
-            
+
             for i in range(course.num_tut):
                 activity = {
                     "act_type": f"wc{i+1}",
@@ -120,7 +120,7 @@ class Schedule:
                 self.nodes[node_id] = activities[node_id]
                 self.connect_nodes(course, activities[node_id])
                 node_id += 1
-            
+
             for i in range(course.num_prac):
                 activity = {
                     "act_type": f"p{i+1}",
@@ -130,7 +130,7 @@ class Schedule:
                 self.nodes[node_id] = activities[node_id]
                 self.connect_nodes(course, activities[node_id])
                 node_id += 1
-            
+
         return activities
 
     def load_room_nodes(self, rooms_path: str):
@@ -145,7 +145,7 @@ class Schedule:
             rooms[node_id] = Room(node_id, r["\ufeffZaalnummber"], r["Max. capaciteit"])
             self.nodes[node_id] = rooms[node_id]
             node_id += 1
-        
+
         return rooms
 
     def load_timeslot_nodes(self):
@@ -154,8 +154,13 @@ class Schedule:
 
         # Add timeslots
         for room in self.rooms.values():
+            period_range: int = 4
+
+            # De grootste zaal heeft ook een avondslot van 17:00-19:00
+            if room.name == "C0.110":
+                period_range = 5
+
             for day in range(5):
-                # TODO #21 only add evening period for biggest room
                 for period in range(0, 6, 2):
                     timeslot = {"day": day, "period": period}
                     timeslots[node_id] = Timeslot(node_id, **timeslot)
