@@ -33,7 +33,7 @@ class Randomize:
                 if assigned_slot.id == activity_timeslot.id:
                     # Student already has assigned timeslot for activity
                     return True
-        print(student, activity)
+        # print(student, activity)
         return False
 
     def draw_uniform_recursive(
@@ -84,12 +84,10 @@ class Randomize:
                 nodes1, nodes2, condition, _recursion_limit=_recursion_limit - 1, _combination_set=_combination_set
             )
 
-        print(f"found condition: {condition_value} with {_recursion_limit} recursions left")
+        # print(f"found condition: {condition_value} for{node1, node2} with {_recursion_limit} recursions left")
         return node1, node2
 
-    def uniform_strict(self, schedule: Schedule, i_max: int = 1000):
-        """Make a completely random schedule solution"""
-
+    def assign_activities_timeslots(self, schedule: Schedule):
         # Make shuffled list of timeslots so they will be picked randomly
         timeslots_shuffled = list(schedule.timeslots.values())
         random.shuffle(timeslots_shuffled)
@@ -99,12 +97,13 @@ class Randomize:
             activity: Activity = random.choice(list(schedule.activities.values()))
             schedule.connect_nodes(activity, timeslot)
 
+    def assign_students_timeslots(self, schedule: Schedule, i_max=1000):
         available_activities = list(schedule.activities.values())
 
         # Try making connections for i_max iterations
         edges = set()
         for i in tqdm(range(i_max)):
-            print(i)
+            # print(i)
             if len(available_activities) == 0:
                 print("Finished!")
                 break
@@ -141,8 +140,8 @@ class Randomize:
                         available_activities.pop(index)
                 continue
 
-            print(draw_student)
             student: Student = draw_student[0]  # type: ignore
+            # print(student)
 
             # TODO: improvement would be to first see if there is an available one (see commented code)
             """
@@ -161,16 +160,16 @@ class Randomize:
 
             timeslot = random.choice(timeslots_available)
 
-            # Skip if timeslot is already linked to student
-            edge = (student.id, timeslot.id)
-            if edge in edges:
-                print("made it through?")
-                continue
-
             # TODO: prevent drawing if student already has assigned timeslot for this
             # TODO: somehow some students still pass this test
             if self.student_has_activity_assigned(student, activity):
-                print("made it through still?")
+                # print("made it through still?")
+                continue
+
+            # Skip if timeslot is already linked to student
+            edge = (student.id, timeslot.id)
+            if edge in edges:
+                # print("made it through?")
                 continue
 
             # Success
@@ -179,6 +178,14 @@ class Randomize:
         if len(available_activities) > 0:
             print(f"ERROR: could not finish schedule within {i_max} iterations.")
             print(f"ERROR: unfinished activities: {available_activities}")
+            return False
+        return True
+
+    def uniform_strict(self, schedule: Schedule, i_max: int = 1000):
+        """Make a completely random schedule solution"""
+
+        self.assign_activities_timeslots(schedule)
+        return self.assign_students_timeslots(schedule, i_max)
 
 
 # TODO try pseudo-ku algorithm

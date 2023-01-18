@@ -18,15 +18,18 @@ from code.algorithms.objective import Objective
 from sched_csv_output import schedule_to_csv
 
 
-def randomize(schedule, i_max=10000):
+def make_random(stud_prefs_path: str, courses_path: str, rooms_path: str, i_max=100):
     """Make random schedule."""
     randomizer = Randomize()
-    randomizer.uniform_strict(schedule, i_max=i_max)
+    schedule = Schedule(stud_prefs_path, courses_path, rooms_path)
+    got_solution = randomizer.uniform_strict(schedule, i_max=i_max)
+
     objective = Objective(schedule)
     objective.get_score()
 
-    schedule_to_csv(schedule)
-
+    if not (got_solution):
+        print("Restarting...\n\n")
+        make_random(stud_prefs_path, courses_path, rooms_path, i_max)
     return schedule
 
 
@@ -38,12 +41,12 @@ def main(
 ):
     """Interface for executing scheduling program."""
 
-    protoype = Schedule(stud_prefs_path, courses_path, rooms_path)
-    ga = GeneticAlgorithm(protoype)
-    ga.run(2)
-    randomize(protoype)
+    # ga = GeneticAlgorithm(protoype)
+    # ga.run(2)
+    schedule = make_random(stud_prefs_path, courses_path, rooms_path)
+    schedule_to_csv(schedule)
 
-    G = GraphVisualization(protoype)
+    G = GraphVisualization(schedule)
     G.visualize()
 
 
