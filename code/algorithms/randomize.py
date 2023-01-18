@@ -102,9 +102,9 @@ class Randomize:
                 _combination_set=_combination_set,
             )
 
-        print(
-            f"found condition: {negation, condition(node1, node2), condition_value} for{node1, node2} with {_recursion_limit} recursions left"
-        )
+        # print(
+        #     f"found condition: {negation, condition(node1, node2), condition_value} for{node1, node2} with {_recursion_limit} recursions left"
+        # )
         return node1, node2
 
     def assign_activities_timeslots_once(self, schedule: Schedule):
@@ -116,8 +116,6 @@ class Randomize:
             draw = self.draw_uniform_recursive([activity], timelots, lambda a, t: self.timeslot_has_activity(t), negation=True)  # type: ignore
             if draw:
                 timeslot: Timeslot = draw[1]
-                if self.timeslot_has_activity(timeslot):
-                    print(timeslot.id, activity)
                 schedule.connect_nodes(activity, timeslot)
 
     def assign_activities_timeslots_uniform(self, schedule: Schedule):
@@ -127,6 +125,8 @@ class Randomize:
 
         # Hard constraint to never double book a timeslot, so iterate over them
         for timeslot in timeslots_shuffled:
+            if self.timeslot_has_activity(timeslot):
+                continue
             activity: Activity = random.choice(list(schedule.activities.values()))
             schedule.connect_nodes(activity, timeslot)
 
@@ -221,8 +221,10 @@ class Randomize:
     def uniform_strict(self, schedule: Schedule, i_max: int = 1000):
         """Make a completely random schedule solution"""
 
+        # First make sure each activity has a timeslot
         self.assign_activities_timeslots_once(schedule)
-        # TODO Check if each activity has at least one timeslot
+        # Divide leftover timeslots over activities
+        self.assign_activities_timeslots_uniform(schedule)
 
         got_solution = self.assign_students_timeslots(schedule, i_max)
         # if not got_solution:

@@ -18,11 +18,13 @@ from code.algorithms.statistics import Statistics
 from sched_csv_output import schedule_to_csv
 
 
-def make_random(stud_prefs_path: str, courses_path: str, rooms_path: str, i_max=50):
+def make_random(stud_prefs_path: str, courses_path: str, rooms_path: str, i_max=None):
     """Make random schedule."""
     randomizer = Randomize()
     schedule = Schedule(stud_prefs_path, courses_path, rooms_path)
 
+    if not i_max:
+        i_max = 100
     got_solution = randomizer.uniform_strict(schedule, i_max=i_max)
     # if not (got_solution):
     #     print("Restarting...\n\n")
