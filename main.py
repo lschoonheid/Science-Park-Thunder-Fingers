@@ -14,7 +14,7 @@ from code.classes import *
 from code.visualisation.visualize import GraphVisualization
 from code.algorithms.genetic import GeneticAlgorithm
 from code.algorithms.randomize import *
-from code.algorithms.objective import Statistics
+from code.algorithms.statistics import Statistics
 from sched_csv_output import schedule_to_csv
 
 
