@@ -22,14 +22,14 @@ def make_random(stud_prefs_path: str, courses_path: str, rooms_path: str, i_max=
     """Make random schedule."""
     randomizer = Randomize()
     schedule = Schedule(stud_prefs_path, courses_path, rooms_path)
+
     got_solution = randomizer.uniform_strict(schedule, i_max=i_max)
+    # if not (got_solution):
+    #     print("Restarting...\n\n")
+    #     make_random(stud_prefs_path, courses_path, rooms_path, i_max)
 
     objective = Objective(schedule)
     objective.get_score()
-
-    if not (got_solution):
-        print("Restarting...\n\n")
-        make_random(stud_prefs_path, courses_path, rooms_path, i_max)
     return schedule
 
 

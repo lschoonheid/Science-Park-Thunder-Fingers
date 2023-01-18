@@ -206,10 +206,11 @@ class Randomize:
         """Make a completely random schedule solution"""
 
         self.assign_activities_timeslots_once(schedule)
+        # TODO Check if each activity has at least one timeslot
 
         got_solution = self.assign_students_timeslots(schedule, i_max)
-        if not got_solution:
-            self.uniform_strict(schedule, i_max)
+        # if not got_solution:
+        #     self.uniform_strict(schedule, i_max)
         return got_solution
 
 
