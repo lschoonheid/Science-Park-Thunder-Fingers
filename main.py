@@ -15,15 +15,15 @@ from code.classes.schedule import Schedule
 from code.visualisation.visualize import GraphVisualization
 from code.algorithms.genetic import GeneticAlgorithm
 from code.algorithms.randomize import connect_random
-from code.algorithms.objective import Objective
+from code.algorithms.objective import Statistics
 from sched_csv_output import schedule_to_csv
 
 
 def random(schedule):
     # make random schedule
     connect_random(schedule, i_max=20)
-    objective = Objective(schedule)
-    objective.get_score()
+    data_interpreter = Statistics(schedule)
+    data_interpreter.get_score()
 
     G = GraphVisualization(schedule)
     G.visualize()

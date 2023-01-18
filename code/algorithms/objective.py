@@ -1,9 +1,12 @@
 from ..classes.schedule import Schedule
+from ..classes.node import Node
 from ..classes.student import Student
 from ..classes.timeslot import Timeslot
+from typing import Type, Callable
 
 # TODO: #15 Implement objective function which couples a score to a schedule
-class Objective:
+# TODO: #27 see if some functions can be cached
+class Statistics:
     # TODO: #26 complete list below
     """
     Check for:
@@ -25,36 +28,40 @@ class Objective:
         self.score: float = 0
         self.schedule = schedule
 
-    # test for students with doubly booked timeslots
-    def count_student_doubles(self, student: Student):
+    def student_overbooked(self, student: Student, quiet=False):
+        """Test for students with overbooked booked periods."""
         bookings = set()
         double_bookings: int = 0
         for timeslot in student.timeslots.values():
             moment = (timeslot.day, timeslot.period)
             if moment in bookings:
                 double_bookings += 1
-                print(f"MALUS: doubly booked student {student.name}: {moment} >1 times")
+
+                if not quiet:
+                    print(f"MALUS: overbooked period for {student.name}: {moment} >1 times")
             else:
                 bookings.add(moment)
-
         return double_bookings
 
-    def count_timeslot_overbookings(self, timeslot: Timeslot):
+    def timeslot_overbooked(self, timeslot: Timeslot, quiet=False):
+        """Test for timeslots with multiple activities linked"""
         overbookings = len(timeslot.activities) - 1
         if overbookings > 0:
             bookings = [str(timeslot) for timeslot in timeslot.activities.values()]
-            print(f"MALUS: Overbooked timeslot: {timeslot} has {bookings}")
+
+            if not quiet:
+                print(f"HARD CONSTRAINT: Overbooked timeslot: {timeslot} has {bookings}")
         return overbookings
 
+    def count_all(self, nodes_dict: dict, count_function: Callable[[Type[Node]], int]):
+        count = 0
+        for node in nodes_dict.values():
+            count += count_function(node)
+
     def get_score(self):
-        student_double_bookings = 0
-        for student in self.schedule.students.values():
-            student_double_bookings += self.count_student_doubles(student)
+        student_overbookings = self.count_all(self.schedule.students, self.student_overbooked)
+        timeslot_overbookings = self.count_all(self.schedule.timeslots, self.timeslot_overbooked)
 
-        timeslot_overbookings = 0
-        for timeslot in self.schedule.timeslots.values():
-            timeslot_overbookings += self.count_timeslot_overbookings(timeslot)
-
-        self.statistics["student_double_bookings"] = student_double_bookings
+        self.statistics["student_double_bookings"] = student_overbookings
         self.statistics["timeslot_overbookings"] = timeslot_overbookings
         return self.score
