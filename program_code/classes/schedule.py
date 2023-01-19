@@ -6,13 +6,12 @@ from .room import Room
 from .student import Student
 from .activity import Activity
 from .timeslot import Timeslot
-from ..modules.helpers import csv_to_dicts
 
 
 class Schedule:
     """Class representation of schedule graph. Contains all nodes and edges."""
 
-    def __init__(self, stud_prefs_path: str, courses_path: str, rooms_path: str) -> None:
+    def __init__(self, students_input: list[dict], courses_input: list[dict], rooms_input: list[dict]) -> None:
         # Contains all nodes
         # TODO: #22 make parent 'Node' class
         self.nodes: dict[int, Student | Course | Activity | Room | Timeslot] = {}
@@ -24,27 +23,27 @@ class Schedule:
         self._student_catalog: dict[int, int] = {}
 
         # Students is a dictionary that hold all students by student number with corresponding info
-        self.students: dict[int, Student] = self.load_student_nodes(stud_prefs_path)
+        self.students: dict[int, Student] = self.load_student_nodes(students_input)
         # Courses is a dictionary that holds course name with corresponding info
-        self.courses: dict[int, Course] = self.load_course_nodes(courses_path)
+        self.courses: dict[int, Course] = self.load_course_nodes(courses_input)
         self.activities: dict[int, Activity] = self.load_activity_nodes()
         # Rooms is a dictionary that hold all rooms with corresponding capacity
-        self.rooms: dict[int, Room] = self.load_room_nodes(rooms_path)
+        self.rooms: dict[int, Room] = self.load_room_nodes(rooms_input)
         self.timeslots: dict[int, Timeslot] = self.load_timeslot_nodes()
 
-        self.load_neighbours(stud_prefs_path)
+        self.load_neighbours(students_input)
 
     def track_node_id(self):
         return len(self.nodes)
 
-    def load_student_nodes(self, stud_prefs_path: str):
+    def load_student_nodes(self, students_input: list[dict]):
         """
         Load all student nodes into student dictionary in __init__
         """
         node_id = self.track_node_id()
         students = {}
 
-        for student in csv_to_dicts(stud_prefs_path):
+        for student in students_input:
             s = student
             stud_no = int(s["Stud.Nr."])
 
@@ -55,14 +54,14 @@ class Schedule:
 
         return students
 
-    def load_course_nodes(self, courses_path: str):
+    def load_course_nodes(self, courses_input: list[dict]):
         """
         Load all course nodes into course dictionary in __init__
         """
         node_id = self.track_node_id()
         courses = {}
 
-        for course in csv_to_dicts(courses_path):
+        for course in courses_input:
             replace_blank = True
             c = course
             # TODO: #25 There is one course that is referenced as "Zoeken, sturen en bewegen" in `vakken.csv` but as "Zoeken sturen en bewegen" in `studenten_en_vakken.csv`.
@@ -135,16 +134,16 @@ class Schedule:
 
         return activities
 
-    def load_room_nodes(self, rooms_path: str):
+    def load_room_nodes(self, rooms_input: list[dict]):
         """
         Load all room nodes into room dictionary in __init__
         """
         node_id = self.track_node_id()
         rooms = {}
 
-        for room in csv_to_dicts(rooms_path):
+        for room in rooms_input:
             r = room
-            rooms[node_id] = Room(node_id, r["\ufeffZaalnummber"], r["Max. capaciteit"])  # type: ignore
+            rooms[node_id] = Room(node_id, r["\ufeffZaalnummber"], int(r["Max. capaciteit"]))  # type: ignore
             self.nodes[node_id] = rooms[node_id]
             node_id += 1
 
@@ -190,13 +189,13 @@ class Schedule:
         self.edges.add(edge)
         return True
 
-    def load_neighbours(self, stud_prefs_path):
+    def load_neighbours(self, students_input: list[dict]):
         """
         Load all the neighbours into the loaded nodes.
         """
 
         # Load neighbors from CSV
-        for student_dict in csv_to_dicts(stud_prefs_path):
+        for student_dict in students_input:
             stud_id = self._student_catalog[int(student_dict["Stud.Nr."])]
 
             # Get course choices from student

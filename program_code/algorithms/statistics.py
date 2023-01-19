@@ -85,11 +85,23 @@ class Statistics:
         """Count timeslot (chair) capacity surplus."""
         return max(timeslot.room.capacity - len(timeslot.students), 0)
 
-    def can_book_activity(self, activity: Activity):
+    def can_assign_timeslot_activity(self, timeslot: Timeslot, activity: Activity):
         """Verify if a timeslot can be added to activity."""
+        # Can never assign two activities to one timeslot
+        if self.node_has_activity(timeslot):
+            return False
+
+        # Can always assign timeslots to tutorials/practicals
         if activity.max_timeslots is None:
             return True
-        print(activity, len(activity.timeslots) <= activity.max_timeslots)
+
+        # Can't assign more timeslots than max_timeslots
+        if len(activity.timeslots) >= activity.max_timeslots:
+            return False
+
+        # One instance of activity means all students must fit in room
+        if activity.max_timeslots == 1 and timeslot.room.capacity >= len(activity.students):
+            return True
         return len(activity.timeslots) < activity.max_timeslots
 
     def activity_overbooked(self, activity: Activity):

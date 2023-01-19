@@ -20,6 +20,7 @@ class Randomize(Solver):
             schedule.connect_nodes(student, timeslot)
             schedule.connect_nodes(activity, timeslot)
 
+    # TODO make for loop for readability?
     def draw_uniform_recursive(
         self,
         nodes1: list[NodeSC],
@@ -91,31 +92,42 @@ class Randomize(Solver):
         # Make shuffled list of timeslots so they will be picked randomly
         activities_shuffled = list(schedule.activities.values())
         random.shuffle(activities_shuffled)
-        timelots = list(schedule.timeslots.values())
+        timeslots_shuffled = list(schedule.timeslots.values())
         for activity in activities_shuffled:
-            enrolled_students = activity.students
-            # TODO if activity = hc, draw until timeslot.capacity >= enrolled students
-            # TODO if activity != hc, draw until total capacity of timeslots >= enrolled students
-            draw = self.draw_uniform_recursive([activity], timelots, lambda a, t: not self.verifier.node_has_activity(t) and True)  # type: ignore
-            if draw:
-                timeslot: Timeslot = draw[1]  # type: ignore
-                schedule.connect_nodes(activity, timeslot)
+            total_capacity = 0
+            random.shuffle(timeslots_shuffled)
+
+            for timeslot in timeslots_shuffled:
+                if total_capacity >= len(activity.students):
+                    print(total_capacity, len(activity.students))
+                    break
+
+                if self.verifier.can_assign_timeslot_activity(timeslot, activity):
+                    print("connected")
+                    schedule.connect_nodes(activity, timeslot)
+                    total_capacity += timeslot.room.capacity
+            print("next activ")
+            if total_capacity < len(activity.students):
+                print(f"FAILED: {total_capacity, len(activity.students)}")
 
     def assign_activities_timeslots_uniform(self, schedule: Schedule):
         # Make shuffled list of timeslots so they will be picked randomly
         timeslots_shuffled = list(schedule.timeslots.values())
         random.shuffle(timeslots_shuffled)
 
+        activities = list(schedule.activities.values())
+
         # Hard constraint to never double book a timeslot, so iterate over them
         for timeslot in timeslots_shuffled:
+            # Skip timeslot if it already has activity
             if self.verifier.node_has_activity(timeslot):
                 continue
 
-            draw = self.draw_uniform_recursive(
-                list(schedule.activities.values()), [timeslot], lambda a, t: self.verifier.can_book_activity(a)  # type: ignore
-            )
+            # Draw an activity that doesnt already have its max timeslots
+            draw = self.draw_uniform_recursive([timeslot], activities, self.verifier.can_assign_timeslot_activity)  # type: ignore
+
             if draw:
-                activity = draw[0]
+                activity = draw[1]
                 schedule.connect_nodes(activity, timeslot)
 
     def assign_students_timeslots(self, schedule: Schedule, i_max=1000):
@@ -161,7 +173,6 @@ class Randomize(Solver):
                 continue
 
             student: Student = draw_student[0]  # type: ignore
-            # print(student)
 
             # TODO: #30 improvement would be to first see if there is an available one, but it wouldn't necessarily be uniform (see commented code)
             """
@@ -180,7 +191,7 @@ class Randomize(Solver):
 
             timeslot = random.choice(timeslots_available)
 
-            if self.verifier.student_timeslots_for_activity(student, activity):
+            if self.verifier.student_has_activity_assigned(student, activity):
                 print("made it through still?")
                 continue
 
