@@ -109,13 +109,7 @@ class Statistics:
             self.schedule = schedule
             self.iterations = iterations
 
-            # Convert True/False to int for matrix multiplication
-            if type(solved) is None:
-                self.solved = 0
-            elif type(solved) is bool:
-                self.solved = int(solved)
-            else:
-                raise ValueError("`solved` needs to be of type int | bool")
+            self.solved_input = solved
 
             self.student_overbookings_input = student_overbookings
             self.timeslot_overbookings_input = timeslot_overbookings
@@ -126,17 +120,17 @@ class Statistics:
 
         @cached_property
         def is_solved(self):
-            if type(self.solved) is bool:
-                return self.solved
-            return None
+            # Convert True/False to int for matrix multiplication
+            if self.solved_input is None:
+                return "test"
+            return self.solved_input
 
         @cached_property
         def student_overbookings(self):
             """1 malus point"""
             if self.student_overbookings_input is None:
                 return self.verifier.aggregate(self.verifier.student_overbooked, self.schedule.students)
-            else:
-                return self.student_overbookings_input
+            return self.student_overbookings_input
 
         @cached_property
         def students_unbooked(self):
@@ -148,18 +142,20 @@ class Statistics:
             """Hard constraint"""
             if self.timeslot_overbookings_input is None:
                 return self.verifier.aggregate(self.verifier.timeslot_overbooked, self.schedule.timeslots)
-            else:
-                return self.timeslot_overbookings_input
+            return self.timeslot_overbookings_input
 
         @cached_property
         def score_vector(self):
             return np.array(
-                [self.solved, self.student_overbookings, self.timeslot_overbookings, self.students_unbooked]
+                [int(self.is_solved), self.student_overbookings, self.timeslot_overbookings, self.students_unbooked]
             )
 
         @cached_property
         def score(self) -> float:
             return self.score_matrix.dot(self.score_vector)
+
+        def __str__(self):
+            return str(self.__dict__)
 
     def get_statistics(self, schedule: Schedule, iterations: int | None = None, solved: bool | None = None):
         """Wrapper function to retrieve statistics as `Result` object."""

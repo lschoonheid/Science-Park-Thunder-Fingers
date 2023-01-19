@@ -115,7 +115,7 @@ class Randomize(Solver):
 
         # Try making connections for i_max iterations
         edges = set()
-        for i in tqdm(range(i_max), disable=not self.verbose):
+        for i in tqdm(range(i_max), disable=not self.verbose, desc="Trying connections:"):
             # print(i)
             if len(available_activities) == 0:
                 return self.verifier.Result(schedule=schedule, iterations=i, solved=True)

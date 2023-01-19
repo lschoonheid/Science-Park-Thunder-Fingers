@@ -28,19 +28,16 @@ def generate(solver: Solver, n: int, stud_prefs_path, courses_path, rooms_path, 
 
 
 # TODO: write interface code to execute complete program from command line
-def main(
-    stud_prefs_path: str,
-    courses_path: str,
-    rooms_path: str,
-):
+def main(stud_prefs_path: str, courses_path: str, rooms_path: str, verbose: bool = False):
     """Interface for executing scheduling program."""
 
-    results = generate(Randomize(), 1000, stud_prefs_path, courses_path, rooms_path)
+    results = generate(Randomize(verbose=True), 1, stud_prefs_path, courses_path, rooms_path, i_max=100)
 
-    sampled_schedule = random.choice(results).schedule
-    G = GraphVisualization(sampled_schedule)
+    sampled_result = random.choice(results)
+    print(sampled_result)
+    G = GraphVisualization(sampled_result.schedule)
     G.visualize()
-    schedule_to_csv(sampled_schedule)
+    schedule_to_csv(sampled_result.schedule)
 
     plot_statistics(results)
 
@@ -55,6 +52,7 @@ if __name__ == "__main__":
         default="data/studenten_en_vakken_subset.csv",
         help="Path to student enrolments csv.",
     )
+    parser.add_argument("-v", dest="verbose", action="store_true", help="Verbose: log error messages.")
     parser.add_argument("--courses", dest="courses_path", default="data/vakken_subset.csv", help="Path to courses csv.")
     parser.add_argument("--rooms", dest="rooms_path", default="data/zalen_subset.csv", help="Path to rooms csv.")
 
