@@ -38,7 +38,7 @@ def main(
     results = generate(Randomize(), 1000, stud_prefs_path, courses_path, rooms_path)
     # schedule_to_csv(schedule)
 
-    G = GraphVisualization(results)
+    G = GraphVisualization(results, True)
     G.visualize()
 
 

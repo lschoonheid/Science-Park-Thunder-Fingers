@@ -2,5 +2,6 @@ argparse>=1.4
 tqdm>=4.64.1
 matplotlib>=3.5.2
 networkx>=3.0
-pyvis>=1.16
+pyvis>=0.3.1
 beautifulsoup4>=4.11
+numpy>=1.24

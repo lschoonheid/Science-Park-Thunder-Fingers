@@ -3,7 +3,9 @@ from ..classes.node import NodeSC
 from ..classes.student import Student
 from ..classes.timeslot import Timeslot
 from ..classes.activity import Activity
+from functools import cached_property
 from typing import Callable
+import numpy as np
 
 
 # TODO
@@ -19,6 +21,7 @@ class Statistics:
      - overbooked timeslots (over room capacity)
      - overbooked timeslots (over tutorial/practical capacity)
      - double booked timeslots
+     - students missing timeslots for activities
      - students with double booked hours
      - lectures only happen once
      - free periods for student (max three is hard constraint)
@@ -54,6 +57,13 @@ class Statistics:
                     # Student already has assigned timeslot for activity
                     return True
         return False
+
+    def students_unbooked(self, activity: Activity):
+        """Count how many enrolled students of `activity` don't have a timeslot for it assigned."""
+        unbooked_students = 0
+        for student in activity.students.values():
+            unbooked_students += int(not self.student_has_activity_assigned(student, activity))
+        return unbooked_students
 
     def student_overbooked(self, student: Student, quiet=True):
         """Count overbooked periods for `student`."""
@@ -98,22 +108,58 @@ class Statistics:
         ):
             self.schedule = schedule
             self.iterations = iterations
-            self.solved = solved
 
-            self.student_overbookings = student_overbookings
-            self.timeslot_overbookings = timeslot_overbookings
+            # Convert True/False to int for matrix multiplication
+            if type(solved) is None:
+                self.solved = 0
+            elif type(solved) is bool:
+                self.solved = int(solved)
+            else:
+                raise ValueError("`solved` needs to be of type int | bool")
 
+            self.student_overbookings_input = student_overbookings
+            self.timeslot_overbookings_input = timeslot_overbookings
+
+            self.verifier = Statistics()
+            # Roostering wil bekijken of roosters rekening kunnen houden met individuele vakinschrijvingen. Ieder vakconflict van een student levert één maluspunt op.
+            self.score_matrix = np.array([100, -1, -30, -5])
+
+        @cached_property
         def is_solved(self):
             if type(self.solved) is bool:
                 return self.solved
-            # TODO
-            print("is_solved called!")
             return None
 
+        @cached_property
+        def student_overbookings(self):
+            """1 malus point"""
+            if self.student_overbookings_input is None:
+                return self.verifier.aggregate(self.verifier.student_overbooked, self.schedule.students)
+            else:
+                return self.student_overbookings_input
+
+        @cached_property
+        def students_unbooked(self):
+            """Amount of students missing timeslots for activities."""
+            return self.verifier.aggregate(self.verifier.students_unbooked, self.schedule.activities)
+
+        @cached_property
+        def timeslot_overbookings(self):
+            """Hard constraint"""
+            if self.timeslot_overbookings_input is None:
+                return self.verifier.aggregate(self.verifier.timeslot_overbooked, self.schedule.timeslots)
+            else:
+                return self.timeslot_overbookings_input
+
+        @cached_property
+        def score_vector(self):
+            return np.array(
+                [self.solved, self.student_overbookings, self.timeslot_overbookings, self.students_unbooked]
+            )
+
+        @cached_property
         def score(self) -> float:
-            # TODO
-            # Something like weightsmatrix * scorevector
-            return 0
+            return self.score_matrix.dot(self.score_vector)
 
     def get_statistics(self, schedule: Schedule, iterations: int | None = None, solved: bool | None = None):
         """Wrapper function to retrieve statistics as `Result` object."""
