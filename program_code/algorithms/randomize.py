@@ -209,9 +209,16 @@ class Randomize(Solver):
         #     self.uniform_strict(schedule, i_max)
         return result
 
-    def solve(self, schedule: Schedule, i_max: int = 1000, method="uniform", strict=True):
+    def solve(self, schedule: Schedule, i_max: int | None = None, method="uniform", strict=True):
+        if type(i_max) is None:
+            guess_required_edges = 0
+            for activity in schedule.activities.values():
+                enrolled_students = len(activity.students)
+                guess_required_edges += enrolled_students
+            i_max = 2 * guess_required_edges
+
         if method == "uniform" and strict:
-            return self.uniform_strict(schedule, i_max)
+            return self.uniform_strict(schedule, i_max)  # type: ignore
         raise ValueError("Did not recognize solver.")
 
 

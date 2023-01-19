@@ -18,22 +18,21 @@ from program_code.algorithms.statistics import Statistics
 from sched_csv_output import schedule_to_csv
 
 
+def generate(solver: Solver, n: int, stud_prefs_path, courses_path, rooms_path):
+    """Generate `n` schedules"""
+    for i in range(n):
+        schedule = Schedule(stud_prefs_path, courses_path, rooms_path)
+
+
 def make_random(stud_prefs_path: str, courses_path: str, rooms_path: str, i_max=None, _recursions=100):
     """Make random schedule."""
     schedule = Schedule(stud_prefs_path, courses_path, rooms_path)
     solver = Randomize()
 
-    if not i_max:
-        guess_required_edges = 0
-        for activity in schedule.activities.values():
-            enrolled_students = len(activity.students)
-            guess_required_edges += enrolled_students
-        i_max = 2 * guess_required_edges
-
     result = solver.solve(schedule, i_max=i_max)
-    if not (result.is_solved()) and _recursions > 0:
-        print("Restarting...\n\n")
-        return make_random(stud_prefs_path, courses_path, rooms_path, i_max, _recursions=_recursions - 1)
+    # if not (result.is_solved()) and _recursions > 0:
+    #     print("Restarting...\n\n")
+    #     return make_random(stud_prefs_path, courses_path, rooms_path, i_max, _recursions=_recursions - 1)
 
     print(f"Score: {result.score()}")
     return schedule
