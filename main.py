@@ -18,24 +18,13 @@ from program_code.algorithms.statistics import Statistics
 from sched_csv_output import schedule_to_csv
 
 
-def generate(solver: Solver, n: int, stud_prefs_path, courses_path, rooms_path):
+def generate(solver: Solver, n: int, stud_prefs_path, courses_path, rooms_path, **kwargs):
     """Generate `n` schedules"""
-    for i in range(n):
+    results = []
+    for i in tqdm(range(n)):
         schedule = Schedule(stud_prefs_path, courses_path, rooms_path)
-
-
-def make_random(stud_prefs_path: str, courses_path: str, rooms_path: str, i_max=None, _recursions=100):
-    """Make random schedule."""
-    schedule = Schedule(stud_prefs_path, courses_path, rooms_path)
-    solver = Randomize()
-
-    result = solver.solve(schedule, i_max=i_max)
-    # if not (result.is_solved()) and _recursions > 0:
-    #     print("Restarting...\n\n")
-    #     return make_random(stud_prefs_path, courses_path, rooms_path, i_max, _recursions=_recursions - 1)
-
-    print(f"Score: {result.score()}")
-    return schedule
+        results.append(solver.solve(schedule, **kwargs))
+    return results
 
 
 # TODO: write interface code to execute complete program from command line
@@ -46,12 +35,10 @@ def main(
 ):
     """Interface for executing scheduling program."""
 
-    # ga = GeneticAlgorithm(protoype)
-    # ga.run(2)
-    schedule = make_random(stud_prefs_path, courses_path, rooms_path)
-    schedule_to_csv(schedule)
+    results = generate(Randomize(), 1000, stud_prefs_path, courses_path, rooms_path)
+    # schedule_to_csv(schedule)
 
-    G = GraphVisualization(schedule)
+    G = GraphVisualization(results)
     G.visualize()
 
 

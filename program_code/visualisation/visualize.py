@@ -1,7 +1,8 @@
 # TODO: #10 make bar charts of students per room (and its max capacity), courses per rooms, etc for quick error checking
 # TODO: #12 make representation of one student's schedule
 
-from ..classes.schedule import Schedule
+from ..algorithms.statistics import Statistics
+import random
 import networkx as nx
 import matplotlib.pyplot as plt
 from pyvis.network import Network as PyvisNetwork
@@ -13,11 +14,11 @@ class GraphVisualization:
 
     def __init__(
         self,
-        schedule: Schedule,
+        results: list[Statistics.Result],
     ):
-        self.schedule = schedule
+        self.schedule = random.choice(results).schedule
         # edges is a list which stores the set of edges that constitutes a graph
-        self.edges = schedule.edges
+        self.edges = self.schedule.edges
 
     def print_nodes(self):
         """Print nodes with id's in rows to terminal"""
@@ -91,22 +92,8 @@ class GraphVisualization:
             # Filter menu function is broken, this function repairs it.
             fix_webpage(output_folder, net)
 
-        print(f"\nView {output_folder}/graph.html in your browser")
+        print(f"\nView a sample of graph results in your browser: {output_folder}/sample.html")
 
         if plot:
             # Plot matplotlib graph in shell configuration
-            nx.draw_networkx(
-                G,
-                pos=nx.drawing.layout.shell_layout(
-                    G,
-                    [
-                        self.schedule.students,
-                        self.schedule.courses,
-                        self.schedule.activities,
-                        self.schedule.rooms,
-                        self.schedule.timeslots,
-                    ],
-                    scale=5,
-                ),
-            )
             plt.show()

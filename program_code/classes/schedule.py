@@ -81,9 +81,9 @@ class Schedule:
                 name,
                 int(c["#Hoorcolleges"]),
                 int(c["#Werkcolleges"]),
-                c["Max. stud. Werkcollege"],
+                c["Max. stud. Werkcollege"],  # type: ignore
                 int(c["#Practica"]),
-                c["Max. stud. Practicum"],
+                c["Max. stud. Practicum"],  # type: ignore
                 int(c["Verwacht"]),
             )
             self.nodes[node_id] = courses[node_id]
@@ -143,7 +143,7 @@ class Schedule:
 
         for room in csv_to_dicts(rooms_path):
             r = room
-            rooms[node_id] = Room(node_id, r["\ufeffZaalnummber"], r["Max. capaciteit"])
+            rooms[node_id] = Room(node_id, r["\ufeffZaalnummber"], r["Max. capaciteit"])  # type: ignore
             self.nodes[node_id] = rooms[node_id]
             node_id += 1
 

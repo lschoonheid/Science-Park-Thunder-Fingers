@@ -115,8 +115,7 @@ class Randomize(Solver):
 
         # Try making connections for i_max iterations
         edges = set()
-        print("\n")
-        for i in tqdm(range(i_max)):
+        for i in tqdm(range(i_max), disable=not self.do_log):
             # print(i)
             if len(available_activities) == 0:
                 return self.verifier.Result(schedule=schedule, iterations=i, solved=True)
@@ -210,7 +209,7 @@ class Randomize(Solver):
         return result
 
     def solve(self, schedule: Schedule, i_max: int | None = None, method="uniform", strict=True):
-        if type(i_max) is None:
+        if i_max is None:
             guess_required_edges = 0
             for activity in schedule.activities.values():
                 enrolled_students = len(activity.students)
