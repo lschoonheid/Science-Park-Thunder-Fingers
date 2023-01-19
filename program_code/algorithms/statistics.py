@@ -37,8 +37,8 @@ class Statistics:
     #     self.statistics: dict = {}
     #     self.score: float = 0
 
-    def timeslot_has_activity(self, timeslot: Timeslot):
-        if len(timeslot.activities) > 0:
+    def node_has_activity(self, node: NodeSC):
+        if len(node.activities) > 0:
             return True
         return False
 
@@ -58,6 +58,22 @@ class Statistics:
                     # Student already has assigned timeslot for activity
                     return True
         return False
+
+    def timeslot_overbooked(self, timeslot: Timeslot, quiet=True):
+        """Count overbooked `activity` for `timeslot`."""
+        overbookings = max(len(timeslot.activities) - 1, 0)
+        if overbookings > 0:
+            bookings = [str(activity) for activity in timeslot.activities.values()]
+
+            if not quiet:
+                print(f"HARD CONSTRAINT: Overbooked timeslot: {timeslot.id} {timeslot} has {bookings}")
+        return overbookings
+
+    def activity_overbooked(self, activity: Activity):
+        """Count surplus timeslots linked to `activity`."""
+        if activity.max_timeslots is None:
+            return 0
+        return len(activity.timeslots) - activity.max_timeslots
 
     def students_unbooked(self, activity: Activity):
         """Count how many enrolled students of `activity` don't have a timeslot for it assigned."""
@@ -80,16 +96,6 @@ class Statistics:
             else:
                 bookings.add(moment)
         return double_bookings
-
-    def timeslot_overbooked(self, timeslot: Timeslot, quiet=True):
-        """Count overbooked `activity` for `timeslot`."""
-        overbookings = len(timeslot.activities) - 1
-        if overbookings > 0:
-            bookings = [str(activity) for activity in timeslot.activities.values()]
-
-            if not quiet:
-                print(f"HARD CONSTRAINT: Overbooked timeslot: {timeslot.id} {timeslot} has {bookings}")
-        return overbookings
 
     def aggregate(self, count_function: Callable[[NodeSC], int], nodes_dict: dict[int, NodeSC]):
         """Return sum of `count_function` for all `Node` in `nodes_dict`."""

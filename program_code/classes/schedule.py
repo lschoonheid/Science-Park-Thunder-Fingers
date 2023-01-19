@@ -106,6 +106,7 @@ class Schedule:
                 activity = {
                     "act_type": f"hc{i+1}",
                     "capacity": None,
+                    "max_timeslots": 1,
                 }
                 activities[node_id] = Activity(node_id, **activity)
                 self.nodes[node_id] = activities[node_id]

@@ -38,6 +38,7 @@ def main(stud_prefs_path: str, courses_path: str, rooms_path: str, verbose: bool
     sampled_result = random.choice(results)
     if verbose:
         print(sampled_result)
+        print(sampled_result.score_vector)
     G = GraphVisualization(sampled_result.schedule)
     G.visualize()
     schedule_to_csv(sampled_result.schedule)

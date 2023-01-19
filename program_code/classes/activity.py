@@ -12,12 +12,13 @@ class Activity(Node):
     - students
     """
 
-    def __init__(self, uid: int, act_type: str, capacity: int | None) -> None:
+    def __init__(self, uid: int, act_type: str, capacity: int | None, max_timeslots: int | None = None) -> None:
         self.id = uid
 
         # Metadata
         self.act_type = act_type
         self.capacity = capacity
+        self.max_timeslots = max_timeslots
 
         # Neighbors
         self.courses: dict[int, Course] = {}

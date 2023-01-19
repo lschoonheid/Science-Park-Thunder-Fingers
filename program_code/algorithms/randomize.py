@@ -95,7 +95,7 @@ class Randomize(Solver):
         random.shuffle(activities_shuffled)
         timelots = list(schedule.timeslots.values())
         for activity in activities_shuffled:
-            draw = self.draw_uniform_recursive([activity], timelots, lambda a, t: self.verifier.timeslot_has_activity(t), negation=True)  # type: ignore
+            draw = self.draw_uniform_recursive([activity], timelots, lambda a, t: self.verifier.node_has_activity(t), negation=True)  # type: ignore
             if draw:
                 timeslot: Timeslot = draw[1]  # type: ignore
                 schedule.connect_nodes(activity, timeslot)
@@ -109,10 +109,15 @@ class Randomize(Solver):
 
         # Hard constraint to never double book a timeslot, so iterate over them
         for timeslot in timeslots_shuffled:
-            if self.verifier.timeslot_has_activity(timeslot):
+            if self.verifier.node_has_activity(timeslot):
                 continue
-            activity: Activity = random.choice(list(schedule.activities.values()))
-            schedule.connect_nodes(activity, timeslot)
+
+            draw = self.draw_uniform_recursive(
+                list(schedule.activities.values()), [timeslot], lambda a, t: bool(self.verifier.activity_overbooked(a))  # type: ignore
+            )
+            if draw:
+                activity = draw[0]
+                schedule.connect_nodes(activity, timeslot)
 
     def assign_students_timeslots(self, schedule: Schedule, i_max=1000):
         available_activities = list(schedule.activities.values())
