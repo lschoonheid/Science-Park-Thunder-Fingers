@@ -119,8 +119,7 @@ class Randomize(Solver):
         for i in tqdm(range(i_max)):
             # print(i)
             if len(available_activities) == 0:
-                print("solved!")
-                return self.verifier.statistics(schedule=schedule, iterations=i, solved=True)
+                return self.verifier.Result(schedule=schedule, iterations=i, solved=True)
 
             # Take random unfinished activity
             activity = random.choice(available_activities)
@@ -194,8 +193,8 @@ class Randomize(Solver):
             print("\n")
             print(f"ERROR: could not finish schedule within {i_max} iterations.")
             print(f"ERROR: unfinished activities: {available_activities}")
-            return self.verifier.statistics(schedule=schedule, iterations=i_max, solved=False)
-        return self.verifier.statistics(schedule=schedule, iterations=i_max)
+            return self.verifier.Result(schedule=schedule, iterations=i_max, solved=False)
+        return self.verifier.Result(schedule=schedule, iterations=i_max)
 
     def uniform_strict(self, schedule: Schedule, i_max: int):
         """Make a completely random schedule solution"""
@@ -206,7 +205,7 @@ class Randomize(Solver):
         self.assign_activities_timeslots_uniform(schedule)
 
         result = self.assign_students_timeslots(schedule, i_max)
-        # if not got_solution:
+        # if not result.is_solved():
         #     self.uniform_strict(schedule, i_max)
         return result
 

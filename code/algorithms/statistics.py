@@ -83,35 +83,38 @@ class Statistics:
             count += count_function(node)
         return count
 
-    class ScoreVector:
+    class Result:
         def __init__(
-            self, student_overbookings, timeslot_overbookings, iterations: int | None, solved: bool | None = None
+            self,
+            schedule: Schedule,
+            solved: bool | None = None,
+            iterations: int | None = None,
+            student_overbookings: int | None = None,
+            timeslot_overbookings: int | None = None,
         ):
-            self.student_overbookings = student_overbookings
-            self.timeslot_overbookings = timeslot_overbookings
+            self.schedule = schedule
             self.iterations = iterations
             self.solved = solved
+
+            self.student_overbookings = student_overbookings
+            self.timeslot_overbookings = timeslot_overbookings
 
         def is_solved(self):
             if type(self.solved) is bool:
                 return self.solved
             # TODO
+            print("is_solved called!")
             return None
-
-        def norm(self) -> float:
-            # TODO
-            return 0
 
         def score(self) -> float:
             # TODO
             # Something like weightsmatrix * scorevector
             return 0
 
-    def statistics(self, schedule: Schedule, iterations: int, solved: bool | None = None) -> ScoreVector:
-        """Wrapper function to retrieve statistics as `ScoreVector` object."""
-        score_vector = self.ScoreVector(
-            student_overbookings=self.aggregate(self.student_overbooked, schedule.students),
-            timeslot_overbookings=self.aggregate(self.timeslot_overbooked, schedule.timeslots),
+    def get_statistics(self, schedule: Schedule, iterations: int | None = None, solved: bool | None = None):
+        """Wrapper function to retrieve statistics as `Result` object."""
+        score_vector = self.Result(
+            schedule,
             iterations=iterations,
             solved=solved,
         )

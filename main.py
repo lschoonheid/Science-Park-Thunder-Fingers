@@ -22,7 +22,6 @@ def make_random(stud_prefs_path: str, courses_path: str, rooms_path: str, i_max=
     """Make random schedule."""
     schedule = Schedule(stud_prefs_path, courses_path, rooms_path)
     solver = Randomize()
-    verifier = Statistics()
 
     if not i_max:
         guess_required_edges = 0
