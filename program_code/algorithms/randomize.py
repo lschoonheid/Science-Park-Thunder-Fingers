@@ -8,7 +8,7 @@ from ..classes.student import Student
 from ..classes.activity import Activity
 from ..classes.timeslot import Timeslot
 
-# TODO: move constraint checks to Objective
+
 class Randomize(Solver):
     def connect_random(self, schedule: Schedule, i_max: int = 5):
         """Make a completely random schedule"""
@@ -88,21 +88,20 @@ class Randomize(Solver):
         return node1, node2
 
     def assign_activities_timeslots_once(self, schedule: Schedule):
-        # TODO: #29 assign only timeslot for timeslot.capcacity >= `len(activity.students)`
-
         # Make shuffled list of timeslots so they will be picked randomly
         activities_shuffled = list(schedule.activities.values())
         random.shuffle(activities_shuffled)
         timelots = list(schedule.timeslots.values())
         for activity in activities_shuffled:
-            draw = self.draw_uniform_recursive([activity], timelots, lambda a, t: self.verifier.node_has_activity(t), negation=True)  # type: ignore
+            enrolled_students = activity.students
+            # TODO if activity = hc, draw until timeslot.capacity >= enrolled students
+            # TODO if activity != hc, draw until total capacity of timeslots >= enrolled students
+            draw = self.draw_uniform_recursive([activity], timelots, lambda a, t: not self.verifier.node_has_activity(t) and True)  # type: ignore
             if draw:
                 timeslot: Timeslot = draw[1]  # type: ignore
                 schedule.connect_nodes(activity, timeslot)
 
     def assign_activities_timeslots_uniform(self, schedule: Schedule):
-        # TODO: #28 assign hc only once
-
         # Make shuffled list of timeslots so they will be picked randomly
         timeslots_shuffled = list(schedule.timeslots.values())
         random.shuffle(timeslots_shuffled)
@@ -113,7 +112,7 @@ class Randomize(Solver):
                 continue
 
             draw = self.draw_uniform_recursive(
-                list(schedule.activities.values()), [timeslot], lambda a, t: bool(self.verifier.activity_overbooked(a))  # type: ignore
+                list(schedule.activities.values()), [timeslot], lambda a, t: self.verifier.can_book_activity(a)  # type: ignore
             )
             if draw:
                 activity = draw[0]
@@ -125,7 +124,6 @@ class Randomize(Solver):
         # Try making connections for i_max iterations
         edges = set()
         for i in tqdm(range(i_max), disable=not self.verbose, desc="Trying connections:"):
-            # print(i)
             if len(available_activities) == 0:
                 return self.verifier.Result(schedule=schedule, iterations=i, solved=True)
 
@@ -180,13 +178,10 @@ class Randomize(Solver):
 
             """
 
-            # student = random.choice(students_linked)
             timeslot = random.choice(timeslots_available)
 
-            # TODO: prevent drawing if student already has assigned timeslot for this
-            # TODO: somehow some students still pass this test
-            if self.verifier.student_has_activity_assigned(student, activity):
-                # print("made it through still?")
+            if self.verifier.student_timeslots_for_activity(student, activity):
+                print("made it through still?")
                 continue
 
             # Skip if timeslot is already linked to student

@@ -18,7 +18,7 @@ from program_code.algorithms.statistics import Statistics
 from sched_csv_output import schedule_to_csv
 
 
-def generate(solver: Solver, n: int, stud_prefs_path, courses_path, rooms_path, **kwargs):
+def generate(solver: Solver, stud_prefs_path, courses_path, rooms_path, n: int = 1000, **kwargs):
     """Generate `n` schedules"""
     results: list[Statistics.Result] = []
     for i in tqdm(range(n)):
@@ -30,10 +30,11 @@ def generate(solver: Solver, n: int, stud_prefs_path, courses_path, rooms_path, 
 # TODO: write interface code to execute complete program from command line
 def main(stud_prefs_path: str, courses_path: str, rooms_path: str, verbose: bool = False, **kwargs):
     """Interface for executing scheduling program."""
+    print(kwargs)
 
     # TODO get subset function
 
-    results = generate(Randomize(verbose=verbose), 1000, stud_prefs_path, courses_path, rooms_path, **kwargs)
+    results = generate(Randomize(verbose=verbose), stud_prefs_path, courses_path, rooms_path, **kwargs)
 
     sampled_result = random.choice(results)
     if verbose:
@@ -43,12 +44,12 @@ def main(stud_prefs_path: str, courses_path: str, rooms_path: str, verbose: bool
     G.visualize()
     schedule_to_csv(sampled_result.schedule)
 
-    plot_statistics(results)
+    # plot_statistics(results)
 
 
 if __name__ == "__main__":
     # Create a command line argument parser
-    parser = argparse.ArgumentParser(description="Make a schedule.")
+    parser = argparse.ArgumentParser(prog="main.py", description="Make a schedule.")
 
     parser.add_argument(
         "--prefs",
@@ -57,6 +58,7 @@ if __name__ == "__main__":
         help="Path to student enrolments csv.",
     )
     parser.add_argument("-i", type=int, dest="i_max", help="max iterations per solve cycle.")
+    parser.add_argument("-n", type=int, dest="n", default=1000, help="amount of results to generate.")
     parser.add_argument("-v", dest="verbose", action="store_true", help="Verbose: log error messages.")
     parser.add_argument("--courses", dest="courses_path", default="data/vakken_subset.csv", help="Path to courses csv.")
     parser.add_argument("--rooms", dest="rooms_path", default="data/zalen_subset.csv", help="Path to rooms csv.")

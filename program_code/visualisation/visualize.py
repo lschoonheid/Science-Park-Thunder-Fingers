@@ -48,13 +48,14 @@ class GraphVisualization:
 
         # Define iterables for hierarchal structure
         shown_nodes = [
-            self.schedule.courses.values(),
             self.schedule.activities.values(),
             self.schedule.timeslots.values(),
             self.schedule.students.values(),
+        ]
+        hidden_nodes = [
+            self.schedule.courses.values(),
             self.schedule.rooms.values(),
         ]
-        hidden_nodes = []
         colors = ["blue", "red", "orange", "green", "purple"]
         assert len(colors) >= len(shown_nodes), "Not enough colors available for levels."
 

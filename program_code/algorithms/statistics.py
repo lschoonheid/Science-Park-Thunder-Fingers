@@ -18,12 +18,14 @@ class Statistics:
     # TODO: #26 complete list below
     """
     Check for:
-     - overbooked timeslots (over room capacity)
+     * overbooked timeslots (more than one activity linked)
+     * overbooked timeslots (over room capacity)
      - overbooked timeslots (over tutorial/practical capacity)
-     - double booked timeslots
-     - students missing timeslots for activities
+     * activities (eg lectures) surplus timeslots
+     * students missing timeslots for activities
+     * students with multiple timeslots for 1 activity
      - timeslots without assigned students
-     - students with double booked hours
+     * students with double booked hours
      - lectures only happen once
      - free periods for student (max three is hard constraint)
      - malus points for using evening timeslot
@@ -43,6 +45,7 @@ class Statistics:
         return False
 
     def student_has_period(self, student: Student, timeslot: Timeslot):
+        """Verify if `student` already has period of `timeslot` booked"""
         new_moment = (timeslot.day, timeslot.period)
         for booked_timeslot in student.timeslots.values():
             booked_moment = (booked_timeslot.day, booked_timeslot.period)
@@ -51,7 +54,7 @@ class Statistics:
         return True
 
     def student_has_activity_assigned(self, student: Student, activity: Activity):
-        """See whether `student` already has a `timeslot` for `activity`."""
+        """Verify whether `student` already has a timeslot for `activity`."""
         for assigned_slot in student.timeslots.values():
             for activity_timeslot in activity.timeslots.values():
                 if assigned_slot.id == activity_timeslot.id:
@@ -59,21 +62,41 @@ class Statistics:
                     return True
         return False
 
-    def timeslot_overbooked(self, timeslot: Timeslot, quiet=True):
+    def student_timeslots_for_activity(self, student: Student, activity: Activity):
+        """Count `student`'s assigned `timeslot`s for `activity`."""
+        timeslots_assigned = 0
+        for assigned_slot in student.timeslots.values():
+            for activity_timeslot in activity.timeslots.values():
+                if assigned_slot.id == activity_timeslot.id:
+                    timeslots_assigned += 1
+        return timeslots_assigned
+
+    def timeslot_overbooked(self, timeslot: Timeslot, verbose=False):
         """Count overbooked `activity` for `timeslot`."""
         overbookings = max(len(timeslot.activities) - 1, 0)
         if overbookings > 0:
             bookings = [str(activity) for activity in timeslot.activities.values()]
 
-            if not quiet:
+            if verbose:
                 print(f"HARD CONSTRAINT: Overbooked timeslot: {timeslot.id} {timeslot} has {bookings}")
         return overbookings
+
+    def room_overbooked(self, timeslot: Timeslot):
+        """Count timeslot (chair) capacity surplus."""
+        return max(timeslot.room.capacity - len(timeslot.students), 0)
+
+    def can_book_activity(self, activity: Activity):
+        """Verify if a timeslot can be added to activity."""
+        if activity.max_timeslots is None:
+            return True
+        print(activity, len(activity.timeslots) <= activity.max_timeslots)
+        return len(activity.timeslots) < activity.max_timeslots
 
     def activity_overbooked(self, activity: Activity):
         """Count surplus timeslots linked to `activity`."""
         if activity.max_timeslots is None:
             return 0
-        return len(activity.timeslots) - activity.max_timeslots
+        return max(len(activity.timeslots) - activity.max_timeslots, 0)
 
     def students_unbooked(self, activity: Activity):
         """Count how many enrolled students of `activity` don't have a timeslot for it assigned."""
@@ -82,7 +105,7 @@ class Statistics:
             unbooked_students += int(not self.student_has_activity_assigned(student, activity))
         return unbooked_students
 
-    def student_overbooked(self, student: Student, quiet=True):
+    def student_overbooked(self, student: Student, verbose=False):
         """Count overbooked periods for `student`."""
         bookings = set()
         double_bookings: int = 0
@@ -91,7 +114,7 @@ class Statistics:
             if moment in bookings:
                 double_bookings += 1
 
-                if not quiet:
+                if verbose:
                     print(f"MALUS: overbooked period for {student.name}: {moment} >1 times")
             else:
                 bookings.add(moment)
