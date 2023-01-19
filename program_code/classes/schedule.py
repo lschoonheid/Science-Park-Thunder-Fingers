@@ -162,7 +162,7 @@ class Schedule:
                 period_range = 5
 
             for day in range(5):
-                for period in range(0, 6, 2):
+                for period in range(period_range):
                     timeslot = {"day": day, "period": period}
                     timeslots[node_id] = Timeslot(node_id, **timeslot)
                     self.nodes[node_id] = timeslots[node_id]
