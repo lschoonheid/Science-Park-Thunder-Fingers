@@ -17,7 +17,7 @@ from .fix_webpage import fix_webpage
 def plot_statistics(results: list[Statistics.Result]):
     scores = [result.score for result in results]
     fig, (ax1) = plt.subplots(1, 1, figsize=(9, 4.5), tight_layout=True)
-    ax1.hist(scores, 10)
+    ax1.hist(scores, 100)
     plt.show()
 
 
