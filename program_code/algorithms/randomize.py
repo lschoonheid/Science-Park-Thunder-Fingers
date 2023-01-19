@@ -88,6 +88,8 @@ class Randomize(Solver):
         return node1, node2
 
     def assign_activities_timeslots_once(self, schedule: Schedule):
+        # TODO: #29 assign only timeslot for timeslot.capcacity >= `len(activity.students)`
+
         # Make shuffled list of timeslots so they will be picked randomly
         activities_shuffled = list(schedule.activities.values())
         random.shuffle(activities_shuffled)
@@ -99,6 +101,8 @@ class Randomize(Solver):
                 schedule.connect_nodes(activity, timeslot)
 
     def assign_activities_timeslots_uniform(self, schedule: Schedule):
+        # TODO: #28 assign hc only once
+
         # Make shuffled list of timeslots so they will be picked randomly
         timeslots_shuffled = list(schedule.timeslots.values())
         random.shuffle(timeslots_shuffled)
@@ -156,7 +160,7 @@ class Randomize(Solver):
             student: Student = draw_student[0]  # type: ignore
             # print(student)
 
-            # TODO: improvement would be to first see if there is an available one, but it wouldn't necessarily be uniform (see commented code)
+            # TODO: #30 improvement would be to first see if there is an available one, but it wouldn't necessarily be uniform (see commented code)
             """
             # Pick timeslot that student has still available
             draw_timeslot = self.draw_uniform_recursive([student], timeslots_available, self.can_book_student, negation=False)  # type: ignore
@@ -193,6 +197,7 @@ class Randomize(Solver):
             if self.verbose:
                 print(f"ERROR: could not finish schedule within {i_max} iterations.")
                 print(f"ERROR: unfinished activities: {available_activities}")
+            # TODO: #31 reassign timeslots with no connected students and try again (allowed to ignore non uniform redraw to permit solution)
             return self.verifier.Result(schedule=schedule, iterations=i_max, solved=False)
         return self.verifier.Result(schedule=schedule, iterations=i_max)
 

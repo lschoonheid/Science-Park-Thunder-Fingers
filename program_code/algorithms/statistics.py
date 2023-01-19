@@ -22,6 +22,7 @@ class Statistics:
      - overbooked timeslots (over tutorial/practical capacity)
      - double booked timeslots
      - students missing timeslots for activities
+     - timeslots without assigned students
      - students with double booked hours
      - lectures only happen once
      - free periods for student (max three is hard constraint)
