@@ -25,10 +25,9 @@ class Statistics:
      - least amount of unique classes (wc1 only given once etc.)
     """
 
-    def __init__(self, schedule: Schedule) -> None:
-        self.statistics: dict = {}
-        self.score: float = 0
-        self.schedule = schedule
+    # def __init__(self) -> None:
+    #     self.statistics: dict = {}
+    #     self.score: float = 0
 
     def timeslot_has_activity(self, timeslot: Timeslot):
         if len(timeslot.activities) > 0:
@@ -52,7 +51,7 @@ class Statistics:
                     return True
         return False
 
-    def student_overbooked(self, student: Student, quiet=False):
+    def student_overbooked(self, student: Student, quiet=True):
         """Count overbooked periods for `student`."""
         bookings = set()
         double_bookings: int = 0
@@ -67,7 +66,7 @@ class Statistics:
                 bookings.add(moment)
         return double_bookings
 
-    def timeslot_overbooked(self, timeslot: Timeslot, quiet=False):
+    def timeslot_overbooked(self, timeslot: Timeslot, quiet=True):
         """Count overbooked `activity` for `timeslot`."""
         overbookings = len(timeslot.activities) - 1
         if overbookings > 0:
@@ -82,11 +81,43 @@ class Statistics:
         count = 0
         for node in nodes_dict.values():
             count += count_function(node)
+        return count
 
-    def get_score(self):
-        student_overbookings = self.aggregate(self.student_overbooked, self.schedule.students)
-        timeslot_overbookings = self.aggregate(self.timeslot_overbooked, self.schedule.timeslots)
+    class ScoreVector:
+        def __init__(
+            self, student_overbookings, timeslot_overbookings, iterations: int | None, solved: bool | None = None
+        ):
+            self.student_overbookings = student_overbookings
+            self.timeslot_overbookings = timeslot_overbookings
+            self.iterations = iterations
+            self.solved = solved
 
-        self.statistics["student_double_bookings"] = student_overbookings
-        self.statistics["timeslot_overbookings"] = timeslot_overbookings
-        return self.score
+        def is_solved(self):
+            if type(self.solved) is bool:
+                return self.solved
+            # TODO
+            return None
+
+        def norm(self) -> float:
+            # TODO
+            return 0
+
+        def score(self) -> float:
+            # TODO
+            # Something like weightsmatrix * scorevector
+            return 0
+
+    def statistics(self, schedule: Schedule, iterations: int, solved: bool | None = None) -> ScoreVector:
+        """Wrapper function to retrieve statistics as `ScoreVector` object."""
+        score_vector = self.ScoreVector(
+            student_overbookings=self.aggregate(self.student_overbooked, schedule.students),
+            timeslot_overbookings=self.aggregate(self.timeslot_overbooked, schedule.timeslots),
+            iterations=iterations,
+            solved=solved,
+        )
+        return score_vector
+
+    # def score(self, schedule: Schedule):
+    #     """Shortcut to get score from `ScoreVector`."""
+    #     score_vector = self.statistics(schedule)
+    #     return score_vector.score()

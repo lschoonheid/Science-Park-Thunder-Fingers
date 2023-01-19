@@ -20,8 +20,9 @@ from sched_csv_output import schedule_to_csv
 
 def make_random(stud_prefs_path: str, courses_path: str, rooms_path: str, i_max=None, _recursions=100):
     """Make random schedule."""
-    randomizer = Randomize()
     schedule = Schedule(stud_prefs_path, courses_path, rooms_path)
+    solver = Randomize()
+    verifier = Statistics()
 
     if not i_max:
         guess_required_edges = 0
@@ -30,13 +31,12 @@ def make_random(stud_prefs_path: str, courses_path: str, rooms_path: str, i_max=
             guess_required_edges += enrolled_students
         i_max = 2 * guess_required_edges
 
-    got_solution = randomizer.uniform_strict(schedule, i_max=i_max)
-    if not (got_solution) and _recursions > 0:
+    result = solver.solve(schedule, i_max=i_max)
+    if not (result.is_solved()) and _recursions > 0:
         print("Restarting...\n\n")
-        make_random(stud_prefs_path, courses_path, rooms_path, i_max, _recursions=_recursions - 1)
+        return make_random(stud_prefs_path, courses_path, rooms_path, i_max, _recursions=_recursions - 1)
 
-    objective = Statistics(schedule)
-    objective.get_score()
+    print(f"Score: {result.score()}")
     return schedule
 
 

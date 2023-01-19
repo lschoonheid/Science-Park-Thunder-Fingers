@@ -28,7 +28,7 @@ class Node:
             case "Room":
                 self.room = node
             case _:
-                print(f"Error: in adding node of type {type(node).__name__}: {node} to {self}")
+                raise ValueError(f"Error: in adding node of type {type(node).__name__}: {node} to {self}")
 
     def __repr__(self) -> str:
         return f"{type(self).__name__} {self.id} at {hex(id(self))}"
