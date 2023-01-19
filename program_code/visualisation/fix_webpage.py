@@ -22,7 +22,7 @@ def fix_webpage(output_folder: str, net: PyvisNetwork):
     parsed_options["layout"] = layout_dict
 
     # Generate javascript string to fix missing functions
-    with open("code/visualisation/filterHighlight.js", "r") as file:
+    with open("program_code/visualisation/filterHighlight.js", "r") as file:
         # Insert options json
         script_var = "var parsed_options = " + json.dumps(parsed_options) + "\n"
 

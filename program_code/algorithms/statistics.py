@@ -6,6 +6,10 @@ from ..classes.activity import Activity
 from typing import Callable
 
 
+# TODO
+# temporar
+
+
 # TODO: #15 Implement objective function which couples a score to a schedule
 # TODO: #27 see if some functions can be cached
 class Statistics:

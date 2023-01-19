@@ -1,7 +1,7 @@
 """Output for schedule in .csv file"""
 
 import csv
-from code.classes.schedule import Schedule
+from program_code.classes.schedule import Schedule
 
 
 def schedule_to_csv(schedule: Schedule, output_path: str = "output/Schedule_output.csv"):

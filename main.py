@@ -10,11 +10,11 @@ Course: Algoritmen en Heuristieken 2023
 
 import argparse
 
-from code.classes import *
-from code.visualisation.visualize import GraphVisualization
-from code.algorithms.genetic import GeneticAlgorithm
-from code.algorithms.randomize import *
-from code.algorithms.statistics import Statistics
+from program_code.classes import *
+from program_code.visualisation.visualize import GraphVisualization
+from program_code.algorithms.genetic import GeneticAlgorithm
+from program_code.algorithms.randomize import *
+from program_code.algorithms.statistics import Statistics
 from sched_csv_output import schedule_to_csv
 
 
