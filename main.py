@@ -11,7 +11,7 @@ Course: Algoritmen en Heuristieken 2023
 import argparse
 
 from program_code.classes import *
-from program_code.visualisation.visualize import GraphVisualization
+from program_code.visualisation.visualize import GraphVisualization, plot_statistics
 from program_code.algorithms.genetic import GeneticAlgorithm
 from program_code.algorithms.randomize import *
 from program_code.algorithms.statistics import Statistics
@@ -20,7 +20,7 @@ from sched_csv_output import schedule_to_csv
 
 def generate(solver: Solver, n: int, stud_prefs_path, courses_path, rooms_path, **kwargs):
     """Generate `n` schedules"""
-    results = []
+    results: list[Statistics.Result] = []
     for i in tqdm(range(n)):
         schedule = Schedule(stud_prefs_path, courses_path, rooms_path)
         results.append(solver.solve(schedule, **kwargs))
@@ -36,10 +36,13 @@ def main(
     """Interface for executing scheduling program."""
 
     results = generate(Randomize(), 1000, stud_prefs_path, courses_path, rooms_path)
-    # schedule_to_csv(schedule)
 
-    G = GraphVisualization(results, True)
+    sampled_schedule = random.choice(results).schedule
+    G = GraphVisualization(sampled_schedule)
     G.visualize()
+    schedule_to_csv(sampled_schedule)
+
+    plot_statistics(results)
 
 
 if __name__ == "__main__":

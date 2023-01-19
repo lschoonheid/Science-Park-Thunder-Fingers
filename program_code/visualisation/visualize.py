@@ -9,15 +9,25 @@ from pyvis.network import Network as PyvisNetwork
 from .fix_webpage import fix_webpage
 
 
+# class ScoreVisualization:
+#     def __init__(self):
+#        self.results = results
+
+
+def plot_statistics(results: list[Statistics.Result]):
+    scores = [result.score for result in results]
+    fig, (ax1) = plt.subplots(1, 1, figsize=(9, 4.5), tight_layout=True)
+    ax1.hist(scores, 10)
+    plt.show()
+
+
 class GraphVisualization:
     """Visualize schedule as a graph."""
 
-    def __init__(self, results: list[Statistics.Result], plot=False):
-        self.results = results
-        self.schedule = random.choice(results).schedule
+    def __init__(self, schedule):
+        self.schedule = schedule
         # edges is a list which stores the set of edges that constitutes a graph
         self.edges = self.schedule.edges
-        self.plot = plot
 
     def print_nodes(self):
         """Print nodes with id's in rows to terminal"""
@@ -92,12 +102,3 @@ class GraphVisualization:
             fix_webpage(output_folder, net)
 
         print(f"\nView a sample of graph results in your browser: {output_folder}/sample.html")
-
-        if self.plot:
-            scores = [result.score for result in self.results]
-
-            fig, (ax1) = plt.subplots(1, 1, figsize=(9, 4.5), tight_layout=True)
-            ax1.hist(scores, 10)
-
-            # Plot matplotlib graph in shell configuration
-            plt.show()
