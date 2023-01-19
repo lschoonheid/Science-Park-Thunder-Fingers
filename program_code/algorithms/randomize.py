@@ -115,7 +115,7 @@ class Randomize(Solver):
 
         # Try making connections for i_max iterations
         edges = set()
-        for i in tqdm(range(i_max), disable=not self.do_log):
+        for i in tqdm(range(i_max), disable=not self.verbose):
             # print(i)
             if len(available_activities) == 0:
                 return self.verifier.Result(schedule=schedule, iterations=i, solved=True)
@@ -136,7 +136,8 @@ class Randomize(Solver):
                 timeslots_available.append(timeslot)
 
             if len(timeslots_available) == 0:
-                print(f"ERROR: Could no longer find available timeslots for {activity} after {i} iterations.")
+                if self.verbose:
+                    print(f"ERROR: Could no longer find available timeslots for {activity} after {i} iterations.")
                 break
 
             # Pick student that does not have a timeslot for this activity
@@ -189,9 +190,9 @@ class Randomize(Solver):
             schedule.connect_nodes(student, timeslot)
             edges.add(edge)
         if len(available_activities) > 0:
-            print("\n")
-            print(f"ERROR: could not finish schedule within {i_max} iterations.")
-            print(f"ERROR: unfinished activities: {available_activities}")
+            if self.verbose:
+                print(f"ERROR: could not finish schedule within {i_max} iterations.")
+                print(f"ERROR: unfinished activities: {available_activities}")
             return self.verifier.Result(schedule=schedule, iterations=i_max, solved=False)
         return self.verifier.Result(schedule=schedule, iterations=i_max)
 
@@ -203,10 +204,7 @@ class Randomize(Solver):
         # Divide leftover timeslots over activities
         self.assign_activities_timeslots_uniform(schedule)
 
-        result = self.assign_students_timeslots(schedule, i_max)
-        # if not result.is_solved():
-        #     self.uniform_strict(schedule, i_max)
-        return result
+        return self.assign_students_timeslots(schedule, i_max)
 
     def solve(self, schedule: Schedule, i_max: int | None = None, method="uniform", strict=True):
         if i_max is None:

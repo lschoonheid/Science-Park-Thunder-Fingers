@@ -3,9 +3,9 @@ from ..classes.schedule import Schedule
 
 
 class Solver:
-    def __init__(self, log=False):
+    def __init__(self, verbose=False):
         self.verifier = Statistics()
-        self.do_log = log
+        self.verbose = verbose
 
     # Mockup function only for type hinting
     def solve(self, schedule: Schedule, i_max: int | None = None, method: str = "", strict=True):
