@@ -31,7 +31,15 @@ def generate(solver: Solver, students_input, courses_input, rooms_input, n: int 
 
 
 # TODO: write interface code to execute complete program from command line
-def main(stud_prefs_path: str, courses_path: str, rooms_path: str, n_subset: int, verbose: bool = False, **kwargs):
+def main(
+    stud_prefs_path: str,
+    courses_path: str,
+    rooms_path: str,
+    n_subset: int,
+    verbose: bool = False,
+    do_plot: bool = True,
+    **kwargs,
+):
     """Interface for executing scheduling program."""
 
     input_data = Data(stud_prefs_path, courses_path, rooms_path)
