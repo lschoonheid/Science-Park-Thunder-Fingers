@@ -103,7 +103,7 @@ class Schedule:
             for i in range(course.num_lec):
                 activity = {
                     "act_type": f"hc{i+1}",
-                    "capacity": None,
+                    "capacity_input": None,
                     "max_timeslots": 1,
                 }
                 activities[node_id] = Activity(node_id, **activity)
@@ -114,7 +114,7 @@ class Schedule:
             for i in range(course.num_tut):
                 activity = {
                     "act_type": f"wc{i+1}",
-                    "capacity": course.max_stud_tut,
+                    "capacity_input": course.max_stud_tut,
                 }
                 activities[node_id] = Activity(node_id, **activity)
                 self.nodes[node_id] = activities[node_id]
@@ -124,7 +124,7 @@ class Schedule:
             for i in range(course.num_prac):
                 activity = {
                     "act_type": f"p{i+1}",
-                    "capacity": course.max_stud_prac,
+                    "capacity_input": course.max_stud_prac,
                 }
                 activities[node_id] = Activity(node_id, **activity)
                 self.nodes[node_id] = activities[node_id]

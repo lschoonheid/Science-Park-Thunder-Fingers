@@ -12,18 +12,24 @@ class Activity(Node):
     - students
     """
 
-    def __init__(self, uid: int, act_type: str, capacity: int | None, max_timeslots: int | None = None) -> None:
+    def __init__(self, uid: int, act_type: str, capacity_input: int | None, max_timeslots: int | None = None) -> None:
         self.id = uid
 
         # Metadata
         self.act_type = act_type
-        self.capacity = capacity
+        self.capacity_input = capacity_input
         self.max_timeslots = max_timeslots
 
         # Neighbors
         self.courses: dict[int, Course] = {}
         self.timeslots: dict[int, Timeslot] = {}
         self.students: dict[int, Student] = {}
+
+    @property
+    def capacity(self):
+        if self.capacity_input:
+            return self.capacity_input
+        return self.enrolled_students
 
     def __repr__(self) -> str:
         return f"{self.act_type} of {str(*(self.courses.values()))}"

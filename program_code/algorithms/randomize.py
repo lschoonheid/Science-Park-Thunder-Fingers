@@ -21,6 +21,7 @@ class Randomize(Solver):
             schedule.connect_nodes(activity, timeslot)
 
     # TODO make for loop for readability?
+    # Cache output?
     def draw_uniform_recursive(
         self,
         nodes1: list[NodeSC],
@@ -88,28 +89,6 @@ class Randomize(Solver):
         # )
         return node1, node2
 
-    def assign_activities_timeslots_once(self, schedule: Schedule):
-        # Make shuffled list of timeslots so they will be picked randomly
-        activities_shuffled = list(schedule.activities.values())
-        random.shuffle(activities_shuffled)
-        timeslots_shuffled = list(schedule.timeslots.values())
-        for activity in activities_shuffled:
-            total_capacity = 0
-            random.shuffle(timeslots_shuffled)
-
-            for timeslot in timeslots_shuffled:
-                if total_capacity >= len(activity.students):
-                    print(total_capacity, len(activity.students))
-                    break
-
-                if self.verifier.can_assign_timeslot_activity(timeslot, activity):
-                    print("connected")
-                    schedule.connect_nodes(activity, timeslot)
-                    total_capacity += timeslot.room.capacity
-            print("next activ")
-            if total_capacity < len(activity.students):
-                print(f"FAILED: {total_capacity, len(activity.students)}")
-
     def assign_activities_timeslots_uniform(self, schedule: Schedule):
         # Make shuffled list of timeslots so they will be picked randomly
         timeslots_shuffled = list(schedule.timeslots.values())
@@ -137,6 +116,7 @@ class Randomize(Solver):
         edges = set()
         for i in tqdm(range(i_max), disable=not self.verbose, desc="Trying connections:"):
             if len(available_activities) == 0:
+                # Solver has come to completion: all activities have its students assigned to timeslots
                 return self.verifier.Result(schedule=schedule, iterations=i, solved=True)
 
             # Take random unfinished activity
@@ -146,24 +126,22 @@ class Randomize(Solver):
             timeslots_linked = list(activity.timeslots.values())
 
             # Filter timeslots for available capacity
-            timeslots_available: list[Timeslot] = []
-            for timeslot in timeslots_linked:
-                # Skip if timeslot has reached capacity
-                bookings = len(timeslot.students)
-                if bookings == activity.capacity or bookings == timeslot.room.capacity:
-                    continue
-                timeslots_available.append(timeslot)
-
-            if len(timeslots_available) == 0:
-                if self.verbose:
-                    print(f"ERROR: Could no longer find available timeslots for {activity} after {i} iterations.")
-                break
+            # timeslots_available: list[Timeslot] = []
+            # for timeslot in timeslots_linked:
+            #     # Skip if timeslot has reached capacity
+            #     enrolled = timeslot.enrolled_students()
+            #     if enrolled >= timeslot.capacity():
+            #         continue
+            #     timeslots_available.append(timeslot)
+            # if len(timeslots_available) == 0:
+            #     if self.verbose:
+            #         print(f"ERROR: Could no longer find available timeslots for {activity} after {i} iterations.")
+            #     break
 
             # Pick student that does not have a timeslot for this activity
             draw_student = self.draw_uniform_recursive(
                 students_linked, [activity], self.verifier.student_has_activity_assigned, negation=True  # type: ignore
             )
-
             if not draw_student:
                 # No available students means this activity has been assigned to all its students, it's finished.
                 for index, test_activity in enumerate(available_activities):
@@ -171,8 +149,14 @@ class Randomize(Solver):
                         # TODO: triple check if this is rightfully removed from list, as this brings algorithm closer to completion
                         available_activities.pop(index)
                 continue
-
             student: Student = draw_student[0]  # type: ignore
+
+            draw_timeslot = self.draw_uniform_recursive([student], timeslots_linked, self.verifier.can_assign_student_timeslot)  # type: ignore
+            if not draw_timeslot:
+                if self.verbose:
+                    print(f"ERROR: Could no longer find available timeslots for {activity} after {i} iterations.")
+                continue
+            timeslot = draw_timeslot[1]
 
             # TODO: #30 improvement would be to first see if there is an available one, but it wouldn't necessarily be uniform (see commented code)
             """
@@ -188,8 +172,6 @@ class Randomize(Solver):
             timeslot: Timeslot = draw_timeslot[1]  # type: ignore
 
             """
-
-            timeslot = random.choice(timeslots_available)
 
             if self.verifier.student_has_activity_assigned(student, activity):
                 print("made it through still?")
@@ -226,7 +208,7 @@ class Randomize(Solver):
         if i_max is None:
             guess_required_edges = 0
             for activity in schedule.activities.values():
-                enrolled_students = len(activity.students)
+                enrolled_students = activity.enrolled_students
                 guess_required_edges += enrolled_students
             i_max = 2 * guess_required_edges
 

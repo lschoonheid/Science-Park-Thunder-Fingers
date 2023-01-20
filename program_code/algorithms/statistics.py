@@ -20,7 +20,7 @@ class Statistics:
     Check for:
      * overbooked timeslots (more than one activity linked)
      * overbooked timeslots (over room capacity)
-     - overbooked timeslots (over tutorial/practical capacity)
+     * overbooked timeslots (over tutorial/practical capacity)
      * activities (eg lectures) surplus timeslots
      * students missing timeslots for activities
      * students with multiple timeslots for 1 activity
@@ -71,7 +71,7 @@ class Statistics:
                     timeslots_assigned += 1
         return timeslots_assigned
 
-    def timeslot_overbooked(self, timeslot: Timeslot, verbose=False):
+    def timeslot_activity_overbooked(self, timeslot: Timeslot, verbose=False):
         """Count overbooked `activity` for `timeslot`."""
         overbookings = max(len(timeslot.activities) - 1, 0)
         if overbookings > 0:
@@ -83,7 +83,11 @@ class Statistics:
 
     def room_overbooked(self, timeslot: Timeslot):
         """Count timeslot (chair) capacity surplus."""
-        return max(timeslot.room.capacity - len(timeslot.students), 0)
+        return max(timeslot.enrolled_students - timeslot.room.capacity, 0)
+
+    def timeslot_student_overbooked(self, timeslot: Timeslot):
+        """Count surplus of students booked for timeslot."""
+        return max(timeslot.enrolled_students - timeslot.capacity, 0)
 
     def can_assign_timeslot_activity(self, timeslot: Timeslot, activity: Activity):
         """Verify if a timeslot can be added to activity."""
@@ -100,9 +104,16 @@ class Statistics:
             return False
 
         # One instance of activity means all students must fit in room
-        if activity.max_timeslots == 1 and timeslot.room.capacity >= len(activity.students):
+        if activity.max_timeslots == 1 and timeslot.room.capacity >= activity.enrolled_students:
             return True
         return len(activity.timeslots) < activity.max_timeslots
+
+    def can_assign_student_timeslot(self, student: Student, timeslot: Timeslot):
+        """Verify if a `student` can be added to `timeslot`."""
+        if timeslot.enrolled_students >= timeslot.capacity:
+            return False
+        # TODO also check if student already has activity assigned
+        return True
 
     def activity_overbooked(self, activity: Activity):
         """Count surplus timeslots linked to `activity`."""
@@ -145,20 +156,15 @@ class Statistics:
             schedule: Schedule,
             solved: bool | None = None,
             iterations: int | None = None,
-            student_overbookings: int | None = None,
-            timeslot_overbookings: int | None = None,
+            score_matrix=np.array([100, -1, -30, -1, -5]),
         ):
             self.schedule = schedule
-            self.iterations = iterations
-
             self.solved_input = solved
-
-            self.student_overbookings_input = student_overbookings
-            self.timeslot_overbookings_input = timeslot_overbookings
+            self.iterations = iterations
+            self.score_matrix = score_matrix
 
             self.verifier = Statistics()
             # Roostering wil bekijken of roosters rekening kunnen houden met individuele vakinschrijvingen. Ieder vakconflict van een student levert één maluspunt op.
-            self.score_matrix = np.array([100, -1, -30, -5])
 
         @cached_property
         def is_solved(self):
@@ -170,9 +176,9 @@ class Statistics:
         @cached_property
         def student_overbookings(self):
             """1 malus point"""
-            if self.student_overbookings_input is None:
-                return self.verifier.aggregate(self.verifier.student_overbooked, self.schedule.students)
-            return self.student_overbookings_input
+            # if self.student_overbookings_input is None:
+            return self.verifier.aggregate(self.verifier.student_overbooked, self.schedule.students)
+            # return self.student_overbookings_input
 
         @cached_property
         def students_unbooked(self):
@@ -180,16 +186,25 @@ class Statistics:
             return self.verifier.aggregate(self.verifier.students_unbooked, self.schedule.activities)
 
         @cached_property
-        def timeslot_overbookings(self):
+        def timeslot_activity_overbookings(self):
             """Hard constraint"""
-            if self.timeslot_overbookings_input is None:
-                return self.verifier.aggregate(self.verifier.timeslot_overbooked, self.schedule.timeslots)
-            return self.timeslot_overbookings_input
+            return self.verifier.aggregate(self.verifier.timeslot_activity_overbooked, self.schedule.timeslots)
+
+        @cached_property
+        def timeslot_student_overbookings(self):
+            """Hard constraint"""
+            return self.verifier.aggregate(self.verifier.timeslot_student_overbooked, self.schedule.timeslots)
 
         @cached_property
         def score_vector(self):
             return np.array(
-                [int(self.is_solved), self.student_overbookings, self.timeslot_overbookings, self.students_unbooked]
+                [
+                    int(self.is_solved),
+                    self.student_overbookings,
+                    self.timeslot_activity_overbookings,
+                    self.timeslot_student_overbookings,
+                    self.students_unbooked,
+                ]
             )
 
         @cached_property
