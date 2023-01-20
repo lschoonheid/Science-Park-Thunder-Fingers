@@ -12,6 +12,7 @@ import argparse
 import random
 import warnings
 from tqdm import tqdm
+import multiprocessing
 from program_code.classes.data import Data
 from program_code.classes.schedule import Schedule
 from program_code.algorithms.solver import Solver
@@ -21,13 +22,53 @@ from program_code.visualisation.visualize import GraphVisualization, plot_statis
 from sched_csv_output import schedule_to_csv
 
 
+# Necessary to work around
+def solver_wrapper(arguments):
+    solver, schedule, kwargs = arguments
+    """Execute `solver.solve(schedule, **kwargs)` with `kwargs`."""
+    return solver.solve(schedule, **kwargs)
+
+
+def solver_swrapper(solver, schedule, kwargs):
+    """Execute `solver.solve(schedule, **kwargs)` with `kwargs`."""
+    return solver.solve(schedule, **kwargs)
+
+
 def generate(solver: Solver, students_input, courses_input, rooms_input, n: int = 1000, **kwargs):
     """Generate `n` schedules"""
     results: list[Statistics.Result] = []
-    for i in tqdm(range(n)):
-        schedule = Schedule(students_input, courses_input, rooms_input)
-        results.append(solver.solve(schedule, **kwargs))
-    return results
+    schedules: list[Schedule] = []
+    for i in tqdm(range(n), desc="Generating schedule prototypes"):
+        schedules.append(Schedule(students_input, courses_input, rooms_input))
+
+    if 300 < n < 1000:
+        # 31.5 - 33 sec
+        for schedule in tqdm(schedules, "Solving schedules"):
+            results.append(solver.solve(schedule, **kwargs))
+        return results
+
+    num_workers = multiprocessing.cpu_count()
+    pool = multiprocessing.Pool(num_workers)
+    with pool as p:
+        solver_arguments = [(solver, schedule, kwargs) for schedule in schedules]
+
+        chunksize, extra = divmod(n, num_workers * 4)
+        if extra:
+            chunksize += 1
+
+        results = list(
+            tqdm(
+                p.imap(solver_wrapper, solver_arguments, chunksize),
+                total=n,
+                desc="Solving schedules",
+                position=0,
+                leave=" ",
+            )
+        )
+        # results = list(tqdm(p.starmap(solver_swrapper, solver_arguments), total=n, desc="Instances", position=0, leave=" "))
+
+        return results
+        # results = list(tqdm(p.map(solver.solve, [schedule], kwargs]), total=n, desc="Instances", position=0, leave=" "))
 
 
 # TODO: write interface code to execute complete program from command line
@@ -78,7 +119,7 @@ if __name__ == "__main__":
         help="Path to student enrolments csv.",
     )
     parser.add_argument("-i", type=int, dest="i_max", help="max iterations per solve cycle.")
-    parser.add_argument("-n", type=int, dest="n", default=1, help="amount of results to generate.")
+    parser.add_argument("-n", type=int, dest="n", default=10, help="amount of results to generate.")
     parser.add_argument(
         "-sub", type=int, dest="n_subset", help="Subset: amount of students to take into account out of dataset."
     )
