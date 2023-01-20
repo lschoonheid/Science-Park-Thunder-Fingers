@@ -55,7 +55,8 @@ def main(stud_prefs_path: str, courses_path: str, rooms_path: str, n_subset: int
     G.visualize()
     schedule_to_csv(sampled_result.schedule)
 
-    # plot_statistics(results)
+    if do_plot:
+        plot_statistics(results)
 
 
 if __name__ == "__main__":
@@ -76,6 +77,7 @@ if __name__ == "__main__":
     parser.add_argument("-v", dest="verbose", action="store_true", help="Verbose: log error messages.")
     parser.add_argument("--courses", dest="courses_path", default="data/vakken.csv", help="Path to courses csv.")
     parser.add_argument("--rooms", dest="rooms_path", default="data/zalen.csv", help="Path to rooms csv.")
+    parser.add_argument("--no_plot", dest="do_plot", action="store_false", help="Don't show matplotlib plot")
 
     # Read arguments from command line
     args = parser.parse_args()
