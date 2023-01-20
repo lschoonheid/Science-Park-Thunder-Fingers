@@ -1,3 +1,4 @@
+from functools import cached_property
 from typing import TypeVar
 
 
@@ -29,6 +30,11 @@ class Node:
                 self.room = node
             case _:
                 raise ValueError(f"Error: in adding node of type {type(node).__name__}: {node} to {self}")
+
+    # Immutable after import for all nodes except Timeslot
+    @cached_property
+    def enrolled_students(self):
+        return len(self.students)
 
     def __repr__(self) -> str:
         return f"{type(self).__name__} {self.id} at {hex(id(self))}"
