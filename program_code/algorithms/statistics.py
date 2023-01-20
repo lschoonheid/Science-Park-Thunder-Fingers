@@ -1,9 +1,11 @@
 from typing import Callable
+import operator
 from ..classes.schedule import Schedule
 from ..classes.node import NodeSC
 from ..classes.student import Student
 from ..classes.timeslot import Timeslot
 from ..classes.activity import Activity
+from ..classes.room import Room
 
 # from ..classes.result import Result
 
@@ -36,6 +38,9 @@ class Statistics:
     # def __init__(self) -> None:
     #     self.statistics: dict = {}
     #     self.score: float = 0
+
+    def sort_nodes(self, nodes: list[NodeSC], attr: str, reverse=False):
+        return sorted(nodes, key=operator.attrgetter(attr), reverse=reverse)
 
     def node_has_activity(self, node: NodeSC):
         if len(node.activities) > 0:
@@ -126,20 +131,49 @@ class Statistics:
             unbooked_students += int(not self.student_has_activity_assigned(student, activity))
         return unbooked_students
 
+    # Soft constraints:
+    def evening_bookings(self, room: Room):
+        """Count booked evening timeslots for `room`."""
+        # Evening timeslot
+        evening_period = 4
+        evening_bookings = 0
+        for timeslot in room.timeslots.values():
+            if timeslot.period == evening_period:
+                evening_bookings += len(timeslot.activities)
+        return evening_bookings
+
     def student_overbooked(self, student: Student, verbose=False):
         """Count overbooked periods for `student`."""
         bookings = set()
         double_bookings: int = 0
         for timeslot in student.timeslots.values():
-            moment = (timeslot.day, timeslot.period)
-            if moment in bookings:
+            if timeslot.moment in bookings:
                 double_bookings += 1
 
                 if verbose:
-                    print(f"MALUS: overbooked period for {student.name}: {moment} >1 times")
+                    print(f"MALUS: overbooked period for {student.name}: {timeslot.moment} >1 times")
             else:
-                bookings.add(moment)
+                bookings.add(timeslot.moment)
         return double_bookings
+
+    def gap_periods(self, student: Student):
+        """Count free periods in between the first and last active period of `student`."""
+        timeslots_daysorted: list[Timeslot] = self.sort_nodes(student.timeslots.values(), "moment")  # type: ignore
+
+        day = -1
+        gap_periods = 0
+        previous_period = -1
+        for timeslot in timeslots_daysorted:
+            if timeslot.day > day:
+                # Next day in week, reset counter
+                day = timeslot.day
+                previous_period = timeslot.period - 1
+            current_period = timeslot.period
+            # Gap is difference between current and last period - 1, if the timeslots are simultaneous take gap = 0
+            gap_periods += max(current_period - previous_period - 1, 0)
+            previous_period = timeslot.period
+
+        return gap_periods
 
     def aggregate(self, count_function: Callable[[NodeSC], int], nodes_dict: dict[int, NodeSC]):
         """Return sum of `count_function` for all `Node` in `nodes_dict`."""

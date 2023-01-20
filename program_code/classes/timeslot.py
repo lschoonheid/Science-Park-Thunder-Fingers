@@ -17,6 +17,7 @@ class Timeslot(Node):
         # Metadata
         self.day = day
         self.period = period
+        self.moment = (day, period)
 
         # Neighbors
         self.room: Room
