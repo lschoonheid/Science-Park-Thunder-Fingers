@@ -1,4 +1,3 @@
-import operator
 import warnings
 from .statistics import Statistics
 from ..classes.node import NodeSC
@@ -13,14 +12,11 @@ class Solver:
         self.verifier = Statistics()
         self.verbose = verbose
 
-    def sort_nodes(self, nodes: list[NodeSC], attr: str, reverse=False):
-        return sorted(nodes, key=operator.attrgetter(attr), reverse=reverse)
-
     def assign_activities_timeslots_greedy(
         self, schedule: Schedule, activities: list[Activity], timeslots: list[Timeslot], reverse=True
     ):
-        activities_sorted = self.sort_nodes(activities, "enrolled_students", reverse=reverse)
-        timeslots_sorted = self.sort_nodes(timeslots, "capacity", reverse=reverse)
+        activities_sorted = self.verifier.sort_nodes(activities, "enrolled_students", reverse=reverse)
+        timeslots_sorted = self.verifier.sort_nodes(timeslots, "capacity", reverse=reverse)
         for activity in activities_sorted:
             activity_enrolments = activity.enrolled_students
             total_capacity = 0
