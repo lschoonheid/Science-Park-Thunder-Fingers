@@ -62,18 +62,9 @@ class Schedule:
         courses = {}
 
         for course in courses_input:
-            replace_blank = True
             c = course
             # TODO: #25 There is one course that is referenced as "Zoeken, sturen en bewegen" in `vakken.csv` but as "Zoeken sturen en bewegen" in `studenten_en_vakken.csv`.
             name = c["Vak"].replace(",", "")
-
-            # Replace blank datavalues with valid values
-            if replace_blank:
-                for tag in list(c.keys())[1:]:
-                    if c[tag] == "":
-                        c[tag] = None
-                    else:
-                        c[tag] = int(c[tag])
 
             courses[node_id] = Course(
                 node_id,
