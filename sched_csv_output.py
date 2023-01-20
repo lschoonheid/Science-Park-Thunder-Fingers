@@ -34,13 +34,3 @@ def schedule_to_csv(schedule: Schedule, output_path: str = "output/Schedule_outp
                         writer.writerow(data)
 
         print(f"output saved to {output_path}")
-
-
-if __name__ == "__main__":
-    stud_prefs_path: str = "data/studenten_en_vakken_subset.csv"
-    courses_path: str = "data/vakken_subset.csv"
-    rooms_path: str = "data/zalen.csv"
-
-    schedule = Schedule(stud_prefs_path, courses_path, rooms_path)
-
-    schedule_to_csv(schedule)

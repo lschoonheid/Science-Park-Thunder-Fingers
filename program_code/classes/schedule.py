@@ -87,7 +87,6 @@ class Schedule:
             )
             self.nodes[node_id] = courses[node_id]
             self._course_catalog[name] = node_id
-            # self._add_course(node_id, course)
             node_id += 1
 
         return courses
@@ -166,7 +165,6 @@ class Schedule:
                     timeslot = {"day": day, "period": period}
                     timeslots[node_id] = Timeslot(node_id, **timeslot)
                     self.nodes[node_id] = timeslots[node_id]
-                    # self._add_timeslot(node_id, timeslot)
                     self.connect_nodes(room, timeslots[node_id])
                     node_id += 1
 
