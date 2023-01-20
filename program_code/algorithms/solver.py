@@ -1,9 +1,10 @@
 from .statistics import Statistics
+import operator
+import warnings
 from ..classes.node import NodeSC
 from ..classes.schedule import Schedule
 from ..classes.activity import Activity
 from ..classes.timeslot import Timeslot
-import operator
 
 
 class Solver:
@@ -33,12 +34,8 @@ class Solver:
                     schedule.connect_nodes(activity, timeslot)
                     total_capacity += min(activity.capacity, timeslot.capacity)
 
-            if total_capacity < activity_enrolments:
-                if self.verbose:
-                    print(f"FAILED: {total_capacity, activity.enrolled_students}")
-            else:
-                if self.verbose:
-                    print("Success")
+            if self.verbose and total_capacity < activity_enrolments:
+                warnings.warn(f"FAILED: {total_capacity, activity.enrolled_students}")
 
     def assign_activities_timeslots_once(self, schedule: Schedule):
         """Assign each activity the amount of timeslots it requires. Results in non-uniform distribution but ensures each enrolled student can book timeslot for activity."""
