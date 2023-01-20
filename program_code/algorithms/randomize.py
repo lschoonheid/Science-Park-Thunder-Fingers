@@ -1,6 +1,7 @@
 import random
 from tqdm import tqdm
 from typing import Callable
+from warnings import warn
 from .solver import Solver
 from ..classes.schedule import Schedule
 from ..classes.node import NodeSC
@@ -20,8 +21,8 @@ class Randomize(Solver):
             schedule.connect_nodes(student, timeslot)
             schedule.connect_nodes(activity, timeslot)
 
-    # TODO make for loop for readability?
-    # Cache output?
+    # TODO #34 make for loop for readability?
+    # TODO #35 Cache output?
     def draw_uniform_recursive(
         self,
         nodes1: list[NodeSC],
@@ -109,7 +110,7 @@ class Randomize(Solver):
                 activity = draw[1]
                 schedule.connect_nodes(activity, timeslot)
 
-    def assign_students_timeslots(self, schedule: Schedule, i_max=1000):
+    def assign_students_timeslots(self, schedule: Schedule, i_max=10000):
         available_activities = list(schedule.activities.values())
 
         # Try making connections for i_max iterations
@@ -146,7 +147,6 @@ class Randomize(Solver):
                 # No available students means this activity has been assigned to all its students, it's finished.
                 for index, test_activity in enumerate(available_activities):
                     if activity == test_activity:
-                        # TODO: triple check if this is rightfully removed from list, as this brings algorithm closer to completion
                         available_activities.pop(index)
                 continue
             student: Student = draw_student[0]  # type: ignore
@@ -154,45 +154,33 @@ class Randomize(Solver):
             draw_timeslot = self.draw_uniform_recursive([student], timeslots_linked, self.verifier.can_assign_student_timeslot)  # type: ignore
             if not draw_timeslot:
                 if self.verbose:
-                    print(f"ERROR: Could no longer find available timeslots for {activity} after {i} iterations.")
+                    warn(f"ERROR: Could no longer find available timeslots for {activity} after {i} iterations.")
                 continue
             timeslot = draw_timeslot[1]
 
             # TODO: #30 improvement would be to first see if there is an available one, but it wouldn't necessarily be uniform (see commented code)
-            """
-            # Pick timeslot that student has still available
-            draw_timeslot = self.draw_uniform_recursive([student], timeslots_available, self.can_book_student, negation=False)  # type: ignore
-
-            # if not draw_timeslot:
-            #     print(
-            #         f"ERROR: Could no longer find available timeslots for {activity} for {student} after {i} iterations."
-            #     )
-                # TODO: draw anyway as second option
-            #     continue
-            timeslot: Timeslot = draw_timeslot[1]  # type: ignore
-
-            """
-
-            if self.verifier.student_has_activity_assigned(student, activity):
-                print("made it through still?")
-                continue
 
             # Skip if timeslot is already linked to student
             edge = (student.id, timeslot.id)
             if edge in edges:
-                # print("made it through?")
+                if self.verbose:
+                    warn("ERROR: attempted adding same edge twice.")
                 continue
 
-            # Success
+            # Success: found a pair of student, timeslot that meet all requirements and can be booked
             schedule.connect_nodes(student, timeslot)
             edges.add(edge)
-        if len(available_activities) > 0:
+        activities_finished = len(available_activities) == 0
+
+        if not activities_finished:
             if self.verbose:
-                print(f"ERROR: could not finish schedule within {i_max} iterations.")
-                print(f"ERROR: unfinished activities: {available_activities}")
+                warn(
+                    f"ERROR: could not finish schedule within {i_max} iterations. Unfinished activities: {available_activities}"
+                )
             # TODO: #31 reassign timeslots with no connected students and try again (allowed to ignore non uniform redraw to permit solution)
-            return self.verifier.Result(schedule=schedule, iterations=i_max, solved=False)
-        return self.verifier.Result(schedule=schedule, iterations=i_max)
+
+        # Return Result
+        return self.verifier.Result(schedule=schedule, iterations=i_max, solved=activities_finished)
 
     def uniform_strict(self, schedule: Schedule, i_max: int):
         """Make a completely random schedule solution"""
@@ -206,15 +194,16 @@ class Randomize(Solver):
 
     def solve(self, schedule: Schedule, i_max: int | None = None, method="uniform", strict=True):
         if i_max is None:
+            # Program on average has to iterate over each activity once, which with a random distribution it takes more iterations
+            i_min = 100 * len(schedule.activities)
             guess_required_edges = 0
             for activity in schedule.activities.values():
-                enrolled_students = activity.enrolled_students
-                guess_required_edges += enrolled_students
-            i_max = 2 * guess_required_edges
+                guess_required_edges += activity.enrolled_students
+            i_max = max(guess_required_edges, i_min)
 
         if method == "uniform" and strict:
             return self.uniform_strict(schedule, i_max)  # type: ignore
         raise ValueError("Did not recognize solver.")
 
 
-# TODO try pseudo-ku algorithm
+# TODO try sudoku algorithm
