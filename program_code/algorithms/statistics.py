@@ -1,15 +1,11 @@
+from typing import Callable
 from ..classes.schedule import Schedule
 from ..classes.node import NodeSC
 from ..classes.student import Student
 from ..classes.timeslot import Timeslot
 from ..classes.activity import Activity
-from functools import cached_property
-from typing import Callable
-import numpy as np
 
-
-# TODO
-# temporar
+# from ..classes.result import Result
 
 
 # TODO: #15 Implement objective function which couples a score to a schedule
@@ -17,19 +13,21 @@ import numpy as np
 class Statistics:
     # TODO: #26 complete list below
     """
-    Check for:
+    Check for hard constraints:
+     - lectures only happen once
      * overbooked timeslots (more than one activity linked)
      * overbooked timeslots (over room capacity)
      * overbooked timeslots (over tutorial/practical capacity)
      * activities (eg lectures) surplus timeslots
      * students missing timeslots for activities
      * students with multiple timeslots for 1 activity
-     - timeslots without assigned students
+     * student should only follow each class once (eg: one wc1 and one wc2 in student schedule)
+
+     Check for soft constraints:
      * students with double booked hours
-     - lectures only happen once
+     - timeslots without assigned students
      - free periods for student (max three is hard constraint)
-     - malus points for using evening timeslot
-     - student should only follow each class once (eg: one wc1 and one wc2 in student schedule)
+     - using evening timeslot
 
      Optional:
      - least amount of unique classes (wc1 only given once etc.)
@@ -149,81 +147,3 @@ class Statistics:
         for node in nodes_dict.values():
             count += count_function(node)
         return count
-
-    class Result:
-        def __init__(
-            self,
-            schedule: Schedule,
-            solved: bool | None = None,
-            iterations: int | None = None,
-            score_matrix=np.array([100, -1, -30, -1, -5]),
-        ):
-            self.schedule = schedule
-            self.solved_input = solved
-            self.iterations = iterations
-            self.score_matrix = score_matrix
-
-            self.verifier = Statistics()
-            # Roostering wil bekijken of roosters rekening kunnen houden met individuele vakinschrijvingen. Ieder vakconflict van een student levert één maluspunt op.
-
-        @cached_property
-        def is_solved(self):
-            # Convert True/False to int for matrix multiplication
-            if self.solved_input is None:
-                return "test"
-            return self.solved_input
-
-        @cached_property
-        def student_overbookings(self):
-            """1 malus point"""
-            # if self.student_overbookings_input is None:
-            return self.verifier.aggregate(self.verifier.student_overbooked, self.schedule.students)
-            # return self.student_overbookings_input
-
-        @cached_property
-        def students_unbooked(self):
-            """Amount of students missing timeslots for activities."""
-            return self.verifier.aggregate(self.verifier.students_unbooked, self.schedule.activities)
-
-        @cached_property
-        def timeslot_activity_overbookings(self):
-            """Hard constraint"""
-            return self.verifier.aggregate(self.verifier.timeslot_activity_overbooked, self.schedule.timeslots)
-
-        @cached_property
-        def timeslot_student_overbookings(self):
-            """Hard constraint"""
-            return self.verifier.aggregate(self.verifier.timeslot_student_overbooked, self.schedule.timeslots)
-
-        @cached_property
-        def score_vector(self):
-            return np.array(
-                [
-                    int(self.is_solved),
-                    self.student_overbookings,
-                    self.timeslot_activity_overbookings,
-                    self.timeslot_student_overbookings,
-                    self.students_unbooked,
-                ]
-            )
-
-        @cached_property
-        def score(self) -> float:
-            return self.score_matrix.dot(self.score_vector)
-
-        def __str__(self):
-            return str(self.__dict__)
-
-    def get_statistics(self, schedule: Schedule, iterations: int | None = None, solved: bool | None = None):
-        """Wrapper function to retrieve statistics as `Result` object."""
-        score_vector = self.Result(
-            schedule,
-            iterations=iterations,
-            solved=solved,
-        )
-        return score_vector
-
-    # def score(self, schedule: Schedule):
-    #     """Shortcut to get score from `ScoreVector`."""
-    #     score_vector = self.statistics(schedule)
-    #     return score_vector.score()

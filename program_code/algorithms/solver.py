@@ -1,10 +1,11 @@
-from .statistics import Statistics
 import operator
 import warnings
+from .statistics import Statistics
 from ..classes.node import NodeSC
 from ..classes.schedule import Schedule
 from ..classes.activity import Activity
 from ..classes.timeslot import Timeslot
+from ..classes.result import Result
 
 
 class Solver:
@@ -62,4 +63,4 @@ class Solver:
 
     # Mockup function only for type hinting
     def solve(self, schedule: Schedule, i_max: int | None = None, method: str = "", strict=True):
-        return self.verifier.Result(schedule)
+        return Result(schedule)

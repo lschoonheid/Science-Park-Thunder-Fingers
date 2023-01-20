@@ -1,20 +1,14 @@
 # TODO: #10 make bar charts of students per room (and its max capacity), courses per rooms, etc for quick error checking
 # TODO: #12 make representation of one student's schedule
 
-from ..algorithms.statistics import Statistics
-import random
 import networkx as nx
 import matplotlib.pyplot as plt
 from pyvis.network import Network as PyvisNetwork
 from .fix_webpage import fix_webpage
+from ..classes.result import Result, CompressedResult
 
 
-# class ScoreVisualization:
-#     def __init__(self):
-#        self.results = results
-
-
-def plot_statistics(results: list[Statistics.Result]):
+def plot_statistics(results: list[Result] | list[CompressedResult]):
     scores = [result.score for result in results]
     fig, (ax1) = plt.subplots(1, 1, figsize=(9, 4.5), tight_layout=True)
     ax1.hist(scores, 100)

@@ -8,6 +8,7 @@ from ..classes.node import NodeSC
 from ..classes.student import Student
 from ..classes.activity import Activity
 from ..classes.timeslot import Timeslot
+from ..classes.result import Result
 
 
 class Randomize(Solver):
@@ -118,7 +119,7 @@ class Randomize(Solver):
         for i in tqdm(range(i_max), disable=not self.verbose, desc="Trying connections:"):
             if len(available_activities) == 0:
                 # Solver has come to completion: all activities have its students assigned to timeslots
-                return self.verifier.Result(schedule=schedule, iterations=i, solved=True)
+                return Result(schedule=schedule, iterations=i, solved=True)
 
             # Take random unfinished activity
             activity = random.choice(available_activities)
@@ -180,7 +181,7 @@ class Randomize(Solver):
             # TODO: #31 reassign timeslots with no connected students and try again (allowed to ignore non uniform redraw to permit solution)
 
         # Return Result
-        return self.verifier.Result(schedule=schedule, iterations=i_max, solved=activities_finished)
+        return Result(schedule=schedule, iterations=i_max, solved=activities_finished)
 
     def uniform_strict(self, schedule: Schedule, i_max: int):
         """Make a completely random schedule solution"""
