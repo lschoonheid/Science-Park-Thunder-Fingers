@@ -5,10 +5,10 @@ import networkx as nx
 import matplotlib.pyplot as plt
 from pyvis.network import Network as PyvisNetwork
 from .fix_webpage import fix_webpage
-from ..classes.result import Result, CompressedResult
+from ..classes.result import Result
 
 
-def plot_statistics(results: list[Result] | list[CompressedResult]):
+def plot_statistics(results: list[Result]):
     scores = [result.score for result in results]
     fig, (ax1) = plt.subplots(1, 1, figsize=(9, 4.5), tight_layout=True)
     ax1.hist(scores, 100)

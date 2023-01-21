@@ -19,7 +19,7 @@ from program_code.classes.schedule import Schedule
 from program_code.algorithms.solver import Solver
 from program_code.algorithms.randomize import Randomize
 from program_code.algorithms.statistics import Statistics
-from program_code.classes.result import Result, CompressedResult
+from program_code.classes.result import Result
 from program_code.visualisation.visualize import GraphVisualization, plot_statistics
 from sched_csv_output import schedule_to_csv
 
@@ -40,22 +40,13 @@ def generate(solver: Solver, students_input, courses_input, rooms_input, n: int 
     # for schedule in tqdm(schedules, "Solving schedules"):
     # TODO: #37 compress data: save only edges and scorevector
 
-    if compress:
-        # return [CompressedResult(solver.solve(schedule, **kwargs)) for schedule in tqdm(schedules)]
-        # results_small = []
-        # for i in tqdm(range(n), "Solving schedules"):
-        #     schedule = Schedule(students_input, courses_input, rooms_input)
-        #     result = solver.solve(schedule, **kwargs)
-        #     result_small = CompressedResult(result)
-        #     results_small.append(result_small)
-        # return results_small
-        return [
-            CompressedResult(solver.solve(Schedule(students_input, courses_input, rooms_input), **kwargs))
-            for i in tqdm(range(n))
-        ]
-
-    results = [solver.solve(Schedule(students_input, courses_input, rooms_input), **kwargs) for i in tqdm(range(n))]
-    scores = [result.score_vector for result in tqdm(results)]
+    for n in tqdm(range(n)):
+        schedule = Schedule(students_input, courses_input, rooms_input)
+        result = solver.solve(schedule)
+        if compress:
+            result.compress()
+        results.append(result)
+    # TODO pickle dump data?
     return results
 
     # num_workers = multiprocessing.cpu_count()
@@ -103,19 +94,19 @@ def main(
             students_input = random.sample(students_input, n_subset)
 
     results_compressed = generate(Randomize(verbose=verbose), students_input, courses_input, rooms_input, **kwargs)
+    sampled_result = random.choice(results_compressed)
 
-    sampled_result_small = random.choice(results_compressed)
-
+    prototype = Schedule(students_input, courses_input, rooms_input)
+    sampled_result.decompress(prototype)
     if verbose:
-        sampled_result_small.score_vector
-        print(sampled_result_small)
+        sampled_result.score_vector
+        print(sampled_result)
 
-    sampled_result_decompressed = Schedule(students_input, courses_input, rooms_input)
-    sampled_result_decompressed = sampled_result_small.decompress(sampled_result_decompressed)
+    prototype = Schedule(students_input, courses_input, rooms_input)
 
-    # G = GraphVisualization(sampled_result_decompressed.schedule)
-    # G.visualize()
-    # schedule_to_csv(sampled_result_decompressed.schedule)
+    G = GraphVisualization(sampled_result.schedule)
+    G.visualize()
+    schedule_to_csv(sampled_result.schedule)
 
     if do_plot:
         plot_statistics(results_compressed)

@@ -30,6 +30,8 @@ class Result:
 
         self.verifier = Statistics()
 
+        self._compressed = False
+
     # Hard constraints
 
     @cached_property
@@ -101,33 +103,45 @@ class Result:
     def score(self) -> float:
         return self.score_matrix.dot(self.score_vector)
 
-    def decompress(self, target: Schedule):
-        v = vars(self)
-        target = self.schedule
-        return self
+    def compress(self):
+        # Initialize scorevector
+        self.score_vector
 
-    def __str__(self):
-        return str(self.__dict__)
+        # Delete all protype data except genereted edges, since entire graph can be rebuild from prototype and edges
+        self.schedule.nodes = {}
+        self.schedule._student_index = {}
+        self.schedule._course_index = {}
+        self.schedule.students = {}
+        self.schedule.courses = {}
+        self.schedule.activities = {}
+        self.schedule.rooms = {}
+        self.schedule.timeslots = {}
 
-
-class CompressedResult(Result):
-    """Similar to `Result` class, but removes pointers to original schedule to save memory."""
-
-    def __init__(self, result: Result):
-        """Does not use reference to original schedule object so it is a candidate for garbage collection."""
-        self.schedule: Schedule = Schedule([], [], [])
-        self.schedule.edges = copy.copy(result.schedule.edges)
-
-        self.score_matrix = result.score_matrix
-        self.score_vector_input = result.score_vector
-
-        # self.verifier = Statistics()
+        self._compressed = True
 
     def decompress(self, target: Schedule):
-        """Decompress data onto `target`. Alters target."""
+        """Decompress data onto `target`. Binds target to self.schedule"""
         for edge in self.schedule.edges:
             id1, id2 = edge
             node1 = target.nodes[id1]
             node2 = target.nodes[id2]
             target.connect_nodes(node1, node2)
-        return Result(target, score_vector=self.score_vector)
+        self.schedule = target
+        self._compressed = False
+
+    def __str__(self):
+        return str(self.__dict__)
+
+
+# class CompressedResult(Result):
+#     """Similar to `Result` class, but removes pointers to original schedule to save memory."""
+
+#     def __init__(self, result: Result):
+#         """Does not use reference to original schedule object so it is a candidate for garbage collection."""
+#         self.schedule: Schedule = Schedule([], [], [])
+#         self.schedule.edges = copy.copy(result.schedule.edges)
+
+#         self.score_matrix = result.score_matrix
+#         self.score_vector_input = result.score_vector
+
+#         # self.verifier = Statistics()
