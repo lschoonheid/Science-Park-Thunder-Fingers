@@ -86,9 +86,6 @@ class Randomize(Solver):
                 _combination_set=_combination_set,
             )
 
-        # print(
-        #     f"found condition: {negation, condition(node1, node2), condition_value} for{node1, node2} with {_recursion_limit} recursions left"
-        # )
         return node1, node2
 
     def assign_activities_timeslots_uniform(self, schedule: Schedule):

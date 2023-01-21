@@ -14,7 +14,7 @@ import warnings
 from tqdm import tqdm
 
 # import multiprocessing
-from program_code.classes.data import Data
+from program_code.classes.data import Data, pickle_cache
 from program_code.classes.schedule import Schedule
 from program_code.algorithms.solver import Solver
 from program_code.algorithms.randomize import Randomize
@@ -31,6 +31,11 @@ from sched_csv_output import schedule_to_csv
 #     return solver.solve(schedule, **kwargs)
 
 
+@pickle_cache
+def make_prototype(students_input, courses_input, rooms_input):
+    return Schedule(students_input, courses_input, rooms_input)
+
+
 def generate(solver: Solver, students_input, courses_input, rooms_input, n: int = 1000, compress=False, **kwargs):
     """Generate `n` schedules"""
     statistics = Statistics()
@@ -41,7 +46,7 @@ def generate(solver: Solver, students_input, courses_input, rooms_input, n: int 
     # TODO: #37 compress data: save only edges and scorevector
 
     for n in tqdm(range(n)):
-        schedule = Schedule(students_input, courses_input, rooms_input)
+        schedule = make_prototype(students_input, courses_input, rooms_input)
         result = solver.solve(schedule)
         if compress:
             result.compress()

@@ -1,4 +1,47 @@
+import pickle
+import hashlib
+from typing import Callable
+from functools import wraps
 from csv import DictReader
+
+
+def dump_pickle(data, output: str):
+    """Dump pickle file."""
+    with open(output, "wb") as handle:
+        pickle.dump(data, handle)
+    return data
+
+
+def load_pickle(location: str):
+    """Load pickle file."""
+    with open(location, "rb") as handle:
+        data = pickle.load(handle)
+    return data
+
+
+def hashargs(*args, **kwds):
+    """Takes `args` and `kwds` as arguments and hashes its information to a string."""
+    args_identifier = hashlib.md5(str((args, kwds)).encode()).hexdigest()
+    return args_identifier
+
+
+def pickle_cache(func: Callable, verbose: bool = False):
+    """Decorator function for caching function output to PKL files."""
+
+    @wraps(func)
+    def wrapper(*args, **kwds):
+        args_identifier = hashargs(*args, **kwds)
+        output = ".cache/" + args_identifier + ".pkl"
+
+        try:
+            data = load_pickle(output)
+            if verbose:
+                print("Found cached data. Loading from cache instead.")
+        except FileNotFoundError:
+            data = dump_pickle(func(*args, **kwds), output)
+        return data
+
+    return wrapper
 
 
 def csv_to_dicts(input_file: str):
