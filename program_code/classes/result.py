@@ -119,14 +119,15 @@ class Result:
 
         self._compressed = True
 
-    def decompress(self, target: Schedule):
+    def decompress(
+        self,
+        students_input: list[dict],
+        courses_input: list[dict],
+        rooms_input: list[dict],
+        edges_input: set[tuple[int, int]] | None = None,
+    ):
         """Decompress data onto `target`. Binds target to self.schedule"""
-        for edge in self.schedule.edges:
-            id1, id2 = edge
-            node1 = target.nodes[id1]
-            node2 = target.nodes[id2]
-            target.connect_nodes(node1, node2)
-        self.schedule = target
+        self.schedule.__init__(students_input, courses_input, rooms_input, edges_input)
         self._compressed = False
 
     def __str__(self):

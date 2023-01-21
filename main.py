@@ -31,7 +31,7 @@ from sched_csv_output import schedule_to_csv
 #     return solver.solve(schedule, **kwargs)
 
 
-@pickle_cache
+# @pickle_cache
 def make_prototype(students_input, courses_input, rooms_input):
     return Schedule(students_input, courses_input, rooms_input)
 
@@ -101,8 +101,11 @@ def main(
     results_compressed = generate(Randomize(verbose=verbose), students_input, courses_input, rooms_input, **kwargs)
     sampled_result = random.choice(results_compressed)
 
-    prototype = Schedule(students_input, courses_input, rooms_input)
-    sampled_result.decompress(prototype)
+    sampled_result.decompress(
+        students_input,
+        courses_input,
+        rooms_input,
+    )
     if verbose:
         sampled_result.score_vector
         print(sampled_result)
