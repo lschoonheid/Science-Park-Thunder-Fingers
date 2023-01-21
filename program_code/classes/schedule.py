@@ -19,8 +19,8 @@ class Schedule:
         self.edges: set[tuple[int, int]] = set()
 
         # keeps track of uids assigned to named nodes
-        self._course_catalog: dict[str, int] = {}
-        self._student_catalog: dict[int, int] = {}
+        self._student_index: dict[int, int] = {}
+        self._course_index: dict[str, int] = {}
 
         # Students is a dictionary that hold all students by student number with corresponding info
         self.students: dict[int, Student] = self.load_student_nodes(students_input)
@@ -49,7 +49,7 @@ class Schedule:
 
             students[node_id] = Student(node_id, s["Achternaam"], s["Voornaam"], stud_no)
             self.nodes[node_id] = students[node_id]
-            self._student_catalog[stud_no] = node_id
+            self._student_index[stud_no] = node_id
             node_id += 1
 
         return students
@@ -77,7 +77,7 @@ class Schedule:
                 int(c["Verwacht"]),
             )
             self.nodes[node_id] = courses[node_id]
-            self._course_catalog[name] = node_id
+            self._course_index[name] = node_id
             node_id += 1
 
         return courses
@@ -185,7 +185,7 @@ class Schedule:
 
         # Load neighbors from CSV
         for student_dict in students_input:
-            stud_id = self._student_catalog[int(student_dict["Stud.Nr."])]
+            stud_id = self._student_index[int(student_dict["Stud.Nr."])]
 
             # Get course choices from student
             choice_keys = list(student_dict.keys())[-5:]
@@ -195,7 +195,7 @@ class Schedule:
 
             # Add courses to student
             for course_name in choices:
-                course_id = self._course_catalog[course_name]
+                course_id = self._course_index[course_name]
                 course = self.courses[course_id]
                 student = self.students[stud_id]
                 self.connect_nodes(course, student)
