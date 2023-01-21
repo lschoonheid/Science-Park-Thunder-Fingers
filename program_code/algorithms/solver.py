@@ -1,4 +1,5 @@
 import warnings
+import random
 from .statistics import Statistics
 from ..classes.node import NodeSC
 from ..classes.schedule import Schedule
@@ -40,6 +41,10 @@ class Solver:
 
         activities = list(schedule.activities.values())
         timeslots = list(schedule.timeslots.values())
+
+        # TODO check if this makes a difference
+        random.shuffle(activities)
+        random.shuffle(timeslots)
 
         # Activities with max timeslots
         activities_bound: list[Activity] = []

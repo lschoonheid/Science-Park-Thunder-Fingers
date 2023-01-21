@@ -16,7 +16,7 @@ class Result:
                 100,
                 -5,
                 -1,
-                -0.5,
+                -1,
             ]
         ),
         score_vector=None,
@@ -108,14 +108,14 @@ class Result:
         self.score_vector
 
         # Delete all protype data except genereted edges, since entire graph can be rebuild from prototype and edges
-        self.schedule.nodes = {}
-        self.schedule._student_index = {}
-        self.schedule._course_index = {}
-        self.schedule.students = {}
-        self.schedule.courses = {}
-        self.schedule.activities = {}
-        self.schedule.rooms = {}
-        self.schedule.timeslots = {}
+        del self.schedule.nodes
+        del self.schedule._student_index
+        del self.schedule._course_index
+        del self.schedule.students
+        del self.schedule.courses
+        del self.schedule.activities
+        del self.schedule.rooms
+        del self.schedule.timeslots
 
         self._compressed = True
 

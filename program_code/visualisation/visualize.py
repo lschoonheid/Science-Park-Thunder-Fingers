@@ -9,9 +9,26 @@ from ..classes.result import Result
 
 
 def plot_statistics(results: list[Result]):
-    scores = [result.score for result in results]
-    fig, (ax1) = plt.subplots(1, 1, figsize=(9, 4.5), tight_layout=True)
-    ax1.hist(scores, 100)
+    evening_timeslots = [result.score_vector[1] for result in results]
+    student_overbookings = [result.score_vector[2] for result in results]
+    gaps = [result.score_vector[3] for result in results]
+    total_scores = [result.score for result in results]
+    fig, (ax1, ax2, ax3, ax4) = plt.subplots(1, 4, figsize=(9, 4.5), tight_layout=True)
+    ax1.hist(
+        total_scores,
+        100,
+    )
+    ax1.set_title("Total score")
+
+    ax2.hist(evening_timeslots, 100)
+    ax2.set_title("Evening timeslots")
+
+    ax3.hist(student_overbookings, 100)
+    ax3.set_title("Couse conflicts")
+
+    ax4.hist(gaps, 100)
+    ax4.set_title("Gaps")
+
     plt.show()
 
 

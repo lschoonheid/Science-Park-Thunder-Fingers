@@ -24,6 +24,9 @@ class Statistics:
      * students missing timeslots for activities
      * students with multiple timeslots for 1 activity
      * student should only follow each class once (eg: one wc1 and one wc2 in student schedule)
+     - Een tussenslot voor een student op een dag levert één maluspunt op.
+     - Twee tussensloten op één dag voor een student levert drie maluspunten op.
+     - Drie tussensloten op één dag is niet toegestaan. De kans op verzuim bij meerdere tussensloten is namelijk aanzienlijk groter dan bij één tussenslot.
 
      Check for soft constraints:
      * students with double booked hours
@@ -161,19 +164,24 @@ class Statistics:
         timeslots_daysorted: list[Timeslot] = self.sort_nodes(student.timeslots.values(), "moment")  # type: ignore
 
         day = -1
-        gap_periods = 0
+        gaps_today = 0
         previous_period = -1
         for timeslot in timeslots_daysorted:
+            # TODO: #38 differentiate between:
+            # 1 gap -> 1 malus point
+            # 2 gaps -> 3 malus points
+            # >2 gaps -> hard constraint
             if timeslot.day > day:
+                gaps_today = 0
                 # Next day in week, reset counter
                 day = timeslot.day
                 previous_period = timeslot.period - 1
             current_period = timeslot.period
             # Gap is difference between current and last period - 1, if the timeslots are simultaneous take gap = 0
-            gap_periods += max(current_period - previous_period - 1, 0)
+            gaps_today += max(current_period - previous_period - 1, 0)
             previous_period = timeslot.period
 
-        return gap_periods
+        return gaps_today
 
     def aggregate(self, count_function: Callable[[NodeSC], int], nodes_dict: dict[int, NodeSC]):
         """Return sum of `count_function` for all `Node` in `nodes_dict`."""
