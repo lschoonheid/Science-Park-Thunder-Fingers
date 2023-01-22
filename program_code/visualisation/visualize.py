@@ -1,8 +1,9 @@
 # TODO: #10 make bar charts of students per room (and its max capacity), courses per rooms, etc for quick error checking
 # TODO: #12 make representation of one student's schedule
 
-import networkx as nx
+import numpy as np
 import matplotlib.pyplot as plt
+import networkx as nx
 from pyvis.network import Network as PyvisNetwork
 from .fix_webpage import fix_webpage
 from ..classes.result import Result
@@ -13,21 +14,21 @@ def plot_statistics(results: list[Result]):
     student_overbookings = [result.score_vector[2] for result in results]
     gaps = [result.score_vector[3] for result in results]
     total_scores = [result.score for result in results]
+
     fig, (ax1, ax2, ax3, ax4) = plt.subplots(1, 4, figsize=(9, 4.5), tight_layout=True)
-    ax1.hist(
-        total_scores,
-        100,
-    )
-    ax1.set_title("Total score")
+    ax1.hist(total_scores, 100)
+    ax1.set_title(f"Total score \n mean: ${np.mean(total_scores):.2f} \pm {np.std(total_scores):.2f}$")
 
     ax2.hist(evening_timeslots, 100)
-    ax2.set_title("Evening timeslots")
+    ax2.set_title(f"Evening timeslots \n mean: ${np.mean(evening_timeslots):.2f} \pm {np.std(evening_timeslots):.2f}$")
 
     ax3.hist(student_overbookings, 100)
-    ax3.set_title("Couse conflicts")
+    ax3.set_title(
+        f"Course conflicts \n mean: ${np.mean(student_overbookings):.2f} \pm {np.std(student_overbookings):.2f}$"
+    )
 
     ax4.hist(gaps, 100)
-    ax4.set_title("Gaps")
+    ax4.set_title(f"Gaps \n mean: ${np.mean(gaps):.2f} \pm {np.std(gaps):.2f}$")
 
     plt.show()
 
