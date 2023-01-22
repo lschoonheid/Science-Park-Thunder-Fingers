@@ -86,12 +86,10 @@ class Randomize(Solver):
 
     def assign_activities_timeslots_once(self, schedule: Schedule):
         """Assign each activity the amount of timeslots it requires. Results in non-uniform distribution but ensures each enrolled student can book timeslot for activity."""
-        # Use greedy: sort both lists in order of capacity
 
         activities = list(schedule.activities.values())
         timeslots = list(schedule.timeslots.values())
 
-        # TODO check if this makes a difference
         random.shuffle(activities)
         random.shuffle(timeslots)
 
