@@ -19,7 +19,6 @@ class Randomize(Solver):
             schedule.connect_nodes(activity, timeslot)
 
     # TODO #34 make for loop for readability?
-    # TODO #35 Cache output?
     def draw_uniform_recursive(
         self,
         nodes1: list[NodeSC],
@@ -134,6 +133,10 @@ class Randomize(Solver):
     def assign_students_timeslots(self, schedule: Schedule, i_max=10000):
         available_activities = list(schedule.activities.values())
 
+        # Remember students that have already been assigned a timeslot for activities
+        # Uses tuples of (activity.id, student.id)
+        activity_students_assigned: set[tuple[int, int]] = set()
+
         # Try making connections for i_max iterations
         edges = set()
         for i in tqdm(range(i_max), disable=not self.verbose, desc="Trying connections:"):
@@ -147,22 +150,9 @@ class Randomize(Solver):
             students_linked = list(activity.students.values())
             timeslots_linked = list(activity.timeslots.values())
 
-            # Filter timeslots for available capacity
-            # timeslots_available: list[Timeslot] = []
-            # for timeslot in timeslots_linked:
-            #     # Skip if timeslot has reached capacity
-            #     enrolled = timeslot.enrolled_students()
-            #     if enrolled >= timeslot.capacity():
-            #         continue
-            #     timeslots_available.append(timeslot)
-            # if len(timeslots_available) == 0:
-            #     if self.verbose:
-            #         print(f"ERROR: Could no longer find available timeslots for {activity} after {i} iterations.")
-            #     break
-
             # Pick student that does not have a timeslot for this activity
             draw_student = self.draw_uniform_recursive(
-                students_linked, [activity], self.verifier.student_has_activity_assigned, negation=True  # type: ignore
+                [activity], students_linked, lambda s, a: (s.id, a.id) not in activity_students_assigned, negation=True  # type: ignore
             )
             if not draw_student:
                 # No available students means this activity has been assigned to all its students, it's finished.
@@ -170,7 +160,7 @@ class Randomize(Solver):
                     if activity == test_activity:
                         available_activities.pop(index)
                 continue
-            student: Student = draw_student[0]  # type: ignore
+            student: Student = draw_student[1]  # type: ignore
 
             draw_timeslot = self.draw_uniform_recursive([student], timeslots_linked, self.verifier.can_assign_student_timeslot)  # type: ignore
             if not draw_timeslot:
@@ -191,6 +181,7 @@ class Randomize(Solver):
             # Success: found a pair of student, timeslot that meet all requirements and can be booked
             schedule.connect_nodes(student, timeslot)
             edges.add(edge)
+            activity_students_assigned.add((activity.id, student.id))
         activities_finished = len(available_activities) == 0
 
         if not activities_finished:

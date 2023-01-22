@@ -9,7 +9,6 @@ class Solver:
         self.verifier = Statistics()
         self.verbose = verbose
 
-    # TODO @pickle
     def assign_activities_timeslots_greedy(
         self, schedule: Schedule, activities: list[Activity], timeslots: list[Timeslot], reverse=True
     ):
