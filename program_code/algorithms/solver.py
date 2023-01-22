@@ -13,6 +13,7 @@ class Solver:
         self.verifier = Statistics()
         self.verbose = verbose
 
+    # TODO @pickle
     def assign_activities_timeslots_greedy(
         self, schedule: Schedule, activities: list[Activity], timeslots: list[Timeslot], reverse=True
     ):
@@ -34,33 +35,6 @@ class Solver:
 
             if self.verbose and total_capacity < activity_enrolments:
                 warnings.warn(f"FAILED: {total_capacity, activity.enrolled_students}")
-
-    def assign_activities_timeslots_once(self, schedule: Schedule):
-        """Assign each activity the amount of timeslots it requires. Results in non-uniform distribution but ensures each enrolled student can book timeslot for activity."""
-        # Use greedy: sort both lists in order of capacity
-
-        activities = list(schedule.activities.values())
-        timeslots = list(schedule.timeslots.values())
-
-        # TODO check if this makes a difference
-        random.shuffle(activities)
-        random.shuffle(timeslots)
-
-        # Activities with max timeslots
-        activities_bound: list[Activity] = []
-        # Activitities with unbound number of timeslots
-        activities_free: list[Activity] = []
-
-        # Sort activities into bound and unbound max_timeslots
-        for activity in activities:
-            if activity.max_timeslots:
-                activities_bound.append(activity)
-            else:
-                activities_free.append(activity)
-
-        # first assign activities with max timeslots most efficiently
-        self.assign_activities_timeslots_greedy(schedule, activities_bound, timeslots, reverse=True)
-        self.assign_activities_timeslots_greedy(schedule, activities_free, timeslots, reverse=True)
 
     # Mockup function only for type hinting
     def solve(self, schedule: Schedule, i_max: int | None = None, method: str = "", strict=True):

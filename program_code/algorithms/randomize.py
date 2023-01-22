@@ -88,6 +88,33 @@ class Randomize(Solver):
 
         return node1, node2
 
+    def assign_activities_timeslots_once(self, schedule: Schedule):
+        """Assign each activity the amount of timeslots it requires. Results in non-uniform distribution but ensures each enrolled student can book timeslot for activity."""
+        # Use greedy: sort both lists in order of capacity
+
+        activities = list(schedule.activities.values())
+        timeslots = list(schedule.timeslots.values())
+
+        # TODO check if this makes a difference
+        random.shuffle(activities)
+        random.shuffle(timeslots)
+
+        # Activities with max timeslots
+        activities_bound: list[Activity] = []
+        # Activitities with unbound number of timeslots
+        activities_free: list[Activity] = []
+
+        # Sort activities into bound and unbound max_timeslots
+        for activity in activities:
+            if activity.max_timeslots:
+                activities_bound.append(activity)
+            else:
+                activities_free.append(activity)
+
+        # first assign activities with max timeslots most efficiently
+        self.assign_activities_timeslots_greedy(schedule, activities_bound, timeslots, reverse=True)
+        self.assign_activities_timeslots_greedy(schedule, activities_free, timeslots, reverse=True)
+
     def assign_activities_timeslots_uniform(self, schedule: Schedule):
         # Make shuffled list of timeslots so they will be picked randomly
         timeslots_shuffled = list(schedule.timeslots.values())
