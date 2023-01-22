@@ -152,7 +152,7 @@ class Randomize(Solver):
 
             # Pick student that does not have a timeslot for this activity
             draw_student = self.draw_uniform_recursive(
-                [activity], students_linked, lambda s, a: (s.id, a.id) not in activity_students_assigned, negation=True  # type: ignore
+                [activity], students_linked, lambda s, a: (s.id, a.id) not in activity_students_assigned  # type: ignore
             )
             if not draw_student:
                 # No available students means this activity has been assigned to all its students, it's finished.
