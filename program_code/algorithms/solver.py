@@ -1,5 +1,4 @@
 import warnings
-import random
 from .statistics import Statistics
 from ..classes.node import NodeSC
 from ..classes.schedule import Schedule

@@ -1,6 +1,5 @@
 from functools import cached_property
 import numpy as np
-import copy
 from ..algorithms.statistics import Statistics
 from .schedule import Schedule
 

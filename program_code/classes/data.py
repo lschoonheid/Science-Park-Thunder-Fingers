@@ -26,12 +26,12 @@ def hashargs(*args, **kwds):
 
 
 def pickle_cache(func: Callable, verbose: bool = False):
-    """Decorator function for caching function output to PKL files."""
+    """Decorator function for caching function output to PYC files."""
 
     @wraps(func)
     def wrapper(*args, **kwds):
         args_identifier = hashargs(*args, **kwds)
-        output = ".cache/" + args_identifier + ".pkl"
+        output = ".cache/" + args_identifier + ".pyc"
 
         try:
             data = load_pickle(output)

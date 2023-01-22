@@ -12,16 +12,10 @@ import argparse
 import random
 import warnings
 from tqdm import tqdm
+from program_code import Data, pickle_cache, Solver, Randomize, Schedule, GraphVisualization, plot_statistics, Result
+from sched_csv_output import schedule_to_csv
 
 # import multiprocessing
-from program_code.classes.data import Data, pickle_cache
-from program_code.classes.schedule import Schedule
-from program_code.algorithms.solver import Solver
-from program_code.algorithms.randomize import Randomize
-from program_code.algorithms.statistics import Statistics
-from program_code.classes.result import Result
-from program_code.visualisation.visualize import GraphVisualization, plot_statistics
-from sched_csv_output import schedule_to_csv
 
 
 # # Necessary to work around
