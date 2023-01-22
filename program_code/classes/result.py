@@ -131,17 +131,3 @@ class Result:
 
     def __str__(self):
         return str(self.__dict__)
-
-
-# class CompressedResult(Result):
-#     """Similar to `Result` class, but removes pointers to original schedule to save memory."""
-
-#     def __init__(self, result: Result):
-#         """Does not use reference to original schedule object so it is a candidate for garbage collection."""
-#         self.schedule: Schedule = Schedule([], [], [])
-#         self.schedule.edges = copy.copy(result.schedule.edges)
-
-#         self.score_matrix = result.score_matrix
-#         self.score_vector_input = result.score_vector
-
-#         # self.verifier = Statistics()

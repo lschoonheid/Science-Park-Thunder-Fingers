@@ -2,6 +2,7 @@ import random
 from tqdm import tqdm
 from typing import Callable
 from warnings import warn
+import copy
 from .solver import Solver
 from ..classes import *
 from ..classes.result import Result
@@ -147,18 +148,26 @@ class Randomize(Solver):
             # Take random unfinished activity
             activity = random.choice(available_activities)
 
-            students_linked = list(activity.students.values())
+            # Build index on students that don't yet have a timeslot assigned for this activity
+            if not hasattr(activity, "_unassigned_students"):
+                setattr(activity, "_unassigned_students", set(activity.students.values()))
+
+            available_students_linked = list(getattr(activity, "_unassigned_students"))
             timeslots_linked = list(activity.timeslots.values())
 
             # Pick student that does not have a timeslot for this activity
             draw_student = self.draw_uniform_recursive(
-                [activity], students_linked, lambda s, a: (s.id, a.id) not in activity_students_assigned  # type: ignore
+                [activity], available_students_linked, lambda a, s: s in getattr(a, "_unassigned_students")  # type: ignore
             )
+
+            # No available students means this activity has been assigned to all its students, it's finished.
             if not draw_student:
-                # No available students means this activity has been assigned to all its students, it's finished.
+                # Remove activity from available activities
                 for index, test_activity in enumerate(available_activities):
                     if activity == test_activity:
                         available_activities.pop(index)
+                # Remove index
+                delattr(activity, "_unassigned_students")
                 continue
             student: Student = draw_student[1]  # type: ignore
 
@@ -181,6 +190,8 @@ class Randomize(Solver):
             # Success: found a pair of student, timeslot that meet all requirements and can be booked
             schedule.connect_nodes(student, timeslot)
             edges.add(edge)
+            # Remove student from index of unassigned students for this activity
+            getattr(activity, "_unassigned_students").remove(student)
             activity_students_assigned.add((activity.id, student.id))
         activities_finished = len(available_activities) == 0
 

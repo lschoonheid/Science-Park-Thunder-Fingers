@@ -13,7 +13,6 @@ class Schedule:
         rooms_input: list[dict],
         edges_input: set[tuple[int, int]] | None = None,
     ) -> None:
-        # TODO: check if deepcopying schedule results in actually different pointers to children('s children)
         self._id_count = 0
 
         # keeps track of uids assigned to named nodes
