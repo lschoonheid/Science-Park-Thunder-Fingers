@@ -12,6 +12,7 @@ class Solver:
     def assign_activities_timeslots_greedy(
         self, schedule: Schedule, activities: list[Activity], timeslots: list[Timeslot], reverse=True
     ):
+        # Use greedy: sort both lists in order of capacity
         activities_sorted = self.verifier.sort_nodes(activities, "enrolled_students", reverse=reverse)
         timeslots_sorted = self.verifier.sort_nodes(timeslots, "capacity", reverse=reverse)
         for activity in activities_sorted:
