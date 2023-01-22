@@ -31,27 +31,20 @@ from sched_csv_output import schedule_to_csv
 #     return solver.solve(schedule, **kwargs)
 
 
-# @pickle_cache
+@pickle_cache
 def make_prototype(students_input, courses_input, rooms_input):
     return Schedule(students_input, courses_input, rooms_input)
 
 
-def generate(solver: Solver, students_input, courses_input, rooms_input, n: int = 1000, compress=False, **kwargs):
+def generate(solver: Solver, students_input, courses_input, rooms_input, n: int = 1000, compress=True, **kwargs):
     """Generate `n` schedules"""
-    statistics = Statistics()
-
     results: list[Result] = []
-    # if 300 < n < 1000:
-    # for schedule in tqdm(schedules, "Solving schedules"):
-    # TODO: #37 compress data: save only edges and scorevector
-
     for n in tqdm(range(n)):
         schedule = make_prototype(students_input, courses_input, rooms_input)
         result = solver.solve(schedule)
         if compress:
             result.compress()
         results.append(result)
-    # TODO pickle dump data?
     return results
 
     # num_workers = multiprocessing.cpu_count()
@@ -86,36 +79,39 @@ def main(
     **kwargs,
 ):
     """Interface for executing scheduling program."""
-
+    # Load dataset
     input_data = Data(stud_prefs_path, courses_path, rooms_path)
     students_input = input_data.students
     courses_input = input_data.courses
     rooms_input = input_data.rooms
 
+    # Optionally take subset of data
     if n_subset:
         if n_subset > len(students_input):
             warnings.warn("WARNING: Chosen subset size is larger than set size, continuing anyway.")
         else:
             students_input = random.sample(students_input, n_subset)
 
+    # Generate (compressed) results: only return scorevector and edges
     results_compressed = generate(Randomize(verbose=verbose), students_input, courses_input, rooms_input, **kwargs)
-    sampled_result = random.choice(results_compressed)
 
+    # Take random sample and rebuild schedule from edges
+    sampled_result = random.choice(results_compressed)
     sampled_result.decompress(
         students_input,
         courses_input,
         rooms_input,
     )
+
+    # Visualize graph
     if verbose:
         sampled_result.score_vector
         print(sampled_result)
-
-    prototype = Schedule(students_input, courses_input, rooms_input)
-
     G = GraphVisualization(sampled_result.schedule)
     G.visualize()
     schedule_to_csv(sampled_result.schedule)
 
+    # Visualize score dimensions
     if do_plot:
         plot_statistics(results_compressed)
 
