@@ -1,11 +1,6 @@
 from typing import Callable
 import operator
-from ..classes.schedule import Schedule
-from ..classes.node import NodeSC
-from ..classes.student import Student
-from ..classes.timeslot import Timeslot
-from ..classes.activity import Activity
-from ..classes.room import Room
+from ..classes.nodes import *
 
 # from ..classes.result import Result
 
@@ -45,7 +40,7 @@ class Statistics:
     def sort_nodes(self, nodes: list[NodeSC], attr: str, reverse=False):
         return sorted(nodes, key=operator.attrgetter(attr), reverse=reverse)
 
-    def node_has_activity(self, node: NodeSC):
+    def node_has_activity(self, node):
         if len(node.activities) > 0:
             return True
         return False

@@ -1,9 +1,6 @@
 import warnings
 from .statistics import Statistics
-from ..classes.node import NodeSC
-from ..classes.schedule import Schedule
-from ..classes.activity import Activity
-from ..classes.timeslot import Timeslot
+from ..classes import Schedule, Activity, Timeslot
 from ..classes.result import Result
 
 

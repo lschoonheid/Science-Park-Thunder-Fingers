@@ -63,7 +63,7 @@ class Data:
         for course in courses:
             if replace_blank:
                 for tag in list(course.keys())[1:]:
-                    if course[tag] is "":
+                    if course[tag] == "":
                         course[tag] = None
                     else:
                         course[tag] = int(course[tag])

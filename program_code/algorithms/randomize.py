@@ -3,11 +3,7 @@ from tqdm import tqdm
 from typing import Callable
 from warnings import warn
 from .solver import Solver
-from ..classes.schedule import Schedule
-from ..classes.node import NodeSC
-from ..classes.student import Student
-from ..classes.activity import Activity
-from ..classes.timeslot import Timeslot
+from ..classes import *
 from ..classes.result import Result
 
 

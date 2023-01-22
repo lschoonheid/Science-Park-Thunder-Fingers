@@ -17,18 +17,18 @@ def plot_statistics(results: list[Result]):
 
     fig, (ax1, ax2, ax3, ax4) = plt.subplots(1, 4, figsize=(9, 4.5), tight_layout=True)
     ax1.hist(total_scores, 100)
-    ax1.set_title(f"Total score \n mean: ${np.mean(total_scores):.2f} \pm {np.std(total_scores):.2f}$")
+    ax1.set_title(f"Total score \n mean: ${np.mean(total_scores):.2f} ± {np.std(total_scores):.2f}$")
 
     ax2.hist(evening_timeslots, 100)
-    ax2.set_title(f"Evening timeslots \n mean: ${np.mean(evening_timeslots):.2f} \pm {np.std(evening_timeslots):.2f}$")
+    ax2.set_title(f"Evening timeslots \n mean: ${np.mean(evening_timeslots):.2f} ± {np.std(evening_timeslots):.2f}$")
 
     ax3.hist(student_overbookings, 100)
     ax3.set_title(
-        f"Course conflicts \n mean: ${np.mean(student_overbookings):.2f} \pm {np.std(student_overbookings):.2f}$"
+        f"Course conflicts \n mean: ${np.mean(student_overbookings):.2f} ± {np.std(student_overbookings):.2f}$"
     )
 
     ax4.hist(gaps, 100)
-    ax4.set_title(f"Gaps \n mean: ${np.mean(gaps):.2f} \pm {np.std(gaps):.2f}$")
+    ax4.set_title(f"Gaps \n mean: ${np.mean(gaps):.2f} ± {np.std(gaps):.2f}$")
 
     plt.show()
 
