@@ -12,7 +12,6 @@ class Statistics:
     # TODO: #26 complete list below
     """
     Check for hard constraints:
-     - lectures only happen once
      * overbooked timeslots (more than one activity linked)
      * overbooked timeslots (over room capacity)
      * overbooked timeslots (over tutorial/practical capacity)
@@ -20,15 +19,14 @@ class Statistics:
      * students missing timeslots for activities
      * students with multiple timeslots for 1 activity
      * student should only follow each class once (eg: one wc1 and one wc2 in student schedule)
-     - Een tussenslot voor een student op een dag levert één maluspunt op.
-     - Twee tussensloten op één dag voor een student levert drie maluspunten op.
-     - Drie tussensloten op één dag is niet toegestaan. De kans op verzuim bij meerdere tussensloten is namelijk aanzienlijk groter dan bij één tussenslot.
 
      Check for soft constraints:
+     * One gap period on a day
+     * Two gap periods on a day
+     * Three gap periods on a day (not allowed)
      * students with double booked hours
      - timeslots without assigned students
-     - free periods for student (max three is hard constraint)
-     - using evening timeslot
+     * using evening timeslot
 
      Optional:
      - least amount of unique classes (wc1 only given once etc.)

@@ -17,7 +17,7 @@ class Result:
                 -1,
                 -1,
                 -2,
-                -0,  # TODO
+                -10,  # TODO
             ]
         ),
         score_vector=None,
@@ -50,8 +50,27 @@ class Result:
         return self.verifier.aggregate(self.verifier.timeslot_student_overbooked, self.schedule.timeslots)
 
     def check_solved(self):
+        assert self._compressed == False, "Can only verify schedule uncompressed."
         # TODO check if it is solved (meets all hard constraints). Use the above hard constraint checkers.
-        return False
+        # Check lectures have one timeslot
+        # Check students have exactly 1 timeslot for all their activities
+        for activity in self.schedule.activities.values():
+            if self.verifier.activity_overbooked(activity):
+                return False
+            for student in activity.students.values():
+                if self.verifier.student_timeslots_for_activity(student, activity) != 1:
+                    return False
+
+        # Check timeslots have one activity
+        # Check timeslots are not over capacity (room capacity)
+        # Check timeslots are not over capacity (activity capacity)
+        for timeslot in self.schedule.timeslots.values():
+            if self.verifier.timeslot_activity_overbooked(timeslot) or self.verifier.timeslot_student_overbooked(
+                timeslot
+            ):
+                return False
+
+        return True
 
     @cached_property
     def is_solved(self):
@@ -88,7 +107,6 @@ class Result:
         """Count free periods in between the first and last active period of students."""
         gaps = sum([self.verifier.gap_periods(student) for student in self.schedule.students.values()])
 
-        #  self.verifier.aggregate(self.verifier.gap_periods, self.schedule.students)
         return gaps  # type: ignore
 
     @cached_property
