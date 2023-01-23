@@ -12,11 +12,11 @@ class Result:
         iterations: int | None = None,
         score_matrix=np.array(
             [
-                -5,
-                -1,
-                -1,
-                -2,
-                -10,  # TODO
+                5,
+                1,
+                1,
+                2,
+                10,  # TODO
             ]
         ),
         score_vector=None,
@@ -85,8 +85,7 @@ class Result:
 
         return gaps  # type: ignore
 
-    # @cached_property
-    def score_vector(self):
+    def get_score_vector(self):
         """Return soft constraint scores."""
         if self.score_vector_input is None:
             gap_periods = self.gap_periods()
@@ -102,12 +101,20 @@ class Result:
         return self.score_vector_input
 
     @cached_property
-    def score(self) -> float:
-        return self.score_matrix.dot(self.score_vector())
+    def cached_score_vector(self):
+        return self.get_score_vector()
+
+    def get_score(self) -> float:
+        return self.score_matrix.dot(self.get_score_vector())
+
+    @cached_property
+    def cached_score(self) -> float:
+        return self.score_matrix.dot(self.cached_score_vector)
 
     def compress(self):
         # Initialize scorevector
-        self.score_vector
+        self.cached_score_vector
+        self.cached_score
 
         # Delete all protype data except genereted edges, since entire graph can be rebuild from prototype and edges
         del self.schedule.nodes

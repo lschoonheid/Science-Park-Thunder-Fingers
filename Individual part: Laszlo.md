@@ -15,6 +15,8 @@
 - Breadth first/depth first iteration
 - sudoku algorithm for coloring graph
 - Hillclimber algorithm
+- Structure in code
+- Visualisation, graph & histogram
 
 ### Questions
 

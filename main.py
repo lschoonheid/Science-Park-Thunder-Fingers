@@ -101,7 +101,9 @@ if __name__ == "__main__":
         default="data/studenten_en_vakken.csv",
         help="Path to student enrolments csv.",
     )
-    parser.add_argument("-m", choices=["baseline", "genetic", "greedy"], default="baseline", help="Choose method.")
+    parser.add_argument(
+        "-m", dest="method", choices=["baseline", "genetic", "greedy"], default="baseline", help="Choose method."
+    )
     parser.add_argument("-i", type=int, dest="i_max", help="max iterations per solve cycle.")
     parser.add_argument("-n", type=int, dest="n", default=1, help="amount of results to generate.")
     parser.add_argument(

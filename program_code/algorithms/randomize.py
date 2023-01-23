@@ -11,10 +11,9 @@ from ..classes.result import Result
 
 class Randomize(Solver):
     def connect_random(self, schedule: Schedule, i_max: int = 5):
-        """Make a completely random schedule"""
+        """Make a completely random schedule."""
         for _ in range(i_max):
             student: Student = random.choice(list(schedule.students.values()))
-
             activity: Activity = random.choice(list(student.activities.values()))
             timeslot: Timeslot = random.choice(list(schedule.timeslots.values()))
             schedule.connect_nodes(student, timeslot)

@@ -29,6 +29,9 @@ class GeneticSolve(Solver):
 
         self.population_size = numberOfChromosomes
 
+    def get_fitness(self, result: Result):
+        return 1 / (1 + result.get_score())
+
     def solve(
         self,
         schedule: Schedule | None = None,
@@ -42,6 +45,10 @@ class GeneticSolve(Solver):
                 compress=False,
             )
         else:
-            self.population = [copy.deepcopy(schedule) for i in range(self.population_size)]
+            self.population = [Result(copy.deepcopy(schedule)) for i in range(self.population_size)]
+
+        # TODO: define crossover
+        # TODO: define mutations
+        # TODO: in a loop: crossover, mutate, select best fit and repeat
 
         return Result(Schedule([], [], []))
