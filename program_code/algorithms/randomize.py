@@ -149,34 +149,30 @@ class Randomize(Solver):
             # Build index on students that don't yet have a timeslot assigned for this activity
             if not hasattr(activity, "_unassigned_students"):
                 setattr(activity, "_unassigned_students", set(activity.students.values()))
-
             available_students_linked = list(getattr(activity, "_unassigned_students"))
-            timeslots_linked = list(activity.timeslots.values())
-
-            # Pick student that does not have a timeslot for this activity
-            draw_student = self.draw_uniform_recursive(
-                [activity], available_students_linked, lambda a, s: s in getattr(a, "_unassigned_students")  # type: ignore
-            )
 
             # No available students means this activity has been assigned to all its students, it's finished.
-            if not draw_student:
+            if len(available_students_linked) == 0:
                 # Remove activity from available activities
                 for index, test_activity in enumerate(available_activities):
                     if activity == test_activity:
                         available_activities.pop(index)
-                # Remove index
+                # Remove local index
                 delattr(activity, "_unassigned_students")
                 continue
-            student: Student = draw_student[1]  # type: ignore
 
+            # Pick student that does not have a timeslot for this activity
+            student = random.choice(available_students_linked)
+
+            timeslots_linked = list(activity.timeslots.values())
+
+            # TODO: #30 improvement would be to first see if there is an available timeslot for student, but it wouldn't necessarily be uniform (see commented code)
             draw_timeslot = self.draw_uniform_recursive([student], timeslots_linked, self.verifier.can_assign_student_timeslot)  # type: ignore
             if not draw_timeslot:
                 if self.verbose:
                     warn(f"ERROR: Could no longer find available timeslots for {activity} after {i} iterations.")
                 continue
             timeslot = draw_timeslot[1]
-
-            # TODO: #30 improvement would be to first see if there is an available one, but it wouldn't necessarily be uniform (see commented code)
 
             # Skip if timeslot is already linked to student
             edge = (student.id, timeslot.id)
