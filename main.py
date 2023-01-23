@@ -12,7 +12,13 @@ import argparse
 import random
 import warnings
 from tqdm import tqdm
-from program_code import Data, pickle_cache, Solver, Randomize, Schedule, GraphVisualization, plot_statistics, Result
+from program_code import (
+    Data,
+    generate_solutions,
+    Randomize,
+    GraphVisualization,
+    plot_statistics,
+)
 from sched_csv_output import schedule_to_csv
 
 # import multiprocessing
@@ -25,41 +31,25 @@ from sched_csv_output import schedule_to_csv
 #     return solver.solve(schedule, **kwargs)
 
 
-@pickle_cache
-def make_prototype(students_input, courses_input, rooms_input):
-    return Schedule(students_input, courses_input, rooms_input)
+# num_workers = multiprocessing.cpu_count()
+# pool = multiprocessing.Pool(num_workers)
+# with pool as p:
+#     solver_arguments = [(solver, schedule, kwargs) for schedule in schedules]
 
+#     chunksize, extra = divmod(n, num_workers * 4)
+#     if extra:
+#         chunksize += 1
 
-def generate(solver: Solver, students_input, courses_input, rooms_input, n: int = 1000, compress=True, **kwargs):
-    """Generate `n` schedules"""
-    results: list[Result] = []
-    for n in tqdm(range(n)):
-        schedule = make_prototype(students_input, courses_input, rooms_input)
-        result = solver.solve(schedule)
-        if compress:
-            result.compress()
-        results.append(result)
-    return results
-
-    # num_workers = multiprocessing.cpu_count()
-    # pool = multiprocessing.Pool(num_workers)
-    # with pool as p:
-    #     solver_arguments = [(solver, schedule, kwargs) for schedule in schedules]
-
-    #     chunksize, extra = divmod(n, num_workers * 4)
-    #     if extra:
-    #         chunksize += 1
-
-    #     results = list(
-    #         tqdm(
-    #             p.imap(solver_wrapper, solver_arguments, chunksize),
-    #             total=n,
-    #             desc="Solving schedules",
-    #             position=0,
-    #             leave=" ",
-    #         )
-    #     )
-    # results = list(tqdm(p.starmap(solver_swrapper, solver_arguments), total=n, desc="Instances", position=0, leave=" "))
+#     results = list(
+#         tqdm(
+#             p.imap(solver_wrapper, solver_arguments, chunksize),
+#             total=n,
+#             desc="Solving schedules",
+#             position=0,
+#             leave=" ",
+#         )
+#     )
+# results = list(tqdm(p.starmap(solver_swrapper, solver_arguments), total=n, desc="Instances", position=0, leave=" "))
 
 
 # TODO: write interface code to execute complete program from command line
@@ -88,7 +78,9 @@ def main(
             students_input = random.sample(students_input, n_subset)
 
     # Generate (compressed) results: only return scorevector and edges
-    results_compressed = generate(Randomize(verbose=verbose), students_input, courses_input, rooms_input, **kwargs)
+    results_compressed = generate_solutions(
+        Randomize(verbose=verbose), students_input, courses_input, rooms_input, **kwargs
+    )
 
     # Take random sample and rebuild schedule from edges
     sampled_result = random.choice(results_compressed)
