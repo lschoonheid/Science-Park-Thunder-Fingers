@@ -36,7 +36,7 @@ class Schedule:
         # Contains all nodes
         self.nodes = self.students | self.courses | self.activities | self.rooms | self.timeslots
         # Add new edges
-        self.edges.union(self.get_edges(edges_input, students_input))
+        self.edges = self.edges.union(self.get_edges(edges_input, students_input))
 
     # def track_self._id_count(self):
     #     """Keeps track of node id's ensuring each node is assigned a unique id."""
