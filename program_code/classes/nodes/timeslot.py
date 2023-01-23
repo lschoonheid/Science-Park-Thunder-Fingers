@@ -23,6 +23,7 @@ class Timeslot(Node):
         self.room: Room
         self.students = {}
         self.activities = {}
+        self.courses = {}
 
         self.period_names = [i for i in range(9, 19, 2)]
         self.day_names = ["ma", "di", "wo", "do", "vr"]
