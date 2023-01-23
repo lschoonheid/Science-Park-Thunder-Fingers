@@ -1,6 +1,5 @@
 from .node import Node
 
-
 class Course(Node):
     """Node that represents a course.
 
@@ -34,6 +33,11 @@ class Course(Node):
         # Neighbors
         self.activities = {}
         self.students = {}
+        self.timeslots = {}
+
+    def __repr__(self) -> str:
+        """Output name to string"""
+        return self.name
 
     def __str__(self) -> str:
         """Output name to string"""
