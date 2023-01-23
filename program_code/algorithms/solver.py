@@ -1,12 +1,18 @@
 import warnings
+from typing import TypeVar
+from .generate import make_prototype
 from .statistics import Statistics
 from ..classes import Schedule, Activity, Timeslot
 from ..classes.result import Result
 
 
 class Solver:
-    def __init__(self, verbose=False):
-        self.verifier = Statistics()
+    def __init__(self, students_input, courses_input, rooms_input, verifier=Statistics(), verbose=False):
+        self.students_input = students_input
+        self.courses_input = courses_input
+        self.rooms_input = rooms_input
+
+        self.verifier = verifier
         self.verbose = verbose
 
     def assign_activities_timeslots_greedy(
@@ -33,5 +39,17 @@ class Solver:
                 warnings.warn(f"FAILED: {total_capacity, activity.enrolled_students}")
 
     # Mockup function only for type hinting
-    def solve(self, schedule: Schedule, i_max: int | None = None, method: str = "", strict=True):
+    def solve(
+        self,
+        schedule: Schedule | None = None,
+        i_max: int | None = None,
+        method: str = "",
+        strict=True,
+    ):
+        if schedule is None:
+            schedule = make_prototype(self.students_input, self.courses_input, self.rooms_input)
         return Result(schedule)
+
+
+# class Node or subclass of Node
+SolverSC = TypeVar("SolverSC", bound=Solver)

@@ -4,6 +4,7 @@ from typing import Callable
 from warnings import warn
 import copy
 from .solver import Solver
+from .generate import make_prototype
 from ..classes import *
 from ..classes.result import Result
 
@@ -209,7 +210,10 @@ class Randomize(Solver):
 
         return self.assign_students_timeslots(schedule, i_max)
 
-    def solve(self, schedule: Schedule, i_max: int | None = None, method="uniform", strict=True):
+    def solve(self, schedule: Schedule | None = None, i_max: int | None = None, method="uniform", strict=True):
+        if schedule is None:
+            schedule = make_prototype(self.students_input, self.courses_input, self.rooms_input)
+
         if i_max is None:
             # Program on average has to iterate over each activity once, which with a random distribution it takes more iterations
             i_min = 100 * len(schedule.activities)
