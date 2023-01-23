@@ -15,6 +15,7 @@ from program_code import (
     Data,
     generate_solutions,
     Randomize,
+    GeneticSolve,
     GraphVisualization,
     plot_statistics,
 )
@@ -45,30 +46,33 @@ def main(
         else:
             students_input = random.sample(students_input, n_subset)
 
-    # Generate (compressed) results: only return scorevector and edges
-    results_compressed = generate_solutions(
-        Randomize(verbose=verbose), students_input, courses_input, rooms_input, **kwargs
-    )
+    # # Generate (compressed) results: only return scorevector and edges
+    # results_compressed = generate_solutions(
+    #     Randomize(verbose=verbose), students_input, courses_input, rooms_input, **kwargs
+    # )
 
-    # Take random sample and rebuild schedule from edges
-    sampled_result = random.choice(results_compressed)
-    sampled_result.decompress(
-        students_input,
-        courses_input,
-        rooms_input,
-    )
+    # # Take random sample and rebuild schedule from edges
+    # sampled_result = random.choice(results_compressed)
+    # sampled_result.decompress(
+    #     students_input,
+    #     courses_input,
+    #     rooms_input,
+    # )
 
-    # Visualize graph
-    if verbose:
-        sampled_result.score_vector
-        print(sampled_result)
-    G = GraphVisualization(sampled_result.schedule)
-    G.visualize()
-    schedule_to_csv(sampled_result.schedule)
+    # # Visualize graph
+    # if verbose:
+    #     sampled_result.score_vector
+    #     print(sampled_result)
+    # G = GraphVisualization(sampled_result.schedule)
+    # G.visualize()
+    # schedule_to_csv(sampled_result.schedule)
 
-    # Visualize score dimensions
-    if do_plot:
-        plot_statistics(results_compressed)
+    # # Visualize score dimensions
+    # if do_plot:
+    #     plot_statistics(results_compressed)
+
+    # Run Genetic Algorithm
+    genome = GeneticSolve(students_input, courses_input, rooms_input)
 
 
 if __name__ == "__main__":

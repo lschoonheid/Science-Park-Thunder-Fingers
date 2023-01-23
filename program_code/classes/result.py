@@ -12,7 +12,6 @@ class Result:
         iterations: int | None = None,
         score_matrix=np.array(
             [
-                100,
                 -5,
                 -1,
                 -1,
@@ -86,14 +85,13 @@ class Result:
 
         return gaps  # type: ignore
 
-    @cached_property
+    # @cached_property
     def score_vector(self):
         """Return soft constraint scores."""
         if self.score_vector_input is None:
             gap_periods = self.gap_periods()
             return np.array(
                 [
-                    int(self.is_solved),
                     self.evening_timeslots(),
                     self.student_overbookings(),
                     gap_periods[1],
@@ -105,7 +103,7 @@ class Result:
 
     @cached_property
     def score(self) -> float:
-        return self.score_matrix.dot(self.score_vector)
+        return self.score_matrix.dot(self.score_vector())
 
     def compress(self):
         # Initialize scorevector
