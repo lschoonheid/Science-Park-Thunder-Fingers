@@ -14,7 +14,10 @@
 - Genetic algorithm?
 - Breadth first/depth first iteration
 - sudoku algorithm for coloring graph
+- Hillclimber algorithm
 
 ### Questions
 
 - Allowed to mention commits that happened before submission of individual part plan?
+- How to prevent overfitting
+-

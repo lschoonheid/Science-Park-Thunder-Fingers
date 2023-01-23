@@ -35,20 +35,6 @@ class Result:
 
     # Hard constraints
 
-    @cached_property
-    def timeslot_activity_overbookings(self):
-        """Hard constraint"""
-        if self.is_solved:
-            return 0
-        return self.verifier.aggregate(self.verifier.timeslot_activity_overbooked, self.schedule.timeslots)
-
-    @cached_property
-    def timeslot_student_overbookings(self):
-        if self.is_solved:
-            return 0
-        """Hard constraint"""
-        return self.verifier.aggregate(self.verifier.timeslot_student_overbooked, self.schedule.timeslots)
-
     def check_solved(self):
         assert self._compressed == False, "Can only verify schedule uncompressed."
         # TODO check if it is solved (meets all hard constraints). Use the above hard constraint checkers.
@@ -81,28 +67,19 @@ class Result:
 
     # Soft constraints
 
-    @cached_property
-    def students_unbooked(self):
-        """Hard constraint(?)
-        Amount of students missing timeslots for activities."""
-        if self.is_solved:
-            return 0
-        return self.verifier.aggregate(self.verifier.students_unbooked, self.schedule.activities)
-
-    @cached_property
+    # @cached_property
     def evening_timeslots(self):
         return self.verifier.aggregate(self.verifier.evening_bookings, self.schedule.rooms)
 
-    @cached_property
+    # @cached_property
     def student_overbookings(self):
         """Instances of students with two timeslots at the same time."""
         # if self.student_overbookings_input is None:
         return self.verifier.aggregate(self.verifier.student_overbooked, self.schedule.students)
         # return self.student_overbookings_input
 
-    # TODO: make this function cleaner/efficient
     # TODO: #39 don't allow 3 gaps
-    @cached_property
+    # @cached_property
     def gap_periods(self) -> tuple[int, int, int, int]:
         """Count free periods in between the first and last active period of students."""
         gaps = sum([self.verifier.gap_periods(student) for student in self.schedule.students.values()])
@@ -113,14 +90,15 @@ class Result:
     def score_vector(self):
         """Return soft constraint scores."""
         if self.score_vector_input is None:
+            gap_periods = self.gap_periods()
             return np.array(
                 [
                     int(self.is_solved),
-                    self.evening_timeslots,
-                    self.student_overbookings,
-                    self.gap_periods[1],
-                    self.gap_periods[2],
-                    self.gap_periods[3],
+                    self.evening_timeslots(),
+                    self.student_overbookings(),
+                    gap_periods[1],
+                    gap_periods[2],
+                    gap_periods[3],
                 ]
             )
         return self.score_vector_input
