@@ -11,7 +11,6 @@ Course: Algoritmen en Heuristieken 2023
 import argparse
 import random
 import warnings
-from tqdm import tqdm
 from program_code import (
     Data,
     generate_solutions,
@@ -20,37 +19,6 @@ from program_code import (
     plot_statistics,
 )
 from sched_csv_output import schedule_to_csv
-
-# import multiprocessing
-
-
-# # Necessary to work around
-# def solver_wrapper(arguments):
-#     solver, schedule, kwargs = arguments
-#     """Execute `solver.solve(schedule, **kwargs)` with `kwargs`."""
-#     return solver.solve(schedule, **kwargs)
-
-
-# num_workers = multiprocessing.cpu_count()
-# pool = multiprocessing.Pool(num_workers)
-# with pool as p:
-#     solver_arguments = [(solver, schedule, kwargs) for schedule in schedules]
-
-#     chunksize, extra = divmod(n, num_workers * 4)
-#     if extra:
-#         chunksize += 1
-
-#     results = list(
-#         tqdm(
-#             p.imap(solver_wrapper, solver_arguments, chunksize),
-#             total=n,
-#             desc="Solving schedules",
-#             position=0,
-#             leave=" ",
-#         )
-#     )
-# results = list(tqdm(p.starmap(solver_swrapper, solver_arguments), total=n, desc="Instances", position=0, leave=" "))
-
 
 # TODO: write interface code to execute complete program from command line
 def main(
