@@ -16,6 +16,8 @@ class Result:
                 -5,
                 -1,
                 -1,
+                -2,
+                -0,  # TODO
             ]
         ),
         score_vector=None,
@@ -79,10 +81,15 @@ class Result:
         return self.verifier.aggregate(self.verifier.student_overbooked, self.schedule.students)
         # return self.student_overbookings_input
 
+    # TODO: make this function cleaner/efficient
+    # TODO: #39 don't allow 3 gaps
     @cached_property
-    def gap_periods(self):
+    def gap_periods(self) -> tuple[int, int, int, int]:
         """Count free periods in between the first and last active period of students."""
-        return self.verifier.aggregate(self.verifier.gap_periods, self.schedule.students)
+        gaps = sum([self.verifier.gap_periods(student) for student in self.schedule.students.values()])
+
+        #  self.verifier.aggregate(self.verifier.gap_periods, self.schedule.students)
+        return gaps  # type: ignore
 
     @cached_property
     def score_vector(self):
@@ -93,7 +100,9 @@ class Result:
                     int(self.is_solved),
                     self.evening_timeslots,
                     self.student_overbookings,
-                    self.gap_periods,
+                    self.gap_periods[1],
+                    self.gap_periods[2],
+                    self.gap_periods[3],
                 ]
             )
         return self.score_vector_input
@@ -126,6 +135,8 @@ class Result:
         edges_input: set[tuple[int, int]] | None = None,
     ):
         """Decompress data onto `target`. Binds target to self.schedule"""
+        if edges_input is None:
+            edges_input = self.schedule.edges
         self.schedule.__init__(students_input, courses_input, rooms_input, edges_input)
         self._compressed = False
 

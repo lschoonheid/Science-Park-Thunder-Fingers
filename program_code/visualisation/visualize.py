@@ -30,6 +30,7 @@ def plot_statistics(results: list[Result]):
     ax4.hist(gaps, 100)
     ax4.set_title(f"Gaps \n mean: ${np.mean(gaps):.2f} ± {np.std(gaps):.2f}$")
 
+    plt.savefig("output/image.png")
     plt.show()
 
 

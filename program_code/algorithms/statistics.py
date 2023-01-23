@@ -1,5 +1,6 @@
 from typing import Callable
 import operator
+import numpy as np
 from ..classes.nodes import *
 
 # from ..classes.result import Result
@@ -156,27 +157,41 @@ class Statistics:
 
     def gap_periods(self, student: Student):
         """Count free periods in between the first and last active period of `student`."""
-        timeslots_daysorted: list[Timeslot] = self.sort_nodes(student.timeslots.values(), "moment")  # type: ignore
+        timeslots_sorted: list[Timeslot] = self.sort_nodes(student.timeslots.values(), "moment")  # type: ignore
 
+        timeslot_day: dict[int, list[Timeslot]] = {}
+        # Sort timeslots in buckets per day
         day = -1
-        gaps_today = 0
+        for timeslot in timeslots_sorted:
+            if timeslot.day > day:
+                day = timeslot.day
+                timeslot_day[timeslot.day] = [timeslot]
+            else:
+                timeslot_day[timeslot.day].append(timeslot)
+
+        # Index is the gaps on a day, value is the number of occurences
+        gap_frequency = np.zeros((4,), dtype=int)
         previous_period = -1
-        for timeslot in timeslots_daysorted:
+        for day in timeslot_day.values():
+            gaps_today = 0
+            for i, timeslot in enumerate(day):
+                if i == 0:
+                    previous_period = timeslot.period - 1
+                current_period = timeslot.period
+                # Gap is difference between current and last period - 1, if the timeslots are simultaneous take gap = 0
+                gaps_today += max(current_period - previous_period - 1, 0)
+                previous_period = timeslot.period
             # TODO: #38 differentiate between:
             # 1 gap -> 1 malus point
             # 2 gaps -> 3 malus points
             # >2 gaps -> hard constraint
-            if timeslot.day > day:
-                gaps_today = 0
-                # Next day in week, reset counter
-                day = timeslot.day
-                previous_period = timeslot.period - 1
-            current_period = timeslot.period
-            # Gap is difference between current and last period - 1, if the timeslots are simultaneous take gap = 0
-            gaps_today += max(current_period - previous_period - 1, 0)
-            previous_period = timeslot.period
+            assert gaps_today >= 0, "Cannot have negative gaps."
+            if gaps_today >= 3:
+                gap_frequency[3] += 1
+            else:
+                gap_frequency[gaps_today] += 1
 
-        return gaps_today
+        return gap_frequency
 
     def aggregate(self, count_function: Callable[[NodeSC], int], nodes_dict: dict[int, NodeSC]):
         """Return sum of `count_function` for all `Node` in `nodes_dict`."""

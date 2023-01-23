@@ -1,7 +1,7 @@
 """Output for schedule in .csv file"""
 
 import csv
-from program_code.classes.schedule import Schedule
+from program_code import Data, Schedule
 
 
 def schedule_to_csv(schedule: Schedule, output_path: str = "output/Schedule_output.csv"):
@@ -34,3 +34,19 @@ def schedule_to_csv(schedule: Schedule, output_path: str = "output/Schedule_outp
                         writer.writerow(data)
 
         print(f"output saved to {output_path}")
+
+
+if __name__ == "__main__":
+    stud_prefs_path: str = "data/studenten_en_vakken_subset.csv"
+    courses_path: str = "data/vakken_subset.csv"
+    rooms_path: str = "data/zalen.csv"
+
+    input_data = Data(stud_prefs_path, courses_path, rooms_path)
+
+    students_input = input_data.students
+    courses_input = input_data.courses
+    rooms_input = input_data.rooms
+
+    schedule = Schedule(students_input, courses_input, rooms_input)
+
+    schedule_to_csv(schedule)

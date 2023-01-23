@@ -80,6 +80,7 @@ def main(
     rooms_input = input_data.rooms
 
     # Optionally take subset of data
+    # TODO #40 take random students of subset to prevent overfitting
     if n_subset:
         if n_subset > len(students_input):
             warnings.warn("WARNING: Chosen subset size is larger than set size, continuing anyway.")
