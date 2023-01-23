@@ -170,7 +170,7 @@ class Statistics:
                 timeslot_day[timeslot.day].append(timeslot)
 
         # Index is the gaps on a day, value is the number of occurences
-        gap_frequency = np.zeros(4)
+        gap_frequency = np.zeros((4,), dtype=int)
         previous_period = -1
         for day in timeslot_day.values():
             gaps_today = 0

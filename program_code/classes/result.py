@@ -135,6 +135,8 @@ class Result:
         edges_input: set[tuple[int, int]] | None = None,
     ):
         """Decompress data onto `target`. Binds target to self.schedule"""
+        if edges_input is None:
+            edges_input = self.schedule.edges
         self.schedule.__init__(students_input, courses_input, rooms_input, edges_input)
         self._compressed = False
 
