@@ -18,6 +18,7 @@ class GeneticSolve(Solver):
         replaceByGeneration=8,
         trackBest=5,
         verifier=Statistics(),
+        method="uniform",
         verbose=False,
     ) -> None:
         self.students_input = students_input
@@ -25,6 +26,7 @@ class GeneticSolve(Solver):
         self.rooms_input = rooms_input
 
         self.verifier = verifier
+        self.method = method
         self.verbose = verbose
 
         self.population_size = numberOfChromosomes
@@ -40,7 +42,7 @@ class GeneticSolve(Solver):
         # Generate population from prototype
         if schedule is None:
             self.population = generate_solutions(
-                Randomize(self.students_input, self.courses_input, self.rooms_input),
+                Randomize(self.students_input, self.courses_input, self.rooms_input, method=self.method),
                 n=self.population_size,
                 compress=False,
             )

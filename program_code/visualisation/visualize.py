@@ -12,7 +12,7 @@ from ..classes.result import Result
 def plot_statistics(results: list[Result]):
     evening_timeslots = [result.cached_score_vector[0] for result in results]
     student_overbookings = [result.cached_score_vector[1] for result in results]
-    gaps_1, gaps_2, gaps_3 = [[result.cached_score_vector[i] for result in results] for i in range(1, 4)]
+    gaps_1, gaps_2, gaps_3 = [[result.cached_score_vector[i] for result in results] for i in range(2, 5)]
     total_scores = [result.cached_score for result in results]
 
     fig, ax = plt.subplots(2, 3, figsize=(9, 4.5), tight_layout=True, sharex=True, sharey=False)
@@ -33,15 +33,15 @@ def plot_statistics(results: list[Result]):
 
     axg1 = ax[1, 0]  # type: ignore
     axg1.hist(gaps_1, 100)
-    axg1.set_title(f"Gaps \n mean: ${np.mean(gaps_1):.2f} ± {np.std(gaps_1):.2f}$")
+    axg1.set_title(f"1 gap \n mean: ${np.mean(gaps_1):.2f} ± {np.std(gaps_1):.2f}$")
 
     axg1 = ax[1, 1]  # type: ignore
     axg1.hist(gaps_2, 100)
-    axg1.set_title(f"Gaps \n mean: ${np.mean(gaps_2):.2f} ± {np.std(gaps_2):.2f}$")
+    axg1.set_title(f"2 gaps \n mean: ${np.mean(gaps_2):.2f} ± {np.std(gaps_2):.2f}$")
 
     axg1 = ax[1, 2]  # type: ignore
     axg1.hist(gaps_3, 100)
-    axg1.set_title(f"Gaps \n mean: ${np.mean(gaps_3):.2f} ± {np.std(gaps_3):.2f}$")
+    axg1.set_title(f">2 gaps \n mean: ${np.mean(gaps_3):.2f} ± {np.std(gaps_3):.2f}$")
 
     plt.savefig("output/image.png")
     plt.show()

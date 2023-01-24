@@ -7,13 +7,24 @@ from ..classes.result import Result
 
 
 class Solver:
-    def __init__(self, students_input, courses_input, rooms_input, verifier=Statistics(), verbose=False):
+    def __init__(
+        self,
+        students_input,
+        courses_input,
+        rooms_input,
+        verifier=Statistics(),
+        method: str | None = "uniform",
+        verbose=False,
+    ):
         self.students_input = students_input
         self.courses_input = courses_input
         self.rooms_input = rooms_input
 
         self.verifier = verifier
         self.verbose = verbose
+        if method is None:
+            method = "baseline"
+        self.method = method
 
     def assign_activities_timeslots_greedy(
         self, schedule: Schedule, activities: list[Activity], timeslots: list[Timeslot], reverse=True
@@ -43,7 +54,7 @@ class Solver:
         self,
         schedule: Schedule | None = None,
         i_max: int | None = None,
-        method: str = "",
+        method: str | None = None,
         strict=True,
     ):
         if schedule is None:

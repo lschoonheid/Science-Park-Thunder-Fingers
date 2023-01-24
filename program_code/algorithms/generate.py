@@ -14,7 +14,7 @@ def generate_solutions(solver, n: int = 1000, compress=True, **kwargs):
     solver_name = type(solver).__name__
 
     results: list[Result] = []
-    for n in tqdm(range(n), f"{solver_name}"):
+    for n in tqdm(range(n), f"{solver_name} ({solver.method})"):
         result: Result = solver.solve()
         if compress:
             result.compress()
