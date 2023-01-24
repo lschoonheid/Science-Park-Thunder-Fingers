@@ -11,6 +11,8 @@ def prepare_path(path: str):
 
     # Filter directory from path
     directory = "/".join(path.split("/")[:-1])
+    if directory == "":
+        return
 
     isExist = os.path.exists(directory)
     if not isExist:
