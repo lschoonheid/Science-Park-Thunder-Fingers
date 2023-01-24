@@ -1,7 +1,7 @@
 """Output for schedule in .csv file"""
 
 import csv
-from program_code import Data, Schedule
+from program_code import Data, Schedule, prepare_path
 
 
 def schedule_to_csv(schedule: Schedule, output_path: str = "output/Schedule_output.csv"):
@@ -11,6 +11,8 @@ def schedule_to_csv(schedule: Schedule, output_path: str = "output/Schedule_outp
 
     # 'dag', 'tijdslot' add when implemented elsewhere
     field_names = ["student", "vak", "activiteit", "zaal", "dag", "tijdslot"]
+
+    prepare_path(output_path)
 
     with open(output_path, "w") as csvfile:
         writer = csv.writer(csvfile)

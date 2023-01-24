@@ -7,6 +7,7 @@ import networkx as nx
 from pyvis.network import Network as PyvisNetwork
 from .fix_webpage import fix_webpage
 from ..classes.result import Result
+from ..classes.data import prepare_path
 
 
 def plot_statistics(results: list[Result]):
@@ -122,6 +123,7 @@ class GraphVisualization:
         net.options.edges.smooth.enabled = False
         net.options.layout.set_separation(500)
         net.options.layout.hierarchical.sortMethod = "directed"
+        prepare_path(output_folder)
         net.show(f"{output_folder}/graph.html")
 
         if do_filter_menu:
