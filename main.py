@@ -60,6 +60,7 @@ def main(
         #     method = method
         case "genetic":
             solver = GeneticSolve
+            method = "min_gaps_overlap"
         case _:
             solver = Randomize
             method = method
@@ -109,7 +110,7 @@ if __name__ == "__main__":
         "-m",
         dest="method",
         choices=["baseline", "min_overlap", "min_gaps", "min_gaps_overlap", "min_overlap_gaps", "genetic", "greedy"],
-        default="min_gaps_overlap",
+        default="genetic",
         help="Choose method.",
     )
     parser.add_argument("-i", type=int, dest="i_max", help="max iterations per solve cycle.")
