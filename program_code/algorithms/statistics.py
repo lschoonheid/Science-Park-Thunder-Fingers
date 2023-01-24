@@ -16,10 +16,10 @@ class Statistics:
      * overbooked timeslots (over room capacity)
      * overbooked timeslots (over tutorial/practical capacity)
      * activities (eg lectures) surplus timeslots
+     * activities have time conflicts (eg: lectures at the same time as practica/tutorials of course)
      * students missing timeslots for activities
      * students with multiple timeslots for 1 activity
      * student should only follow each class once (eg: one wc1 and one wc2 in student schedule)
-     - TODO: #43 lectures never at the same time as practica/tutorials of course
 
      Check for soft constraints:
      * One gap period on a day
@@ -52,6 +52,16 @@ class Statistics:
             if booked_timeslot.moment == new_moment:
                 return True
         return False
+
+    def moment_conflicts(self, activities1, activities2):
+        conflicts = 0
+        for activity1 in activities1:
+            for activity2 in activities2:
+                if activity1.id == activity2.id:
+                    continue
+                if activity1.moment == activity2.moment:
+                    conflicts += 1
+        return conflicts
 
     def student_has_activity_assigned(self, student: Student, activity: Activity):
         """Verify whether `student` already has a timeslot for `activity`."""
@@ -205,7 +215,7 @@ class Statistics:
             return True
         return False
 
-    def gap_periods(self, student: Student):
+    def gap_periods_student(self, student: Student):
         """Count free periods in between the first and last active period of `student`."""
         timeslot_day = self.sort_to_day(list(student.timeslots.values()))
         # Index is the gaps on a day, value is the number of occurences

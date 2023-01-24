@@ -4,7 +4,7 @@ from ..algorithms.statistics import Statistics
 from .schedule import Schedule
 
 
-class Result:
+class Result(Statistics):
     def __init__(
         self,
         schedule: Schedule,
@@ -28,8 +28,6 @@ class Result:
         self.score_matrix = score_matrix
         self.score_vector_input = score_vector
 
-        self.verifier = Statistics()
-
         self._compressed = False
 
     # Hard constraints
@@ -37,22 +35,24 @@ class Result:
     def check_solved(self):
         assert self._compressed == False, "Can only verify schedule uncompressed."
         # TODO check if it is solved (meets all hard constraints). Use the above hard constraint checkers.
-        # Check lectures have one timeslot
-        # Check students have exactly 1 timeslot for all their activities
-        for activity in self.schedule.activities.values():
-            if self.verifier.activity_overbooked(activity):
-                return False
-            for student in activity.students.values():
-                if self.verifier.student_timeslots_for_activity(student, activity) != 1:
+        for course in self.schedule.courses.values():
+            for activity in course.activities.values():
+                # Check whether lectures never coincide with same course activities
+                if self.moment_conflicts(course.bound_activities.values(), course.activities.values()):
                     return False
+                # Check lectures have one timeslot
+                if self.activity_overbooked(activity):
+                    return False
+                for student in activity.students.values():
+                    # Check students have exactly 1 timeslot for all their activities
+                    if self.student_timeslots_for_activity(student, activity) != 1:
+                        return False
 
         # Check timeslots have one activity
         # Check timeslots are not over capacity (room capacity)
         # Check timeslots are not over capacity (activity capacity)
         for timeslot in self.schedule.timeslots.values():
-            if self.verifier.timeslot_activity_overbooked(timeslot) or self.verifier.timeslot_student_overbooked(
-                timeslot
-            ):
+            if self.timeslot_activity_overbooked(timeslot) or self.timeslot_student_overbooked(timeslot):
                 return False
 
         return True
@@ -68,20 +68,20 @@ class Result:
 
     # @cached_property
     def evening_timeslots(self):
-        return self.verifier.aggregate(self.verifier.evening_bookings, self.schedule.rooms)
+        return self.aggregate(self.evening_bookings, self.schedule.rooms)
 
     # @cached_property
     def student_overbookings(self):
         """Instances of students with two timeslots at the same time."""
         # if self.student_overbookings_input is None:
-        return self.verifier.aggregate(self.verifier.student_overbooked, self.schedule.students)
+        return self.aggregate(self.student_overbooked, self.schedule.students)
         # return self.student_overbookings_input
 
     # TODO: #39 don't allow 3 gaps
     # @cached_property
     def gap_periods(self) -> tuple[int, int, int, int]:
         """Count free periods in between the first and last active period of students."""
-        gaps = sum([self.verifier.gap_periods(student) for student in self.schedule.students.values()])
+        gaps = sum([self.gap_periods_student(student) for student in self.schedule.students.values()])
 
         return gaps  # type: ignore
 
