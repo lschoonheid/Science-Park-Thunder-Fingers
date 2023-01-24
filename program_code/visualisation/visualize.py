@@ -10,9 +10,12 @@ from ..classes.result import Result
 
 
 def plot_statistics(results: list[Result]):
-    evening_timeslots = [result.cached_score_vector[1] for result in results]
-    student_overbookings = [result.cached_score_vector[2] for result in results]
-    gaps = [result.cached_score_vector[3] for result in results]
+    evening_timeslots = [result.cached_score_vector[0] for result in results]
+    student_overbookings = [result.cached_score_vector[1] for result in results]
+    gaps = [
+        result.cached_score_vector[2] + result.cached_score_vector[3] + result.cached_score_vector[4]
+        for result in results
+    ]
     total_scores = [result.cached_score for result in results]
 
     fig, (ax1, ax2, ax3, ax4) = plt.subplots(1, 4, figsize=(9, 4.5), tight_layout=True)

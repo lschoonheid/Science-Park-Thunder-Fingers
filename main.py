@@ -77,7 +77,7 @@ def main(
 
     # Visualize graph
     if verbose:
-        sampled_result.score_vector
+        sampled_result.cached_score_vector
         print(sampled_result)
     G = GraphVisualization(sampled_result.schedule)
     G.visualize()
