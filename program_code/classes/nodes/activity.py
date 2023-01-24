@@ -21,9 +21,15 @@ class Activity(Node):
         self.max_timeslots = max_timeslots
 
         # Neighbors
-        self.courses: dict[int, Course] = {}
+        # self.courses: dict[int, Course] = {}
         self.timeslots: dict[int, Timeslot] = {}
         self.students: dict[int, Student] = {}
+
+    def add_neighbor(self, node):
+        if type(node).__name__ == "Course":
+            self.course = node
+            return
+        return super().add_neighbor(node)
 
     @property
     def capacity(self):
@@ -32,7 +38,7 @@ class Activity(Node):
         return self.enrolled_students
 
     def __repr__(self) -> str:
-        return f"{self.act_type} of {str(*(self.courses.values()))}"
+        return f"{self.act_type} of {self.course}"
 
     def __str__(self) -> str:
-        return f"{self.act_type} of {str(*(self.courses.values()))}"
+        return f"{self.act_type} of {self.course}"

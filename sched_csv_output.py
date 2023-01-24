@@ -22,16 +22,15 @@ def schedule_to_csv(schedule: Schedule, output_path: str = "output/Schedule_outp
         for student in schedule.students.values():
             for timeslot in student.timeslots.values():
                 for activity in timeslot.activities.values():
-                    for course in activity.courses.values():
-                        data = [
-                            student.name,
-                            course.name,
-                            activity.act_type,
-                            timeslot.room.name,
-                            timeslot.day_names[timeslot.day],
-                            timeslot.period_names[timeslot.period],
-                        ]
-                        writer.writerow(data)
+                    data = [
+                        student.name,
+                        activity.course.name,
+                        activity.act_type,
+                        timeslot.room.name,
+                        timeslot.day_names[timeslot.day],
+                        timeslot.period_names[timeslot.period],
+                    ]
+                    writer.writerow(data)
 
         print(f"output saved to {output_path}")
 
