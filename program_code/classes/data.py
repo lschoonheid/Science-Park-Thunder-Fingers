@@ -7,7 +7,7 @@ from csv import DictReader
 
 
 def prepare_path(path: str):
-    """If a path doesn't exist, make it."""
+    """If a directory for `path` doesn't exist, make it."""
 
     # Filter directory from path
     directory = "/".join(path.split("/")[:-1])
