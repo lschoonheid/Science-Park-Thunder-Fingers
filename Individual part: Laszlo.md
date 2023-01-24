@@ -23,3 +23,9 @@
 - Allowed to mention commits that happened before submission of individual part plan?
 - How to prevent overfitting
 -
+
+### Feedback:
+
+- try crossover between activity <-> timeslot distribution,
+- try crossover between timeslot <-> student distribution
+- multi objective for both ^
