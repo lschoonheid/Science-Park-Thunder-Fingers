@@ -45,10 +45,10 @@ class Statistics:
             return True
         return False
 
-    def student_has_period(self, student: Student, timeslot: Timeslot):
-        """Verify if `student` already has period of `timeslot` booked"""
+    def node_has_period(self, node, timeslot: Timeslot):
+        """Verify if `node` already has period of `timeslot` booked"""
         new_moment = timeslot.moment
-        for booked_timeslot in student.timeslots.values():
+        for booked_timeslot in node.timeslots.values():
             if booked_timeslot.moment == new_moment:
                 return True
         return False

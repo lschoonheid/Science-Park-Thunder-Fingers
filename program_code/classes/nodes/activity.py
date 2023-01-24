@@ -8,6 +8,7 @@ class Activity(Node):
     """Node that represents an activity. Eg: `wc1 of analyise`'.
 
     Is linked with:
+    - course
     - timeslots
     - students
     """
@@ -21,7 +22,7 @@ class Activity(Node):
         self.max_timeslots = max_timeslots
 
         # Neighbors
-        # self.courses: dict[int, Course] = {}
+        self.course: Course
         self.timeslots: dict[int, Timeslot] = {}
         self.students: dict[int, Student] = {}
 

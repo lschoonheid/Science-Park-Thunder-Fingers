@@ -7,6 +7,7 @@ class Course(Node):
     Is linked with:
     - activities
     - students
+    - timeslots
     """
 
     def __init__(

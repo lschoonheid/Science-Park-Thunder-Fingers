@@ -92,22 +92,7 @@ class Randomize(Solver):
         random.shuffle(activities)
         random.shuffle(timeslots)
 
-        # Activities with max timeslots
-        activities_bound: list[Activity] = []
-        # Activitities with unbound number of timeslots
-        activities_free: list[Activity] = []
-
-        # Sort activities into bound and unbound max_timeslots
-        for activity in activities:
-            if activity.max_timeslots:
-                activities_bound.append(activity)
-            else:
-                activities_free.append(activity)
-
-        # first assign activities with max timeslots most efficiently
-        self.assign_activities_timeslots_greedy(schedule, activities_bound, timeslots, reverse=True)
-        # TODO: #42 - lectures never at the same time as practica/tutorials of same course
-        self.assign_activities_timeslots_greedy(schedule, activities_free, timeslots, reverse=True)
+        self.assign_activities_timeslots_sorted(schedule, activities, timeslots)
 
     def assign_activities_timeslots_uniform(self, schedule: Schedule):
         # Make shuffled list of timeslots so they will be picked randomly
@@ -119,11 +104,11 @@ class Randomize(Solver):
         # Hard constraint to never double book a timeslot, so iterate over them
         for timeslot in timeslots_shuffled:
             # Skip timeslot if it already has activity
-            if self.verifier.node_has_activity(timeslot):
+            if self.node_has_activity(timeslot):
                 continue
 
             # Draw an activity that doesnt already have its max timeslots
-            draw = self.draw_uniform_recursive([timeslot], activities, self.verifier.can_assign_timeslot_activity)  # type: ignore
+            draw = self.draw_uniform_recursive([timeslot], activities, self.can_assign_timeslot_activity)  # type: ignore
 
             if draw:
                 activity = draw[1]
@@ -174,95 +159,92 @@ class Randomize(Solver):
                     draw_timeslot = self.draw_uniform_recursive(
                         [student],
                         timeslots_linked,
-                        lambda s, t: self.verifier.can_assign_student_timeslot(s, t)
-                        and not self.verifier.student_has_period(s, t),
+                        lambda s, t: self.can_assign_student_timeslot(s, t) and not self.node_has_period(s, t),
                     )
                 case "min_gaps":
                     draw_timeslot = self.draw_uniform_recursive(
                         [student],
                         timeslots_linked,
-                        lambda s, t: self.verifier.can_assign_student_timeslot(s, t)
-                        and not self.verifier.timeslot_gives_gaps(s, t, limit=1),
+                        lambda s, t: self.can_assign_student_timeslot(s, t)
+                        and not self.timeslot_gives_gaps(s, t, limit=1),
                     )
                     if not draw_timeslot:
                         draw_timeslot = self.draw_uniform_recursive(
                             [student],
                             timeslots_linked,
-                            lambda s, t: self.verifier.can_assign_student_timeslot(s, t)
-                            and not self.verifier.timeslot_gives_gaps(s, t, limit=2),
+                            lambda s, t: self.can_assign_student_timeslot(s, t)
+                            and not self.timeslot_gives_gaps(s, t, limit=2),
                         )
                     if not draw_timeslot:
                         draw_timeslot = self.draw_uniform_recursive(
                             [student],
                             timeslots_linked,
-                            lambda s, t: self.verifier.can_assign_student_timeslot(s, t)
-                            and not self.verifier.timeslot_gives_gaps(s, t, limit=3),
+                            lambda s, t: self.can_assign_student_timeslot(s, t)
+                            and not self.timeslot_gives_gaps(s, t, limit=3),
                         )
                 case "min_gaps_overlap":
                     """Give priority to gaps, then to overlap."""
                     draw_timeslot = self.draw_uniform_recursive(
                         [student],
                         timeslots_linked,
-                        lambda s, t: self.verifier.can_assign_student_timeslot(s, t)
-                        and not self.verifier.timeslot_gives_gaps(s, t, limit=1),
+                        lambda s, t: self.can_assign_student_timeslot(s, t)
+                        and not self.timeslot_gives_gaps(s, t, limit=1),
                     )
                     if not draw_timeslot:
                         draw_timeslot = self.draw_uniform_recursive(
                             [student],
                             timeslots_linked,
-                            lambda s, t: self.verifier.can_assign_student_timeslot(s, t)
-                            and not self.verifier.timeslot_gives_gaps(s, t, limit=2),
+                            lambda s, t: self.can_assign_student_timeslot(s, t)
+                            and not self.timeslot_gives_gaps(s, t, limit=2),
                         )
                     if not draw_timeslot:
                         draw_timeslot = self.draw_uniform_recursive(
                             [student],
                             timeslots_linked,
-                            lambda s, t: self.verifier.can_assign_student_timeslot(s, t)
-                            and not self.verifier.timeslot_gives_gaps(s, t, limit=3),
+                            lambda s, t: self.can_assign_student_timeslot(s, t)
+                            and not self.timeslot_gives_gaps(s, t, limit=3),
                         )
                     if not draw_timeslot:
                         draw_timeslot = self.draw_uniform_recursive(
                             [student],
                             timeslots_linked,
-                            lambda s, t: self.verifier.can_assign_student_timeslot(s, t)
-                            and not self.verifier.student_has_period(s, t),
+                            lambda s, t: self.can_assign_student_timeslot(s, t) and not self.node_has_period(s, t),
                         )
                 case "min_overlap_gaps":
                     """Give priority to gaps, then to overlap."""
                     draw_timeslot = self.draw_uniform_recursive(
                         [student],
                         timeslots_linked,
-                        lambda s, t: self.verifier.can_assign_student_timeslot(s, t)
-                        and not self.verifier.student_has_period(s, t),
+                        lambda s, t: self.can_assign_student_timeslot(s, t) and not self.node_has_period(s, t),
                     )
                     if not draw_timeslot:
 
                         draw_timeslot = self.draw_uniform_recursive(
                             [student],
                             timeslots_linked,
-                            lambda s, t: self.verifier.can_assign_student_timeslot(s, t)
-                            and not self.verifier.timeslot_gives_gaps(s, t, limit=1),
+                            lambda s, t: self.can_assign_student_timeslot(s, t)
+                            and not self.timeslot_gives_gaps(s, t, limit=1),
                         )
                     if not draw_timeslot:
                         draw_timeslot = self.draw_uniform_recursive(
                             [student],
                             timeslots_linked,
-                            lambda s, t: self.verifier.can_assign_student_timeslot(s, t)
-                            and not self.verifier.timeslot_gives_gaps(s, t, limit=2),
+                            lambda s, t: self.can_assign_student_timeslot(s, t)
+                            and not self.timeslot_gives_gaps(s, t, limit=2),
                         )
                     if not draw_timeslot:
                         draw_timeslot = self.draw_uniform_recursive(
                             [student],
                             timeslots_linked,
-                            lambda s, t: self.verifier.can_assign_student_timeslot(s, t)
-                            and not self.verifier.timeslot_gives_gaps(s, t, limit=3),
+                            lambda s, t: self.can_assign_student_timeslot(s, t)
+                            and not self.timeslot_gives_gaps(s, t, limit=3),
                         )
                 case _:
                     draw_timeslot = None
             # Draw a random timeslot if method="uniform" or if method's restrictions did not result in a succesful draw.
             if not draw_timeslot:
                 draw_timeslot = self.draw_uniform_recursive(
-                    [student], timeslots_linked, self.verifier.can_assign_student_timeslot
+                    [student], timeslots_linked, self.can_assign_student_timeslot
                 )
 
             if not draw_timeslot:
