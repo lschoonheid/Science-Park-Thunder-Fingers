@@ -51,19 +51,23 @@ def main(
     match method:
         case "baseline":
             solver = Randomize
+            method = "uniform"
+        # case "min_overlap":
+        #     solver = Randomize
+        #     method = method
+        # case "min_gaps":
+        #     solver = Randomize
+        #     method = method
         case "genetic":
             solver = GeneticSolve
         case _:
             solver = Randomize
+            method = method
+            # raise ValueError("Running solver requires a method.")
 
     # Generate (compressed) results: only return scorevector and edges
     results_compressed = generate_solutions(
-        solver(
-            students_input,
-            courses_input,
-            rooms_input,
-            verbose=verbose,
-        ),
+        solver(students_input, courses_input, rooms_input, verbose=verbose, method=method),
         **kwargs,
     )
 
@@ -102,7 +106,11 @@ if __name__ == "__main__":
         help="Path to student enrolments csv.",
     )
     parser.add_argument(
-        "-m", dest="method", choices=["baseline", "genetic", "greedy"], default="baseline", help="Choose method."
+        "-m",
+        dest="method",
+        choices=["baseline", "min_overlap", "min_gaps", "min_gaps_overlap", "min_overlap_gaps", "genetic", "greedy"],
+        default="min_gaps_overlap",
+        help="Choose method.",
     )
     parser.add_argument("-i", type=int, dest="i_max", help="max iterations per solve cycle.")
     parser.add_argument("-n", type=int, dest="n", default=1, help="amount of results to generate.")
