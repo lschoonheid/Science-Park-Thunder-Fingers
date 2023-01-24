@@ -28,8 +28,8 @@ class Solver(Statistics):
         self, schedule: Schedule, activities: list[Activity], timeslots: list[Timeslot], reverse=True
     ):
         # Use greedy: sort both lists in order of capacity
-        activities_sorted = self.sort_nodes(activities, "enrolled_students", reverse=reverse)
-        timeslots_sorted = self.sort_nodes(timeslots, "capacity", reverse=reverse)
+        activities_sorted = self.sort_objects(activities, "enrolled_students", reverse=reverse)
+        timeslots_sorted = self.sort_objects(timeslots, "capacity", reverse=reverse)
         for activity in activities_sorted:
             activity_enrolments = activity.enrolled_students
             total_capacity = 0

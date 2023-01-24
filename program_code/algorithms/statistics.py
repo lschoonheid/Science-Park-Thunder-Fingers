@@ -2,6 +2,7 @@ from typing import Callable
 import operator
 import numpy as np
 from ..classes.nodes import *
+from ..classes import Schedule
 
 # from ..classes.result import Result
 
@@ -37,8 +38,8 @@ class Statistics:
     #     self.statistics: dict = {}
     #     self.score: float = 0
 
-    def sort_nodes(self, nodes: list[NodeSC], attr: str, reverse=False):
-        return sorted(nodes, key=operator.attrgetter(attr), reverse=reverse)
+    def sort_objects(self, objects, attr: str, reverse=False):
+        return sorted(objects, key=operator.attrgetter(attr), reverse=reverse)
 
     def node_has_activity(self, node):
         if len(node.activities) > 0:
@@ -165,7 +166,7 @@ class Statistics:
 
     def sort_to_day(self, timeslots: list[Timeslot]):
         """Sorts `timeslots` per day to dict[day, timeslots]."""
-        timeslots_sorted = self.sort_nodes(timeslots, "moment")  # type: ignore
+        timeslots_sorted = self.sort_objects(timeslots, "moment")  # type: ignore
 
         timeslot_day: dict[int, list[Timeslot]] = {}
         # Sort timeslots in buckets per day
@@ -181,7 +182,7 @@ class Statistics:
     def gaps_on_day(self, day: list[Timeslot]):
         """Count gaps on `day` between timeslots in day.
         Assumes list `day` only includes timeslots of one day."""
-        day_sorted = self.sort_nodes(day, "moment")  # type: ignore
+        day_sorted = self.sort_objects(day, "moment")  # type: ignore
         gaps_today = 0
         previous_period = -1
         for i, timeslot in enumerate(day_sorted):
@@ -196,6 +197,10 @@ class Statistics:
 
     def timeslot_gives_gaps(self, student: Student, timeslot: Timeslot, limit=3):
         """See adding `timeslot` to `student` results in  `student` having `limit` or more gaps on that day."""
+        # gaps_on_day will never be smaller than 0
+        if limit == 0:
+            return True
+
         # Pretend timeslot is assigned to student
         potential_timeslots = [*list(student.timeslots.values()), timeslot]
 

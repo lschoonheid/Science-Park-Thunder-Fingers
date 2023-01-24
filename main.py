@@ -48,6 +48,7 @@ def main(
         else:
             students_input = random.sample(students_input, n_subset)
 
+    show_progress = True
     match method:
         case "baseline":
             solver = Randomize
@@ -61,6 +62,7 @@ def main(
         case "genetic":
             solver = GeneticSolve
             method = "min_gaps_overlap"
+            show_progress = False
         case _:
             solver = Randomize
             method = method
@@ -69,6 +71,7 @@ def main(
     # Generate (compressed) results: only return scorevector and edges
     results_compressed = generate_solutions(
         solver(students_input, courses_input, rooms_input, verbose=verbose, method=method),
+        show_progress=show_progress,
         **kwargs,
     )
 
@@ -82,7 +85,7 @@ def main(
 
     # Visualize graph
     if verbose:
-        sampled_result.cached_score_vector
+        sampled_result.score_vector
         print(sampled_result)
     G = GraphVisualization(sampled_result.schedule)
     G.visualize()
