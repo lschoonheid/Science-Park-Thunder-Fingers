@@ -66,11 +66,9 @@ class Result(Statistics):
 
     # Soft constraints
 
-    # @cached_property
     def evening_timeslots(self):
         return self.aggregate(self.evening_bookings, self.schedule.rooms)
 
-    # @cached_property
     def student_overbookings(self):
         """Instances of students with two timeslots at the same time."""
         # if self.student_overbookings_input is None:
@@ -78,14 +76,14 @@ class Result(Statistics):
         # return self.student_overbookings_input
 
     # TODO: #39 don't allow 3 gaps
-    # @cached_property
     def gap_periods(self) -> tuple[int, int, int, int]:
         """Count free periods in between the first and last active period of students."""
         gaps = sum([self.gap_periods_student(student) for student in self.schedule.students.values()])
 
         return gaps  # type: ignore
 
-    def get_score_vector(self):
+    @cached_property
+    def score_vector(self):
         """Return soft constraint scores."""
         if self.score_vector_input is None:
             gap_periods = self.gap_periods()
@@ -101,20 +99,21 @@ class Result(Statistics):
         return self.score_vector_input
 
     @cached_property
-    def cached_score_vector(self):
-        return self.get_score_vector()
+    def score(self) -> float:
+        return self.score_matrix.dot(self.score_vector)
 
-    def get_score(self) -> float:
-        return self.score_matrix.dot(self.get_score_vector())
-
-    @cached_property
-    def cached_score(self) -> float:
-        return self.score_matrix.dot(self.cached_score_vector)
+    def update_score(self):
+        assert not self._compressed, "Cannot recalculate values in compressed state."
+        del self.__dict__["is_solved"]
+        del self.__dict__["score_vector"]
+        del self.__dict__["score"]
 
     def compress(self):
+        if self._compressed:
+            return
+
         # Initialize scorevector
-        self.cached_score_vector
-        self.cached_score
+        self.score_vector
 
         # Delete all protype data except genereted edges, since entire graph can be rebuild from prototype and edges
         del self.schedule.nodes
