@@ -20,7 +20,7 @@ from program_code import (
     Data,
     generate_solutions,
     Randomize,
-    Schedule)
+    Schedule, prepare_path)
 
 PERIODS = ("9 - 11", "11 - 13", "13 - 15", "15 - 17", "17 - 19")
 WEEK_DAYS = ("MA", "DI", "WO", "DO", "VR")
@@ -66,7 +66,7 @@ def main(stud_prefs_path: str, courses_path: str, rooms_path: str, n_subset: int
 
     plot_timetable(sampled_result.schedule)
  
-def csv_timetable(schedule: Schedule, spec: str = None):
+def csv_timetable(schedule: Schedule, spec: str | None = None):
     """Interface for executing timetable program."""
     match spec:
         case "-s":
@@ -91,7 +91,7 @@ def stud_sched_csv(schedule: Schedule):
 
     # header
     field_names = ["dag","tijdslot","vak","activiteit","zaal"]
-
+    prepare_path(output_path)
     with open(output_path, "w") as csvfile:
         writer = csv.writer(csvfile)
 
@@ -128,6 +128,7 @@ def course_sched_csv(schedule: Schedule):
     # header
     field_names = ["dag","tijdslot","activiteit","zaal", "studenten"]
 
+    prepare_path(output_path)
     with open(output_path, "w") as csvfile:
         writer = csv.writer(csvfile)
 
@@ -160,6 +161,7 @@ def room_sched_csv(schedule: Schedule):
     # header
     field_names = ["zaal","dag","tijdslot","vak","activiteit", "studenten"]
 
+    prepare_path(output_path)
     with open(output_path, "w") as csvfile:
         writer = csv.writer(csvfile)
 
