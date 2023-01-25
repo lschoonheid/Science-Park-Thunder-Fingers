@@ -107,10 +107,10 @@ class Randomize(Solver):
                 continue
 
             # Draw an activity that doesnt already have its max timeslots
-            draw = self.draw_uniform_recursive([timeslot], activities, self.can_assign_timeslot_activity)  # type: ignore
+            draw = self.draw_uniform_recursive([timeslot], activities, lambda t, a: self.can_assign_timeslot_activity(t, a) and a.course.enrolled_students != 0)  # type: ignore
 
             if draw:
-                activity = draw[1]
+                activity: Activity = draw[1]  # type: ignore
                 schedule.connect_nodes(activity, timeslot)
 
     def assign_students_timeslots(self, schedule: Schedule, i_max=10000, method="uniform"):
