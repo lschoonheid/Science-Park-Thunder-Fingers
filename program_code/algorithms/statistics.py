@@ -85,6 +85,8 @@ class Statistics:
             for activity_timeslot in activity.timeslots.values():
                 if assigned_slot.id == activity_timeslot.id:
                     timeslots_assigned += 1
+        if timeslots_assigned != 1:
+            pass
         return timeslots_assigned
 
     def timeslot_activity_overbooked(self, timeslot: Timeslot, verbose=False):

@@ -15,7 +15,7 @@ class GeneticSolve(Mutations):
         students_input,
         courses_input,
         rooms_input,
-        max_generations=3,
+        max_generations=30000,
         # max_generations=35000,
         numberOfChromosomes=100,
         # numberOfChromosomes=100,
@@ -96,7 +96,7 @@ class GeneticSolve(Mutations):
             # Try swapping timeslots to get a better fitness (or score)
             _old_score = current_best.score
 
-            backup = copy.deepcopy(current_best)
+            backup_edges = copy.deepcopy(current_best.schedule.edges)
 
             swapped = self.swap_random_timeslots(current_best.schedule)
             undid_swap = not swapped
@@ -110,8 +110,9 @@ class GeneticSolve(Mutations):
                 undid_swap = True
 
             if not current_best.check_solved():
-                current_best = copy.deepcopy(backup)
+                current_best = Result(Schedule(self.students_input, self.courses_input, self.rooms_input, backup_edges))
             generations = i
+            pbar.set_description(f"{type(self).__name__} ({self.method}) (score: {current_best.score})")
             # print(f"Score: {current_best.score} \t Generation: {i + 1 }/{ self.max_generations}", end="\r")
             if current_best.score == 0:
                 break

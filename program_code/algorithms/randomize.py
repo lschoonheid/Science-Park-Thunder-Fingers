@@ -260,7 +260,14 @@ class Randomize(Solver):
         # Divide leftover timeslots over activities
         self.assign_activities_timeslots_uniform(schedule)
 
-        return self.assign_students_timeslots(schedule, i_max, method=method)
+        result = self.assign_students_timeslots(schedule, i_max, method=method)
+
+        _solved = Result(schedule).check_solved()
+        if not _solved:
+            pass
+
+        return Result(schedule)
+        return result
 
 
 # TODO try sudoku algorithm
