@@ -50,9 +50,37 @@ class Mutations(Randomize):
         """Assumes timeslots are already legally assigned."""
         # For timeslot swap:
         # TODO: Check capacity is still valid
+        # TODO: #44 constraint relaxation for local minima
 
+        # Cannot swap with itself
         if timeslot1 is timeslot2:
             return False
+
+        # Check for possible booking during lecture
+        # Check whether timeslot is already taken by a lecture of the same course, or others if self is lecture
+        if timeslot1.moment != timeslot2.moment:
+            for activity1 in timeslot1.activities.values():
+                if activity1.max_timeslots:
+                    # Activity 1 is bound, it may not coincide with any activity of same course
+                    for bound_activity1 in activity1.course.activities.values():
+                        if self.node_has_period(bound_activity1, timeslot2):
+                            return False
+                else:
+                    # Activity 1 is unbound, it may not coincide with lectures of same course
+                    for bound_activity1 in activity1.course.bound_activities.values():
+                        if self.node_has_period(bound_activity1, timeslot2):
+                            return False
+            for activity2 in timeslot2.activities.values():
+                if activity2.max_timeslots:
+                    # Activity 2 is bound, it may not coincide with any activity of same course
+                    for bound_activity2 in activity2.course.activities.values():
+                        if self.node_has_period(bound_activity2, timeslot1):
+                            return False
+                else:
+                    # Activity 2 is unbound, it may not coincide with lectures of same course
+                    for bound_activity2 in activity2.course.bound_activities.values():
+                        if self.node_has_period(bound_activity2, timeslot1):
+                            return False
 
         if timeslot1.room.capacity == timeslot2.room.capacity:
             return True
