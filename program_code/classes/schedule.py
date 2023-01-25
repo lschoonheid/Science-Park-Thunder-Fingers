@@ -183,6 +183,18 @@ class Schedule:
             self.edges.add(edge)
         return edge
 
+    def disconnect_nodes(self, node1: NodeSC, node2: NodeSC, remove_edge=True, check=False):
+        """Disonnect two nodes by removing neighbor to both nodes symmetrically."""
+        # Sort so the tuple of pairing (id1, id2) is unique
+        edge = (min(node1.id, node2.id), max((node1.id, node2.id)))
+
+        node1.remove_neighbor(node2)
+        node2.remove_neighbor(node1)
+
+        if remove_edge:
+            self.edges.remove(edge)
+        return edge
+
     def get_edges(self, edges: set[tuple[int, int]] | None = None, students_input: list[dict] | None = None):
         """
         Get all the neighbours into the geted nodes.

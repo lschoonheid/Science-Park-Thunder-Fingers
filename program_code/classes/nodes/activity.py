@@ -46,7 +46,7 @@ class Activity(Node):
     def capacity(self):
         if self.capacity_input:
             return self.capacity_input
-        return self.enrolled_students
+        return None
 
     def __repr__(self) -> str:
         return f"{self.act_type} of {self.course}"

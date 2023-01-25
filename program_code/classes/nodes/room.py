@@ -19,6 +19,9 @@ class Room(Node):
         self.neighbors = {}
         self.timeslots = self.neighbors
 
+    def remove_neighbor(self, node):
+        del self.neighbors[node.id]
+
     def __repr__(self) -> str:
         return f"{self.name}"
 
