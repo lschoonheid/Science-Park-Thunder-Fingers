@@ -43,12 +43,17 @@ class Solver(Statistics):
                 if not self.can_assign_timeslot_activity(timeslot, activity):
                     continue
 
-                # Check if moment is already taken by course lecture
+                # Check if moment is already taken by a course lecture
                 for bound_activity in activity.course.bound_activities.values():
                     if self.node_has_period(bound_activity, timeslot):
                         continue
                 schedule.connect_nodes(activity, timeslot)
-                total_capacity += min(activity.capacity, timeslot.capacity)
+
+                if not activity.capacity:
+                    added_capacity = timeslot.capacity
+                else:
+                    added_capacity = min(activity.capacity, timeslot.capacity)
+                total_capacity += added_capacity
 
             if self.verbose and total_capacity < activity_enrolments:
                 warnings.warn(f"FAILED: {total_capacity, activity.enrolled_students}")
