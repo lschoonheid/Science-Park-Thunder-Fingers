@@ -2,7 +2,7 @@
 Individueel onderdeel
 Interface for executing timetable program.
 
-Execute: `python3 main.py -h` for usage.
+Execute: `python3 timetable.py`.
 
 Student: Julia Geisler
 Course: Algoritmen en Heuristieken 2023
@@ -20,141 +20,11 @@ from program_code import (
     Data,
     generate_solutions,
     Randomize,
-    Schedule
-)
+    Schedule)
 
 PERIODS = ("9 - 11", "11 - 13", "13 - 15", "15 - 17", "17 - 19")
 WEEK_DAYS = ("MA", "DI", "WO", "DO", "VR")
-
-class Timetable:
-    def __init__(self, schedule: Schedule) -> None:
-        PERIODS = ("9 - 11", "11 - 13", "13 - 15", "15 - 17", "17 - 19")
-        WEEK_DAYS = ("MA", "DI", "WO", "DO", "VR")
-        self.schedule = schedule
- 
-def stud_sched_csv(schedule: Schedule):
-    # generate student information from random student in schedule
-    student = random.choice(schedule.students)
-    timeslots = sorted(list(student.timeslots.values()), key=lambda x: x.moment)
-
-    # output path + file name
-    output_path = f"output/{student.name}_schedule_output.csv"
-
-    # header
-    field_names = ["dag","tijdslot","vak","activiteit","zaal"]
-
-    with open(output_path, "w") as csvfile:
-        writer = csv.writer(csvfile)
-
-        # write the header
-        writer.writerow(field_names)
-
-        # write the data
-        for timeslot in timeslots:
-                for activity in timeslot.activities.values():
-                    for course in activity.courses.values():
-                        data = [
-                            timeslot.day_names[timeslot.day],
-                            timeslot.period_names[timeslot.period],
-                            course.name,
-                            activity.act_type,
-                            timeslot.room.name,
-                        ]
-                        writer.writerow(data)
-
-        print(f"output saved to {output_path}")
-
-def course_sched_csv(schedule: Schedule):
-    # generate course information from random course in schedule
-    course = random.choice(list(schedule.courses.values()))
-    for activity in course.activities.values():
-        for timeslot in activity.timeslots.values():
-            schedule.connect_nodes(course, timeslot)
-    timeslots = sorted(list(course.timeslots.values()), key=lambda x: x.moment)
-
-    # output path + file name
-    output_path = f"output/{course.name}_schedule_output.csv"
-
-    # header
-    field_names = ["dag","tijdslot","activiteit","zaal", "studenten"]
-
-    with open(output_path, "w") as csvfile:
-        writer = csv.writer(csvfile)
-
-        # write the header
-        writer.writerow(field_names)
-
-        # write the data
-        for timeslot in timeslots:
-                for activity in timeslot.activities.values():
-                    data = [
-                        timeslot.day_names[timeslot.day],
-                        timeslot.period_names[timeslot.period],
-                        activity.act_type,
-                        timeslot.room.name,
-                        list(timeslot.students.values()),
-                    ]
-                    writer.writerow(data)
-
-        print(f"output saved to {output_path}")
-
-def room_sched_csv(schedule: Schedule):
-    # generate course information from random course in schedule
-    room = random.choice(list(schedule.rooms.values()))
-    timeslots = sorted(list(room.timeslots.values()), key=lambda x: x.moment)
-
-    # output path + file name
-    output_path = f"output/{room.name}_schedule_output.csv"
-
-    # header
-    field_names = ["dag","tijdslot","vak","activiteit", "studenten"]
-
-    with open(output_path, "w") as csvfile:
-        writer = csv.writer(csvfile)
-
-        # write the header
-        writer.writerow(field_names)
-
-        # write the data
-        for timeslot in timeslots:
-                for activity in timeslot.activities.values():
-                    data = [
-                        timeslot.day_names[timeslot.day],
-                        timeslot.period_names[timeslot.period],
-                        random.choice(list(activity.courses.values())),
-                        activity.act_type,
-                        list(timeslot.students.values()),
-                    ]
-                    writer.writerow(data)
-
-        print(f"output saved to {output_path}")
-
-def csv_timetable(schedule: Schedule, spec: str = None):
-    """Interface for executing timetable program."""
-    match spec:
-        case "-s":
-            stud_sched_csv(schedule)
-        case "-c":
-            course_sched_csv(schedule)
-        case "-r":
-            room_sched_csv(schedule)
-        # run all three if no specificity is given
-        case None:
-            stud_sched_csv(schedule)
-            course_sched_csv(schedule)
-            room_sched_csv(schedule)
-
-    # Initialize plot
-    # fig = plt.figure()
-    # plt.fill_between([course, course+0.96])
-
-    # Set Axis
-
-def plot_timetable():
-    xpoints = WEEK_DAYS
-    ypoints = PERIODS
-    plt.plot(xpoints, ypoints)
-    plt.show()
+ROOMS = ["A1.04","A1.06","A1.08","A1.10","B0.201","C0.110","C1.112"]
 
 """ 
 main function is a selected copy from main.py 
@@ -194,8 +64,151 @@ def main(stud_prefs_path: str, courses_path: str, rooms_path: str, n_subset: int
         rooms_input,
     )
 
-    # csv_timetable(sampled_result.schedule)
-    plot_timetable()
+    plot_timetable(sampled_result.schedule)
+ 
+def csv_timetable(schedule: Schedule, spec: str = None):
+    """Interface for executing timetable program."""
+    match spec:
+        case "-s":
+            stud_sched_csv(schedule)
+        case "-c":
+            course_sched_csv(schedule)
+        case "-r":
+            room_sched_csv(schedule)
+        # run all three if no specificity is given
+        case None:
+            stud_sched_csv(schedule)
+            course_sched_csv(schedule)
+            room_sched_csv(schedule)
+
+def stud_sched_csv(schedule: Schedule):
+    # generate student information from random student in schedule
+    student = random.choice(schedule.students)
+    timeslots = sorted(list(student.timeslots.values()), key=lambda x: x.moment)
+
+    # output path + file name
+    output_path = f"output/{student.name}_schedule_output.csv"
+
+    # header
+    field_names = ["dag","tijdslot","vak","activiteit","zaal"]
+
+    with open(output_path, "w") as csvfile:
+        writer = csv.writer(csvfile)
+
+        # write the header
+        writer.writerow(field_names)
+
+        # write the data
+        for timeslot in timeslots:
+                for activity in timeslot.activities.values():
+                    for course in activity.courses.values():
+                        data = [
+                            timeslot.day_names[timeslot.day],
+                            timeslot.period_names[timeslot.period],
+                            course.name,
+                            activity.act_type,
+                            timeslot.room.name,
+                        ]
+                        writer.writerow(data)
+
+        print(f"output saved to {output_path}")
+        return student
+
+def course_sched_csv(schedule: Schedule):
+    # generate course information from random course in schedule
+    course = random.choice(list(schedule.courses.values()))
+    for activity in course.activities.values():
+        for timeslot in activity.timeslots.values():
+            schedule.connect_nodes(course, timeslot)
+    timeslots = sorted(list(course.timeslots.values()), key=lambda x: x.moment)
+
+    # output path + file name
+    output_path = f"output/{course.name}_schedule_output.csv"
+
+    # header
+    field_names = ["dag","tijdslot","activiteit","zaal", "studenten"]
+
+    with open(output_path, "w") as csvfile:
+        writer = csv.writer(csvfile)
+
+        # write the header
+        writer.writerow(field_names)
+
+        # write the data
+        for timeslot in timeslots:
+                for activity in timeslot.activities.values():
+                    data = [
+                        timeslot.day_names[timeslot.day],
+                        timeslot.period_names[timeslot.period],
+                        activity.act_type,
+                        timeslot.room.name,
+                        list(timeslot.students.values()),
+                    ]
+                    writer.writerow(data)
+
+        print(f"output saved to {output_path}")
+
+def room_sched_csv(schedule: Schedule):
+    # generate course information from random course in schedule
+    # room = random.choice(list(schedule.rooms.values()))
+    print(schedule.rooms.values())
+    # timeslots = sorted(list(room.timeslots.values()), key=lambda x: x.moment)
+    # print(timeslots)
+    # output path + file name
+    output_path = f"output/room_schedule_output.csv"
+
+    # header
+    field_names = ["zaal","dag","tijdslot","vak","activiteit", "studenten"]
+
+    with open(output_path, "w") as csvfile:
+        writer = csv.writer(csvfile)
+
+        # write the header
+        writer.writerow(field_names)
+
+        # write the data
+        for room in schedule.rooms.values():
+            timeslots = sorted(list(room.timeslots.values()), key=lambda x: x.moment)
+            for timeslot in timeslots:
+                    for activity in timeslot.activities.values():
+                        data = [
+                            room.name,
+                            timeslot.day_names[timeslot.day],
+                            timeslot.period_names[timeslot.period],
+                            random.choice(list(activity.courses.values())),
+                            activity.act_type,
+                            list(timeslot.students.values()),
+                        ]
+                        writer.writerow(data)
+
+        print(f"output saved to {output_path}")
+
+def plot_timetable(schedule: Schedule):
+    
+    timeslots = sorted(list(schedule.timeslots.values()), key=lambda x: x.moment)
+    # for timeslot in timeslots:
+    #         print(timeslot,timeslot.activities.values())
+
+    for timeslot in timeslots:
+        print(timeslot.day_names[timeslot.day])
+        print(timeslot.period_names[timeslot.period])
+        data = [
+            timeslot.room.name,
+            timeslot.day_names[timeslot.day],
+            timeslot.period_names[timeslot.period],
+            list(timeslot.activities.values())[0],
+            # activity.act_type,
+            list(timeslot.students.values()),
+        ]
+        # match timeslot.day
+        print(data)
+    xpoints = np.array([0,35])
+    ypoints = np.array([0,4])
+    plt.xticks(range(0,35,1))
+    plt.plot(xpoints,ypoints)
+    plt.grid('both')
+    plt.show()
+
 
 if __name__ == "__main__":
     # Create a command line argument parser
