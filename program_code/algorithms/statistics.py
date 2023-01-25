@@ -60,8 +60,10 @@ class Statistics:
             for activity2 in activities2:
                 if activity1.id == activity2.id:
                     continue
-                if activity1.moment == activity2.moment:
-                    conflicts += 1
+                for timeslot1 in activity1.timeslots.values():
+                    for timeslot2 in activity2.timeslots.values():
+                        if timeslot1.moment == timeslot2.moment:
+                            conflicts += 1
         return conflicts
 
     def student_has_activity_assigned(self, student: Student, activity: Activity):
