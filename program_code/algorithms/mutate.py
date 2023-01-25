@@ -1,3 +1,4 @@
+from program_code.classes.result import Result
 from .solver import Solver
 from ..classes import NodeSC, Node, Schedule, Timeslot
 from .randomize import Randomize
@@ -102,6 +103,12 @@ class Mutations(Randomize):
             return None
 
         self.swap_neighbors(schedule, *draw, skip=["Room"])
+
+        # TODO remove TEST
+        # if not Result(schedule).check_solved():
+        #     self.swap_neighbors(schedule, *draw, skip=["Room"])
+        #     self.allow_timeslot_swap(*draw)
+        #     self.swap_neighbors(schedule, *draw, skip=["Room"])
         return draw
 
     # TODO: swap two timeslots of same (room) capacity (in time)

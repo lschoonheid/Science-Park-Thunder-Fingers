@@ -31,6 +31,7 @@ def main(
     method: str,
     verbose: bool = False,
     do_plot: bool = True,
+    show_progress=True,
     **kwargs,
 ):
     """Interface for executing scheduling program."""
@@ -48,7 +49,6 @@ def main(
         else:
             students_input = random.sample(students_input, n_subset)
 
-    show_progress = True
     match method:
         case "baseline":
             solver = Randomize
@@ -62,7 +62,6 @@ def main(
         case "genetic":
             solver = GeneticSolve
             method = "min_gaps_overlap"
-            show_progress = False
         case _:
             solver = Randomize
             method = method
@@ -87,6 +86,7 @@ def main(
     if verbose:
         sampled_result.score_vector
         print(sampled_result)
+
     G = GraphVisualization(sampled_result.schedule)
     G.visualize()
     schedule_to_csv(sampled_result.schedule)
@@ -94,9 +94,6 @@ def main(
     # Visualize score dimensions
     if do_plot:
         plot_statistics(results_compressed)
-
-    # Run Genetic Algorithm
-    genome = GeneticSolve(students_input, courses_input, rooms_input)
 
 
 if __name__ == "__main__":

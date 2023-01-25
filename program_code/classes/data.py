@@ -32,7 +32,7 @@ def dump_pickle(data, output: str):
 def dump_result(data, directory: str):
     time_string = time.strftime("%Y%m%d-%H%M%S")
     path = directory + time_string + ".pyc"
-    return dump_pickle(data, path)
+    return path
 
 
 def load_pickle(location: str):

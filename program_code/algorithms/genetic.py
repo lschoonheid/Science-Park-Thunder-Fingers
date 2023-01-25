@@ -15,9 +15,9 @@ class GeneticSolve(Mutations):
         students_input,
         courses_input,
         rooms_input,
-        max_generations=100,
+        max_generations=30000,
         # max_generations=35000,
-        numberOfChromosomes=10,
+        numberOfChromosomes=100,
         # numberOfChromosomes=100,
         replaceByGeneration=8,
         trackBest=5,
@@ -47,15 +47,15 @@ class GeneticSolve(Mutations):
 
     def get_fitness(self, result: Result):
         result.update_score()
-        return 1 / (1 + result.score)
+        return 10000 / (1 + result.score)
 
     def solve(
         self,
-        seed: Schedule | None = None,
+        schedule_seed: Schedule | None = None,
         i_max: int | None = None,
     ):
         # Initialize population from prototype
-        if seed is None:
+        if schedule_seed is None:
             self.population = generate_solutions(
                 Randomize(self.students_input, self.courses_input, self.rooms_input, method=self.method),
                 n=self.population_size,
@@ -63,13 +63,15 @@ class GeneticSolve(Mutations):
                 show_progress=True,
             )
         else:
-            self.population = [Result(copy.deepcopy(seed)).compress() for i in range(self.population_size)]
+            self.population = [Result(copy.deepcopy(schedule_seed)).compress() for i in range(self.population_size)]
 
         # Worst score
         best_fitness = 0
         current_best: Result = None  # type: ignore
+        generations = 0
         # TODO: in a loop: crossover, mutate, select best fit and repeat
-        for i in tqdm(range(self.max_generations), disable=True):
+        pbar = tqdm(range(self.max_generations))
+        for i in pbar:
             # TODO mark lower half of population for replacement
 
             population_sorted: list[Result] = self.sort_objects(self.population, "score")  # type: ignore
@@ -81,6 +83,8 @@ class GeneticSolve(Mutations):
             if current_best_fitness > best_fitness:
                 best_fitness = current_best_fitness
 
+            solved = current_best.check_solved()
+
             # TODO: define crossover
             # TODO: define mutations
             # TODO do different mutations, depending on highest conflict factor
@@ -90,21 +94,34 @@ class GeneticSolve(Mutations):
             # TODO: index on swaps already tried
             # TODO: simulated annealing
             # Try swapping timeslots to get a better fitness (or score)
+            _old_score = current_best.score
+
+            backup = copy.deepcopy(current_best)
+
             swapped = self.swap_random_timeslots(current_best.schedule)
+            undid_swap = not swapped
             if not swapped:
                 warnings.warn("Had to break here")
                 break
-            if self.get_fitness(current_best) < current_best_fitness:
+            if self.get_fitness(current_best) < current_best_fitness or not current_best.check_solved():
                 # Undo swap
                 self.swap_neighbors(current_best.schedule, *swapped, skip=["Room"])  # type: ignore
                 current_best.update_score()
+                undid_swap = True
 
-            print(f"Score: {current_best.score} \t Generation: {i + 1 }/{ self.max_generations}", end="\r")
+            if not current_best.check_solved():
+                current_best = copy.deepcopy(backup)
+            generations = i
+            # print(f"Score: {current_best.score} \t Generation: {i + 1 }/{ self.max_generations}", end="\r")
+            if current_best.score == 0:
+                break
 
+        output_path = dump_result(current_best, f"output/genetic_{self.max_generations}_")
         print(
-            f"Best fitness {self.get_fitness(current_best):5f} \t score: {current_best.score} \nIterations: {self.max_generations} \t soved: {current_best.check_solved()}"
+            f"Best fitness {self.get_fitness(current_best):5f} \t score: {current_best.score} \nIterations: {generations} \t solved: {current_best.check_solved()}  \n \
+            Score vector: {current_best.score_vector} \n \
+            saved at {output_path}"
         )
-        dump_result(current_best, f"output/genetic_{self.max_generations}_")
 
         print("\n")
         if self.verbose:
