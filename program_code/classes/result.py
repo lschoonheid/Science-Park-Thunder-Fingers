@@ -104,13 +104,16 @@ class Result(Statistics):
 
     def update_score(self):
         assert not self._compressed, "Cannot recalculate values in compressed state."
-        del self.__dict__["is_solved"]
-        del self.__dict__["score_vector"]
-        del self.__dict__["score"]
+        if "is_solved" in self.__dict__.keys():
+            del self.__dict__["is_solved"]
+        if "score_vector" in self.__dict__.keys():
+            del self.__dict__["score_vector"]
+        if "score" in self.__dict__.keys():
+            del self.__dict__["score"]
 
     def compress(self):
         if self._compressed:
-            return
+            return self
 
         # Initialize scorevector
         self.score_vector
@@ -126,6 +129,7 @@ class Result(Statistics):
         del self.schedule.timeslots
 
         self._compressed = True
+        return self
 
     def decompress(
         self,
@@ -135,10 +139,13 @@ class Result(Statistics):
         edges_input: set[tuple[int, int]] | None = None,
     ):
         """Decompress data onto `target`. Binds target to self.schedule"""
+        if not self._compressed:
+            return self
         if edges_input is None:
             edges_input = self.schedule.edges
         self.schedule.__init__(students_input, courses_input, rooms_input, edges_input)
         self._compressed = False
+        return self
 
     def __str__(self):
         return str(self.__dict__)
