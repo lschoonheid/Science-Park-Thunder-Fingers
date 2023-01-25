@@ -18,5 +18,8 @@ class Room(Node):
         # Neighbors
         self.timeslots = {}
 
+    def __repr__(self) -> str:
+        return f"{self.name}"
+
     def __str__(self) -> str:
         return f"{self.name}"
