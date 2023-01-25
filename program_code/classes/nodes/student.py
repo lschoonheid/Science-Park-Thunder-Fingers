@@ -25,6 +25,7 @@ class Student(Node):
         self.std_id = std_id
 
         # Neighbors
+        self.neighbors = {}
         self.courses = {}
         self.activities = {}
         self.timeslots = {}

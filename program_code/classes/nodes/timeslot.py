@@ -21,6 +21,7 @@ class Timeslot(Node):
         self.moment = (day, period)
 
         # Neighbors
+        self.neighbors = {}
         self.room: Room
         self.students = {}
         self.activities = {}
@@ -50,6 +51,11 @@ class Timeslot(Node):
         if type(node).__name__ == "Activity" and "capacity" in self.__dict__.keys():
             del self.__dict__["capacity"]
         return super().add_neighbor(node)
+
+    def remove_neighbor(self, node):
+        if type(node).__name__ == "Activity" and "capacity" in self.__dict__.keys():
+            del self.__dict__["capacity"]
+        return super().remove_neighbor(node)
 
     def __repr__(self) -> str:
         return f"Room {self.room} hour {self.period_names[self.period]} on {self.day_names[self.day]}"

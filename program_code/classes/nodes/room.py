@@ -16,7 +16,8 @@ class Room(Node):
         self.capacity = capacity
 
         # Neighbors
-        self.timeslots = {}
+        self.neighbors = {}
+        self.timeslots = self.neighbors
 
     def __repr__(self) -> str:
         return f"{self.name}"

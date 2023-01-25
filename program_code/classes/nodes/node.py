@@ -9,6 +9,7 @@ class Node:
         self.id = uid
 
         # Neighbors
+        self.neighbors = {}
         self.students = {}
         self.courses = {}
         self.activities = {}
@@ -30,6 +31,25 @@ class Node:
                 self.room = node
             case _:
                 raise ValueError(f"Error: in adding node of type {type(node).__name__}: {node} to {self}")
+
+        self.neighbors[node.id] = node
+
+    def remove_neighbor(self, node):
+        match type(node).__name__:
+            case "Course":
+                del self.courses[node.id]
+            case "Activity":
+                del self.activities[node.id]
+            case "Student":
+                del self.students[node.id]
+            case "Timeslot":
+                del self.timeslots[node.id]
+            case "Room":
+                self.room = None
+            case _:
+                raise ValueError(f"Error: in removing node of type {type(node).__name__}: {node} to {self}")
+
+        del self.neighbors[node.id]
 
     # Immutable after import for all nodes except Timeslot
     @cached_property

@@ -33,6 +33,7 @@ class Course(Node):
         self.expected_stud = expected_stud
 
         # Neighbors
+        self.neighbors = {}
         self.activities = {}
         self.bound_activities = {}
         self.unbound_activities = {}
@@ -47,6 +48,14 @@ class Course(Node):
             else:
                 self.unbound_activities[node.id] = node
         return super().add_neighbor(node)
+
+    def remove_neighbor(self, node):
+        if type(node).__name__ == "Activity":
+            if node.max_timeslots:
+                del self.bound_activities[node.id]
+            else:
+                del self.unbound_activities[node.id]
+        return super().remove_neighbor(node)
 
     def __repr__(self) -> str:
         """Output name to string"""
