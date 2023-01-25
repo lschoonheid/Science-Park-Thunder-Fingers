@@ -164,19 +164,22 @@ class Statistics:
                 bookings.add(timeslot.moment)
         return double_bookings
 
-    def sort_to_day(self, timeslots: list[Timeslot]):
+    def sort_to_day(self, timeslots):
         """Sorts `timeslots` per day to dict[day, timeslots]."""
-        timeslots_sorted = self.sort_objects(timeslots, "moment")  # type: ignore
 
         timeslot_day: dict[int, list[Timeslot]] = {}
         # Sort timeslots in buckets per day
         day = -1
-        for timeslot in timeslots_sorted:
-            if timeslot.day > day:
-                day = timeslot.day
+        for timeslot in timeslots:
+            if timeslot.day not in timeslot_day:
                 timeslot_day[timeslot.day] = [timeslot]
             else:
                 timeslot_day[timeslot.day].append(timeslot)
+
+        for day_index in timeslot_day:
+            if len(timeslot_day[day_index]) == 1:
+                continue
+            timeslot_day[day_index] = self.sort_objects(timeslot_day[day_index], "moment")  # type: ignore
         return timeslot_day
 
     def gaps_on_day(self, day: list[Timeslot]):
@@ -202,27 +205,29 @@ class Statistics:
             return True
 
         # Pretend timeslot is assigned to student
-        potential_timeslots = [*list(student.timeslots.values()), timeslot]
-
         # TODO: possible to assign relaxation here, only check if there are already some timeslots
-        if len(potential_timeslots) == 1:
+        if len(student.timeslots.values()) == 0:
             return False
 
-        # Sort timeslots per day
-        timeslot_day = self.sort_to_day(potential_timeslots)
+        # Only consider timeslots on same day as `timeslot`
+        day: list[Timeslot] = []
+        day_index = timeslot.day
+        for booked_timeslot in student.timeslots.values():
+            if booked_timeslot.day == day_index:
+                day.append(booked_timeslot)
+        if len(day) == 0:
+            return False
 
         # Count gaps on day of new timeslot if timeslot was added
-        day = timeslot.day
-        if len(timeslot_day[day]) == 1:
-            return False
-        gaps_on_day = self.gaps_on_day(timeslot_day[day])
+        day.append(timeslot)
+        gaps_on_day = self.gaps_on_day(day)
         if gaps_on_day >= limit:
             return True
         return False
 
     def gap_periods_student(self, student: Student):
         """Count free periods in between the first and last active period of `student`."""
-        timeslot_day = self.sort_to_day(list(student.timeslots.values()))
+        timeslot_day = self.sort_to_day(student.timeslots.values())
         # Index is the gaps on a day, value is the number of occurences
         gap_frequency = np.zeros((4,), dtype=int)
         for day in timeslot_day.values():

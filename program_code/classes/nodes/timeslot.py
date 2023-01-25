@@ -1,3 +1,4 @@
+from functools import cached_property
 from .node import Node
 from .room import Room
 
@@ -33,14 +34,22 @@ class Timeslot(Node):
     def enrolled_students(self):
         return len(self.students)
 
-    @property
-    def capacity(self) -> int:
+    def calculate_capacity(self):
         min_capacity = self.room.capacity
         if len(self.activities):
             for activity in self.activities.values():
                 if activity.capacity and activity.capacity < min_capacity:
                     min_capacity = activity.capacity
         return min_capacity
+
+    @cached_property
+    def capacity(self) -> int:
+        return self.calculate_capacity()
+
+    def add_neighbor(self, node):
+        if type(node).__name__ == "Activity" and "capacity" in self.__dict__.keys():
+            del self.__dict__["capacity"]
+        return super().add_neighbor(node)
 
     def __repr__(self) -> str:
         return f"Room {self.room} hour {self.period_names[self.period]} on {self.day_names[self.day]}"
