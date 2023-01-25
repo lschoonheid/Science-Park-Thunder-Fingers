@@ -10,17 +10,14 @@ Course: Algoritmen en Heuristieken 2023
 
 import csv
 import matplotlib.pyplot as plt
+
 # import pandas as pd
 import numpy as np
 
 import argparse
 import random
 import warnings
-from program_code import (
-    Data,
-    generate_solutions,
-    Randomize,
-    Schedule)
+from program_code import Data, generate_solutions, Randomize, Schedule, prepare_path
 
 PERIODS = ("9 - 11", "11 - 13", "13 - 15", "15 - 17", "17 - 19")
 WEEK_DAYS = ("MA", "DI", "WO", "DO", "VR")
@@ -90,8 +87,9 @@ def stud_sched_csv(schedule: Schedule):
     output_path = f"output/{student.name}_schedule_output.csv"
 
     # header
-    field_names = ["dag","tijdslot","vak","activiteit","zaal"]
+    field_names = ["dag", "tijdslot", "vak", "activiteit", "zaal"]
 
+    prepare_path(output_path)
     with open(output_path, "w") as csvfile:
         writer = csv.writer(csvfile)
 
@@ -100,19 +98,20 @@ def stud_sched_csv(schedule: Schedule):
 
         # write the data
         for timeslot in timeslots:
-                for activity in timeslot.activities.values():
-                    for course in activity.courses.values():
-                        data = [
-                            timeslot.day_names[timeslot.day],
-                            timeslot.period_names[timeslot.period],
-                            course.name,
-                            activity.act_type,
-                            timeslot.room.name,
-                        ]
-                        writer.writerow(data)
+            for activity in timeslot.activities.values():
+                for course in activity.courses.values():
+                    data = [
+                        timeslot.day_names[timeslot.day],
+                        timeslot.period_names[timeslot.period],
+                        course.name,
+                        activity.act_type,
+                        timeslot.room.name,
+                    ]
+                    writer.writerow(data)
 
         print(f"output saved to {output_path}")
         return student
+
 
 def course_sched_csv(schedule: Schedule):
     # generate course information from random course in schedule
@@ -126,8 +125,9 @@ def course_sched_csv(schedule: Schedule):
     output_path = f"output/{course.name}_schedule_output.csv"
 
     # header
-    field_names = ["dag","tijdslot","activiteit","zaal", "studenten"]
+    field_names = ["dag", "tijdslot", "activiteit", "zaal", "studenten"]
 
+    prepare_path(output_path)
     with open(output_path, "w") as csvfile:
         writer = csv.writer(csvfile)
 
@@ -136,17 +136,18 @@ def course_sched_csv(schedule: Schedule):
 
         # write the data
         for timeslot in timeslots:
-                for activity in timeslot.activities.values():
-                    data = [
-                        timeslot.day_names[timeslot.day],
-                        timeslot.period_names[timeslot.period],
-                        activity.act_type,
-                        timeslot.room.name,
-                        list(timeslot.students.values()),
-                    ]
-                    writer.writerow(data)
+            for activity in timeslot.activities.values():
+                data = [
+                    timeslot.day_names[timeslot.day],
+                    timeslot.period_names[timeslot.period],
+                    activity.act_type,
+                    timeslot.room.name,
+                    list(timeslot.students.values()),
+                ]
+                writer.writerow(data)
 
         print(f"output saved to {output_path}")
+
 
 def room_sched_csv(schedule: Schedule):
     # generate course information from random course in schedule
@@ -158,8 +159,9 @@ def room_sched_csv(schedule: Schedule):
     output_path = f"output/room_schedule_output.csv"
 
     # header
-    field_names = ["zaal","dag","tijdslot","vak","activiteit", "studenten"]
+    field_names = ["dag", "tijdslot", "vak", "activiteit", "studenten"]
 
+    prepare_path(output_path)
     with open(output_path, "w") as csvfile:
         writer = csv.writer(csvfile)
 
@@ -208,6 +210,7 @@ def plot_timetable(schedule: Schedule):
     plt.plot(xpoints,ypoints)
     plt.grid('both')
     plt.show()
+
 
 
 if __name__ == "__main__":

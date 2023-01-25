@@ -2,6 +2,7 @@ from typing import Callable
 import operator
 import numpy as np
 from ..classes.nodes import *
+from ..classes import Schedule
 
 # from ..classes.result import Result
 
@@ -16,6 +17,7 @@ class Statistics:
      * overbooked timeslots (over room capacity)
      * overbooked timeslots (over tutorial/practical capacity)
      * activities (eg lectures) surplus timeslots
+     * activities have time conflicts (eg: lectures at the same time as practica/tutorials of course)
      * students missing timeslots for activities
      * students with multiple timeslots for 1 activity
      * student should only follow each class once (eg: one wc1 and one wc2 in student schedule)
@@ -36,22 +38,31 @@ class Statistics:
     #     self.statistics: dict = {}
     #     self.score: float = 0
 
-    def sort_nodes(self, nodes: list[NodeSC], attr: str, reverse=False):
-        return sorted(nodes, key=operator.attrgetter(attr), reverse=reverse)
+    def sort_objects(self, objects, attr: str, reverse=False):
+        return sorted(objects, key=operator.attrgetter(attr), reverse=reverse)
 
     def node_has_activity(self, node):
         if len(node.activities) > 0:
             return True
         return False
 
-    def student_has_period(self, student: Student, timeslot: Timeslot):
-        """Verify if `student` already has period of `timeslot` booked"""
-        new_moment = (timeslot.day, timeslot.period)
-        for booked_timeslot in student.timeslots.values():
-            booked_moment = (booked_timeslot.day, booked_timeslot.period)
-            if booked_moment == new_moment:
-                return False
-        return True
+    def node_has_period(self, node, timeslot: Timeslot):
+        """Verify if `node` already has period of `timeslot` booked"""
+        new_moment = timeslot.moment
+        for booked_timeslot in node.timeslots.values():
+            if booked_timeslot.moment == new_moment:
+                return True
+        return False
+
+    def moment_conflicts(self, activities1, activities2):
+        conflicts = 0
+        for activity1 in activities1:
+            for activity2 in activities2:
+                if activity1.id == activity2.id:
+                    continue
+                if activity1.moment == activity2.moment:
+                    conflicts += 1
+        return conflicts
 
     def student_has_activity_assigned(self, student: Student, activity: Activity):
         """Verify whether `student` already has a timeslot for `activity`."""
@@ -153,37 +164,74 @@ class Statistics:
                 bookings.add(timeslot.moment)
         return double_bookings
 
-    def gap_periods(self, student: Student):
-        """Count free periods in between the first and last active period of `student`."""
-        timeslots_sorted: list[Timeslot] = self.sort_nodes(student.timeslots.values(), "moment")  # type: ignore
+    def sort_to_day(self, timeslots):
+        """Sorts `timeslots` per day to dict[day, timeslots]."""
 
         timeslot_day: dict[int, list[Timeslot]] = {}
         # Sort timeslots in buckets per day
         day = -1
-        for timeslot in timeslots_sorted:
-            if timeslot.day > day:
-                day = timeslot.day
+        for timeslot in timeslots:
+            if timeslot.day not in timeslot_day:
                 timeslot_day[timeslot.day] = [timeslot]
             else:
                 timeslot_day[timeslot.day].append(timeslot)
 
+        for day_index in timeslot_day:
+            if len(timeslot_day[day_index]) == 1:
+                continue
+            timeslot_day[day_index] = self.sort_objects(timeslot_day[day_index], "moment")  # type: ignore
+        return timeslot_day
+
+    def gaps_on_day(self, day: list[Timeslot]):
+        """Count gaps on `day` between timeslots in day.
+        Assumes list `day` only includes timeslots of one day."""
+        day_sorted = self.sort_objects(day, "moment")  # type: ignore
+        gaps_today = 0
+        previous_period = -1
+        for i, timeslot in enumerate(day_sorted):
+            if i == 0:
+                previous_period = timeslot.period - 1
+            current_period = timeslot.period
+            # Gap is difference between current and last period - 1, if the timeslots are simultaneous take gap = 0
+            gaps_today += max(current_period - previous_period - 1, 0)
+            previous_period = timeslot.period
+        assert gaps_today >= 0, "Cannot have negative gaps."
+        return gaps_today
+
+    def timeslot_gives_gaps(self, student: Student, timeslot: Timeslot, limit=3):
+        """See adding `timeslot` to `student` results in  `student` having `limit` or more gaps on that day."""
+        # gaps_on_day will never be smaller than 0
+        if limit == 0:
+            return True
+
+        # Pretend timeslot is assigned to student
+        # TODO: possible to assign relaxation here, only check if there are already some timeslots
+        if len(student.timeslots.values()) == 0:
+            return False
+
+        # Only consider timeslots on same day as `timeslot`
+        day: list[Timeslot] = []
+        day_index = timeslot.day
+        for booked_timeslot in student.timeslots.values():
+            if booked_timeslot.day == day_index:
+                day.append(booked_timeslot)
+        if len(day) == 0:
+            return False
+
+        # Count gaps on day of new timeslot if timeslot was added
+        day.append(timeslot)
+        gaps_on_day = self.gaps_on_day(day)
+        if gaps_on_day >= limit:
+            return True
+        return False
+
+    def gap_periods_student(self, student: Student):
+        """Count free periods in between the first and last active period of `student`."""
+        timeslot_day = self.sort_to_day(student.timeslots.values())
         # Index is the gaps on a day, value is the number of occurences
         gap_frequency = np.zeros((4,), dtype=int)
-        previous_period = -1
         for day in timeslot_day.values():
-            gaps_today = 0
-            for i, timeslot in enumerate(day):
-                if i == 0:
-                    previous_period = timeslot.period - 1
-                current_period = timeslot.period
-                # Gap is difference between current and last period - 1, if the timeslots are simultaneous take gap = 0
-                gaps_today += max(current_period - previous_period - 1, 0)
-                previous_period = timeslot.period
-            # TODO: #38 differentiate between:
-            # 1 gap -> 1 malus point
-            # 2 gaps -> 3 malus points
-            # >2 gaps -> hard constraint
-            assert gaps_today >= 0, "Cannot have negative gaps."
+            gaps_today = self.gaps_on_day(day)
             if gaps_today >= 3:
                 gap_frequency[3] += 1
             else:

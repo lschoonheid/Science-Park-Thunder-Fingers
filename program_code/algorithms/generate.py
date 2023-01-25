@@ -9,12 +9,12 @@ def make_prototype(students_input, courses_input, rooms_input):
     return Schedule(students_input, courses_input, rooms_input)
 
 
-def generate_solutions(solver, n: int = 1000, compress=True, **kwargs):
+def generate_solutions(solver, n: int = 1000, compress=True, show_progress=True, **kwargs):
     """Generate `n` schedules"""
     solver_name = type(solver).__name__
 
     results: list[Result] = []
-    for n in tqdm(range(n), f"{solver_name}"):
+    for n in tqdm(range(n), f"{solver_name} ({solver.method})", disable=not show_progress):
         result: Result = solver.solve()
         if compress:
             result.compress()

@@ -19,7 +19,6 @@ class Randomize(Solver):
             schedule.connect_nodes(student, timeslot)
             schedule.connect_nodes(activity, timeslot)
 
-    # TODO #34 make for loop for readability?
     def draw_uniform_recursive(
         self,
         nodes1: list[NodeSC],
@@ -93,21 +92,7 @@ class Randomize(Solver):
         random.shuffle(activities)
         random.shuffle(timeslots)
 
-        # Activities with max timeslots
-        activities_bound: list[Activity] = []
-        # Activitities with unbound number of timeslots
-        activities_free: list[Activity] = []
-
-        # Sort activities into bound and unbound max_timeslots
-        for activity in activities:
-            if activity.max_timeslots:
-                activities_bound.append(activity)
-            else:
-                activities_free.append(activity)
-
-        # first assign activities with max timeslots most efficiently
-        self.assign_activities_timeslots_greedy(schedule, activities_bound, timeslots, reverse=True)
-        self.assign_activities_timeslots_greedy(schedule, activities_free, timeslots, reverse=True)
+        self.assign_activities_timeslots_sorted(schedule, activities, timeslots)
 
     def assign_activities_timeslots_uniform(self, schedule: Schedule):
         # Make shuffled list of timeslots so they will be picked randomly
@@ -119,17 +104,17 @@ class Randomize(Solver):
         # Hard constraint to never double book a timeslot, so iterate over them
         for timeslot in timeslots_shuffled:
             # Skip timeslot if it already has activity
-            if self.verifier.node_has_activity(timeslot):
+            if self.node_has_activity(timeslot):
                 continue
 
             # Draw an activity that doesnt already have its max timeslots
-            draw = self.draw_uniform_recursive([timeslot], activities, self.verifier.can_assign_timeslot_activity)  # type: ignore
+            draw = self.draw_uniform_recursive([timeslot], activities, self.can_assign_timeslot_activity)  # type: ignore
 
             if draw:
                 activity = draw[1]
                 schedule.connect_nodes(activity, timeslot)
 
-    def assign_students_timeslots(self, schedule: Schedule, i_max=10000):
+    def assign_students_timeslots(self, schedule: Schedule, i_max=10000, method="uniform"):
         available_activities = list(schedule.activities.values())
 
         # Remember students that have already been assigned a timeslot for activities
@@ -167,7 +152,68 @@ class Randomize(Solver):
             timeslots_linked = list(activity.timeslots.values())
 
             # TODO: #30 improvement would be to first see if there is an available timeslot for student, but it wouldn't necessarily be uniform (see commented code)
-            draw_timeslot = self.draw_uniform_recursive([student], timeslots_linked, self.verifier.can_assign_student_timeslot)  # type: ignore
+            draw_timeslot = None
+            match method:
+                case "min_overlap":
+                    draw_timeslot = self.draw_uniform_recursive(
+                        [student],
+                        timeslots_linked,
+                        lambda s, t: self.can_assign_student_timeslot(s, t) and not self.node_has_period(s, t),
+                    )
+                case "min_gaps":
+                    for limit in range(1, 4):
+                        draw_timeslot = self.draw_uniform_recursive(
+                            [student],
+                            timeslots_linked,
+                            lambda s, t: self.can_assign_student_timeslot(s, t)
+                            and not self.timeslot_gives_gaps(s, t, limit=limit),
+                        )
+                        if draw_timeslot:
+                            break
+                case "min_gaps_overlap":
+                    # Give priority to absence of gaps, then to overlap
+
+                    # Try meeting requirements: no overlap AND no gap of size `limit` for increasing limit
+                    for limit in range(1, 4):
+                        draw_timeslot = self.draw_uniform_recursive(
+                            [student],
+                            timeslots_linked,
+                            lambda s, t: self.can_assign_student_timeslot(s, t)
+                            and not self.node_has_period(s, t)
+                            and not self.timeslot_gives_gaps(s, t, limit=limit),
+                        )
+                        if draw_timeslot:
+                            break
+
+                    # If failed, try meeting requirements: no gaps of size `limit` for increasing limit
+                    if not draw_timeslot:
+                        for limit in range(1, 4):
+                            draw_timeslot = self.draw_uniform_recursive(
+                                [student],
+                                timeslots_linked,
+                                lambda s, t: self.can_assign_student_timeslot(s, t)
+                                and not self.timeslot_gives_gaps(s, t, limit=limit),
+                            )
+                            if draw_timeslot:
+                                break
+
+                    # If still failed, try meeting requirement: no overlap
+                    if not draw_timeslot:
+                        draw_timeslot = self.draw_uniform_recursive(
+                            [student],
+                            timeslots_linked,
+                            lambda s, t: self.can_assign_student_timeslot(s, t) and not self.node_has_period(s, t),
+                        )
+
+                    # If still failed, just draw a random available timeslot
+                case _:
+                    draw_timeslot = None
+            # Draw a random timeslot if method="uniform" or if method's restrictions did not result in a succesful draw.
+            if not draw_timeslot:
+                draw_timeslot = self.draw_uniform_recursive(
+                    [student], timeslots_linked, self.can_assign_student_timeslot
+                )
+
             if not draw_timeslot:
                 if self.verbose:
                     warn(f"ERROR: Could no longer find available timeslots for {activity} after {i} iterations.")
@@ -199,31 +245,29 @@ class Randomize(Solver):
         # Return Result
         return Result(schedule=schedule, iterations=i_max, solved=activities_finished)
 
-    def uniform_strict(self, schedule: Schedule, i_max: int):
-        """Make a completely random schedule solution"""
+    def solve(self, schedule: Schedule | None = None, i_max: int | None = None, method=None, strict=True):
+        if schedule is None:
+            schedule = make_prototype(self.students_input, self.courses_input, self.rooms_input)
+
+        if method is None:
+            method = self.method
+
+        assert method in ["uniform", "min_gaps", "min_overlap", "min_gaps_overlap", "min_overlap_gaps"]
+
+        if i_max is None:
+            # Program on average has to iterate over each activity once, which with a random distribution it takes more iterations
+            i_min = 1000 * len(schedule.activities)
+            guess_required_edges = 0
+            for activity in schedule.activities.values():
+                guess_required_edges += activity.enrolled_students
+            i_max = max(guess_required_edges, i_min)
 
         # First make sure each activity has a timeslot
         self.assign_activities_timeslots_once(schedule)
         # Divide leftover timeslots over activities
         self.assign_activities_timeslots_uniform(schedule)
 
-        return self.assign_students_timeslots(schedule, i_max)
-
-    def solve(self, schedule: Schedule | None = None, i_max: int | None = None, method="uniform", strict=True):
-        if schedule is None:
-            schedule = make_prototype(self.students_input, self.courses_input, self.rooms_input)
-
-        if i_max is None:
-            # Program on average has to iterate over each activity once, which with a random distribution it takes more iterations
-            i_min = 100 * len(schedule.activities)
-            guess_required_edges = 0
-            for activity in schedule.activities.values():
-                guess_required_edges += activity.enrolled_students
-            i_max = max(guess_required_edges, i_min)
-
-        if method == "uniform" and strict:
-            return self.uniform_strict(schedule, i_max)  # type: ignore
-        raise ValueError("Did not recognize solver.")
+        return self.assign_students_timeslots(schedule, i_max, method=method)
 
 
 # TODO try sudoku algorithm

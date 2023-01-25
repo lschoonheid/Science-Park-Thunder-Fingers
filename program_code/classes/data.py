@@ -1,3 +1,4 @@
+import os
 import pickle
 import hashlib
 from typing import Callable
@@ -5,8 +6,23 @@ from functools import wraps
 from csv import DictReader
 
 
+def prepare_path(path: str):
+    """If a directory for `path` doesn't exist, make it."""
+
+    # Filter directory from path
+    directory = "/".join(path.split("/")[:-1])
+    if directory == "":
+        return
+
+    isExist = os.path.exists(directory)
+    if not isExist:
+        # Create a new directory because it does not exist
+        os.makedirs(directory)
+
+
 def dump_pickle(data, output: str):
     """Dump pickle file."""
+    prepare_path(output)
     with open(output, "wb") as handle:
         pickle.dump(data, handle)
     return data
