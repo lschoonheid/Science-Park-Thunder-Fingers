@@ -15,7 +15,7 @@ class GeneticSolve(Mutations):
         students_input,
         courses_input,
         rooms_input,
-        max_generations=30000,
+        max_generations=3,
         # max_generations=35000,
         numberOfChromosomes=100,
         # numberOfChromosomes=100,
@@ -118,9 +118,9 @@ class GeneticSolve(Mutations):
 
         output_path = dump_result(current_best, f"output/genetic_{self.max_generations}_")
         print(
-            f"Best fitness {self.get_fitness(current_best):5f} \t score: {current_best.score} \nIterations: {generations} \t solved: {current_best.check_solved()}  \n \
-            Score vector: {current_best.score_vector} \n \
-            saved at {output_path}"
+            f"Best fitness {self.get_fitness(current_best):5f} \t score: {current_best.score} \nIterations: {generations} \t solved: {current_best.check_solved()} \
+            \nScore vector: {current_best.score_vector} \
+            \nsaved at {output_path}"
         )
 
         print("\n")
