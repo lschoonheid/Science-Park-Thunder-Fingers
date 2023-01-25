@@ -104,12 +104,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog="main.py", description="Make a schedule.")
 
     parser.add_argument(
-        "--prefs",
-        dest="stud_prefs_path",
-        default="data/studenten_en_vakken.csv",
-        help="Path to student enrolments csv.",
-    )
-    parser.add_argument(
         "-m",
         dest="method",
         choices=["baseline", "min_overlap", "min_gaps", "min_gaps_overlap", "min_overlap_gaps", "genetic", "greedy"],
@@ -122,6 +116,12 @@ if __name__ == "__main__":
         "-sub", type=int, dest="n_subset", help="Subset: amount of students to take into account out of dataset."
     )
     parser.add_argument("-v", dest="verbose", action="store_true", help="Verbose: log error messages.")
+    parser.add_argument(
+        "--prefs",
+        dest="stud_prefs_path",
+        default="data/studenten_en_vakken.csv",
+        help="Path to student enrolments csv.",
+    )
     parser.add_argument("--courses", dest="courses_path", default="data/vakken.csv", help="Path to courses csv.")
     parser.add_argument("--rooms", dest="rooms_path", default="data/zalen.csv", help="Path to rooms csv.")
     parser.add_argument("--no_plot", dest="do_plot", action="store_false", help="Don't show matplotlib plot")

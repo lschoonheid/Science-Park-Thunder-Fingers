@@ -2,7 +2,6 @@ import random
 from tqdm import tqdm
 from typing import Callable
 from warnings import warn
-import copy
 from .solver import Solver
 from .generate import make_prototype
 from ..classes import *
@@ -117,10 +116,6 @@ class Randomize(Solver):
     def assign_students_timeslots(self, schedule: Schedule, i_max=10000, method="uniform"):
         available_activities = list(schedule.activities.values())
 
-        # Remember students that have already been assigned a timeslot for activities
-        # Uses tuples of (activity.id, student.id)
-        activity_students_assigned: set[tuple[int, int]] = set()
-
         # Try making connections for i_max iterations
         edges = set()
         for i in tqdm(range(i_max), disable=not self.verbose, desc="Trying connections:"):
@@ -229,10 +224,8 @@ class Randomize(Solver):
 
             # Success: found a pair of student, timeslot that meet all requirements and can be booked
             schedule.connect_nodes(student, timeslot)
-            edges.add(edge)
             # Remove student from index of unassigned students for this activity
             getattr(activity, "_unassigned_students").remove(student)
-            activity_students_assigned.add((activity.id, student.id))
         activities_finished = len(available_activities) == 0
 
         if not activities_finished:
