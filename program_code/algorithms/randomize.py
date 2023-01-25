@@ -91,7 +91,7 @@ class Randomize(Solver):
         random.shuffle(activities)
         random.shuffle(timeslots)
 
-        self.assign_activities_timeslots_sorted(schedule, activities, timeslots)
+        self.assign_activities_timeslots_prioritized(schedule, activities, timeslots)
 
     def assign_activities_timeslots_uniform(self, schedule: Schedule):
         # Make shuffled list of timeslots so they will be picked randomly

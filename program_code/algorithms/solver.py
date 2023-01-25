@@ -39,26 +39,24 @@ class Solver(Statistics):
                     # Reached required capacity, stop looking for timeslots
                     break
 
-                # Check if timeslot can be coupled to activity (max_timeslots, timeslot available)
+                # Check if timeslot can be coupled to activity
+                # (max_timeslots, timeslot available, moment is already taken by same course lecture)
                 if not self.can_assign_timeslot_activity(timeslot, activity):
                     continue
 
-                # Check if moment is already taken by a course lecture
-                for bound_activity in activity.course.bound_activities.values():
-                    if self.node_has_period(bound_activity, timeslot):
-                        continue
                 schedule.connect_nodes(activity, timeslot)
 
                 if not activity.capacity:
                     added_capacity = timeslot.capacity
                 else:
                     added_capacity = min(activity.capacity, timeslot.capacity)
+
                 total_capacity += added_capacity
 
             if self.verbose and total_capacity < activity_enrolments:
                 warnings.warn(f"FAILED: {total_capacity, activity.enrolled_students}")
 
-    def assign_activities_timeslots_sorted(self, schedule, activities, timeslots):
+    def assign_activities_timeslots_prioritized(self, schedule: Schedule, activities, timeslots):
         # Activities with max timeslots
         activities_bound: list[Activity] = []
         # Activitities with unbound number of timeslots
@@ -66,11 +64,9 @@ class Solver(Statistics):
 
         # Sort activities into bound and unbound max_timeslots
         # TODO: these lines are degenerate of course.bound_activities
-        for activity in activities:
-            if activity.max_timeslots:
-                activities_bound.append(activity)
-            else:
-                activities_free.append(activity)
+        for course in schedule.courses.values():
+            activities_bound.extend(course.bound_activities.values())
+            activities_free.extend(course.unbound_activities.values())
 
         # first assign activities with max timeslots most efficiently
         self.assign_activities_timeslots_greedy(schedule, activities_bound, timeslots, reverse=True)

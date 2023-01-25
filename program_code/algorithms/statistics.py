@@ -54,16 +54,19 @@ class Statistics:
                 return True
         return False
 
-    def moment_conflicts(self, activities1, activities2):
+    def moment_conflicts(self, nodes1, nodes2):
+        """Count same time bookings between `nodes1` and `nodes2`"""
         conflicts = 0
-        for activity1 in activities1:
-            for activity2 in activities2:
-                if activity1.id == activity2.id:
+        for node1 in nodes1:
+            for node2 in nodes2:
+                if node1.id == node2.id:
                     continue
-                for timeslot1 in activity1.timeslots.values():
-                    for timeslot2 in activity2.timeslots.values():
+                for timeslot1 in node1.timeslots.values():
+                    for timeslot2 in node2.timeslots.values():
                         if timeslot1.moment == timeslot2.moment:
                             conflicts += 1
+        # TODO: possible this has to be divided by two when nodes1 == nodes2
+        # TODO: or build index on pairs checked
         return conflicts
 
     def student_has_activity_assigned(self, student: Student, activity: Activity):
@@ -108,6 +111,11 @@ class Statistics:
         if self.node_has_activity(timeslot):
             return False
 
+        # Check whether timeslot is already taken by a lecture of the same course
+        for bound_activity in activity.course.bound_activities.values():
+            if self.node_has_period(bound_activity, timeslot):
+                return False
+
         # Can always assign timeslots to tutorials/practicals
         if activity.max_timeslots is None:
             return True
@@ -119,6 +127,7 @@ class Statistics:
         # One instance of activity means all students must fit in room
         if activity.max_timeslots == 1 and timeslot.room.capacity >= activity.enrolled_students:
             return True
+
         return len(activity.timeslots) < activity.max_timeslots
 
     def can_assign_student_timeslot(self, student: Student, timeslot: Timeslot):

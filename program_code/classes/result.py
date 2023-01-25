@@ -36,10 +36,11 @@ class Result(Statistics):
         assert self._compressed == False, "Can only verify schedule uncompressed."
         # TODO check if it is solved (meets all hard constraints). Use the above hard constraint checkers.
         for course in self.schedule.courses.values():
+            # Check whether lectures never coincide with same course activities
+            if self.moment_conflicts(course.bound_activities.values(), course.activities.values()):
+                return False
+
             for activity in course.activities.values():
-                # Check whether lectures never coincide with same course activities
-                if self.moment_conflicts(course.bound_activities.values(), course.activities.values()):
-                    return False
                 # Check lectures have one timeslot
                 if self.activity_overbooked(activity):
                     return False
