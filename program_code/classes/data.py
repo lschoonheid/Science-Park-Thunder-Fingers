@@ -4,6 +4,7 @@ import hashlib
 from typing import Callable
 from functools import wraps
 from csv import DictReader
+import time
 
 
 def prepare_path(path: str):
@@ -26,6 +27,12 @@ def dump_pickle(data, output: str):
     with open(output, "wb") as handle:
         pickle.dump(data, handle)
     return data
+
+
+def dump_result(data, directory: str):
+    time_string = time.strftime("%Y%m%d-%H%M%S")
+    path = directory + time_string + ".pyc"
+    return dump_pickle(data, path)
 
 
 def load_pickle(location: str):
