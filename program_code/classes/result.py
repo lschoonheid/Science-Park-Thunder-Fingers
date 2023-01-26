@@ -42,7 +42,7 @@ class Result(Statistics):
                 return False
 
             for activity in course.activities.values():
-                # Check lectures have one timeslot
+                # Check lectures have max. one timeslot
                 if self.activity_overbooked(activity):
                     return False
                 for student in activity.students.values():

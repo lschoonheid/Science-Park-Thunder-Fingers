@@ -7,19 +7,6 @@ import copy
 
 
 class Mutator(Randomizer):
-    def __init__(
-        self,
-        # numberOfCrossoverPoints=2,
-        # mutationSize=2,
-        # crossoverProbability=80,
-        # mutationProbability=3,
-    ):
-        # self.mutationSize = mutationSize
-        # self.numberOfCrossoverPoints = numberOfCrossoverPoints
-        # self.crossoverProbability = crossoverProbability
-        # self.mutationProbability = mutationProbability
-        pass
-
     # TODO implement for all node types
     def fast_swap(self, node1: Timeslot, node2: Timeslot):
         """Only swap metadata; virtual swap."""
@@ -59,16 +46,28 @@ class Mutator(Randomizer):
         neighbors_1 = copy.copy(node1.neighbors)
         neighbors_2 = copy.copy(node2.neighbors)
 
+        solved_before = Result(schedule).check_solved()
+        if not solved_before:
+            pass
+
+        # Disconnect all neighbors
         for neighbor in neighbors_1.values():
             if type(neighbor).__name__ in skip:
                 continue
             schedule.disconnect_nodes(node1, neighbor)
-            schedule.connect_nodes(node2, neighbor)
-
         for neighbor in neighbors_2.values():
             if type(neighbor).__name__ in skip:
                 continue
             schedule.disconnect_nodes(node2, neighbor)
+
+        # Connect all neighbors
+        for neighbor in neighbors_1.values():
+            if type(neighbor).__name__ in skip:
+                continue
+            schedule.connect_nodes(node2, neighbor)
+        for neighbor in neighbors_2.values():
+            if type(neighbor).__name__ in skip:
+                continue
             schedule.connect_nodes(node1, neighbor)
 
     def allow_swap_timeslot(self, result, timeslot1: Timeslot, timeslot2: Timeslot, score_ceiling=None):
