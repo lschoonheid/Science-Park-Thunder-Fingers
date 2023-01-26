@@ -208,9 +208,9 @@ def plot_timetable(schedule: Schedule):
     # Set Axis
     ax = plt.subplot()
     ax.yaxis.grid()
-    ax.set_xlim(-0.5,len(WEEK_DAYS)+0.5)    
+    ax.set_xlim(-0.5,len(WEEK_DAYS)-0.5)    
     ax.set_ylim(19.1, 8.9)
-    ax.set_xticks(range(1,len(WEEK_DAYS)+1))
+    ax.set_xticks(range(0,len(WEEK_DAYS)))
     ax.set_xticklabels(WEEK_DAYS)
     ax.set_yticks(range(9,19,2))
     ax.set_ylabel('Time')
