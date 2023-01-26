@@ -16,11 +16,11 @@ class GeneticSolve(Mutations):
         students_input,
         courses_input,
         rooms_input,
-        max_generations=4000,
-        # max_generations=400000,
+        # max_generations=40,
+        max_generations=5000,
         population_size=1,
-        # population_size=150,
-        decent_scope=100,
+        # population_size=50,
+        decent_scope=10,
         # replaceByGeneration=8,
         # trackBest=5,
         # numberOfCrossoverPoints=2,
@@ -48,10 +48,9 @@ class GeneticSolve(Mutations):
         # self.crossoverProbability = crossoverProbability
         # self.mutationProbability = mutationProbability
 
-    def get_fitness(self, result: Result):
+    def fitness(self, score: float | int):
         """Get fitness of a result."""
-        result.update_score()
-        return 10000 / (1 + result.score)
+        return 10000 / (1 + score)
 
     def get_swap_scores_timeslot(
         self, result: Result, scope: int, tried_swaps: set[tuple[int, int]], ceiling: int | float | None = 0
@@ -83,6 +82,21 @@ class GeneticSolve(Mutations):
         schedule_seed: Schedule | None = None,
         i_max: int | None = None,
     ):
+        """
+        TODO mark lower half of population for replacement
+        TODO: define crossover
+        TODO: define mutations
+        TODO do different mutations, depending on highest conflict factor
+        TODO: statistics of different methods
+        TODO: hillclimber
+        TODO: recursive swapping function
+        TODO: index on swaps already tried
+        TODO: simulated annealing
+        TODO: Track score over time
+        TODO: Sub score function per timeslot, only consider students involved with timeslot for much faster score difference calculation
+        TODO: Build population of mutations and take best score differences , steepest decent: number of mutations = decent scope
+        TODO: Simulated annealing
+        """
         # Initialize population from prototype
         if schedule_seed is None:
             self.population = generate_solutions(
@@ -94,66 +108,90 @@ class GeneticSolve(Mutations):
         else:
             self.population = [Result(copy.deepcopy(schedule_seed)).compress() for i in range(self.population_size)]
 
-        # Worst score
-        best_fitness = 0
-        best_score = 1600
         population_sorted: list[Result] = self.sort_objects(self.population, "score")  # type: ignore
         current_best: Result = population_sorted[0].decompress(
             self.students_input, self.courses_input, self.rooms_input
         )
+        swap_scores_memory: dict[tuple[int, int], int | float] = {}
+        backup_edges = copy.deepcopy(current_best.schedule.edges)
+
+        best_fitness = 0
+        best_score = None
         scores_over_time: list[float] = []
         timestamps = []
         # current_best: Result = None  # type: ignore
         generations = 0
-        backup_edges = copy.deepcopy(current_best.schedule.edges)
         # TODO: order swap pairs
         tried_swaps: set[tuple[int, int]] = set()
         # TODO: in a loop: crossover, mutate, select best fit and repeat
-        pbar = tqdm(range(self.max_generations))
+        pbar = tqdm(range(self.max_generations), position=0, leave=True)
         for i in pbar:
-            # TODO mark lower half of population for replacement
-            # TODO: define crossover
-            # TODO: define mutations
-            # TODO do different mutations, depending on highest conflict factor
-            # TODO: hillclimber
-            # TODO: recursive swapping function
-            # TODO: index on swaps already tried
-            # TODO: simulated annealing
             # Try swapping timeslots to get a better fitness (or score)
 
-            # if current_best_fitness > best_fitness:
-            #     best_fitness = current_best_fitness
-
             current_best.update_score()
-            if current_best.score < best_score and current_best.check_solved():
+            if self.fitness(current_best.score) > best_fitness and current_best.check_solved():
                 backup_edges = copy.deepcopy(current_best.schedule.edges)
                 best_score = current_best.score
+                best_fitness = self.fitness(best_score)
 
-            swapped = self.swap_random_timeslots(current_best, tried_swaps=tried_swaps)
-            if not swapped:
-                warnings.warn("Had to break here")
-                break
-            current_best.update_score()
-            if current_best.score > best_score:
-                # or not current_best.check_solved():
-                # Swap was uneffective, undo swap
-                self.swap_neighbors(current_best.schedule, *swapped, skip=["Room"])  # type: ignore
-                current_best.update_score()
-                s1, s2 = swapped
-                tried_swaps.add((s1.id, s2.id))
-                tried_swaps.add((s2.id, s1.id))
-            else:
-                # Succesful swap, clear memory of tried swaps
-                tried_swaps.clear()
+            # See which swaps are best
+            swap_scores = self.get_swap_scores_timeslot(current_best, self.decent_scope, tried_swaps)
+            # TODO: make this a priority queue
+            # if len(swap_scores_memory) > 4000:
+            #     swap_scores_memory.clear()
+            # tried_swaps.union(swap_scores.keys())
+            swap_scores_memory.update(swap_scores)
+            best_swap_ids: tuple[int, int] = min(swap_scores, key=swap_scores.get)  # type: ignore
+            best_swap_score = swap_scores[best_swap_ids]
+            del swap_scores_memory[best_swap_ids]
+            # swap_scores_sorted = sorted(swap_scores.items(), key=lambda item: item[1])
+            # best_swap_score = swap_scores_sorted[0][1]
+            # best_swap = swap_scores_sorted[0][0]
+
+            # TODO Possible to do simulated annealing here
+            if best_swap_score > 0:
+                continue
+
+            # TODO Possible to do relaxation here
+            id1, id2 = best_swap_ids
+            swapped_nodes = current_best.schedule.nodes[id1], current_best.schedule.nodes[id2]
+            self.swap_neighbors(current_best.schedule, *swapped_nodes, skip=["Room"])  # type: ignore
+            swapped_ids = best_swap_ids
+            # swapped = best_swap
+
+            # # swapped = self.swap_random_timeslots(current_best, tried_swaps=tried_swaps)
+            # if not swapped:
+            #     warnings.warn("Could no longer find available swaps before end of max_generations.")
+            #     break
 
             if not current_best.check_solved():
                 current_best = Result(Schedule(self.students_input, self.courses_input, self.rooms_input, backup_edges))
+                tried_swaps.add(swapped_ids)
+                continue
+
+            # Score of REVERSING the swap
+            score_diff = self.swap_score_timeslot(current_best, *swapped_nodes)  # type: ignore
+            # swapped = self.swap_random_timeslots(current_best, tried_swaps=tried_swaps)
+
+            # current_best.update_score()
+            # if current_best.score > best_score:
+            if score_diff < 0:
+                # Swap was uneffective, undo swap
+                self.swap_neighbors(current_best.schedule, *swapped, skip=["Room"])  # type: ignore
+                current_best.update_score()
+                tried_swaps.add(swapped_ids)
+            else:
+                # Succesful swap, clear memory of tried swaps
+                # TODO: don't clear?
                 tried_swaps.clear()
+
             generations = i
-            pbar.set_description(f"{type(self).__name__} ({self.method}) (score: {current_best.score})")
+            pbar.set_description(
+                f"{type(self).__name__} ({self.method}) (score: {current_best.score}) (best swap memory {len(swap_scores_memory) } tried swaps memory {len(tried_swaps) })"
+            )
             # print(f"Score: {current_best.score} \t Generation: {i + 1 }/{ self.max_generations}", end="\r")
 
-            scores_over_time.append(best_score)
+            scores_over_time.append(best_score)  # type: ignore
             timestamps.append(time.time())
             if current_best.score == 0:
                 break
@@ -167,7 +205,7 @@ class GeneticSolve(Mutations):
             \nsaved at {output_path}"
         )
 
-        plt.plot(scores_over_time, timestamps)
+        plt.plot(timestamps, scores_over_time)
         plt.show()
 
         return current_best
