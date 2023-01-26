@@ -2,6 +2,7 @@ from functools import cached_property
 import numpy as np
 from ..algorithms.statistics import Statistics
 from .schedule import Schedule
+import copy
 
 
 class Result(Statistics):
@@ -150,3 +151,18 @@ class Result(Statistics):
 
     def __str__(self):
         return str(self.__dict__)
+
+    def deepcopy(
+        self,
+        students_input: list[dict],
+        courses_input: list[dict],
+        rooms_input: list[dict],
+        edges_input: set[tuple[int, int]] | None = None,
+    ):
+        return Result(
+            Schedule(students_input, courses_input, rooms_input, copy.deepcopy(self.schedule.edges)),
+            self.solved_input,
+            self.iterations,
+            self.score_matrix,
+            self.score_vector_input,
+        )
