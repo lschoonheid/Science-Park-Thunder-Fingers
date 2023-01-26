@@ -99,9 +99,9 @@ class Statistics:
                 print(f"HARD CONSTRAINT: Overbooked timeslot: {timeslot.id} {timeslot} has {bookings}")
         return overbookings
 
-    def room_overbooked(self, timeslot: Timeslot):
-        """Count timeslot (chair) capacity surplus."""
-        return max(timeslot.enrolled_students - timeslot.room.capacity, 0)
+    # def room_overbooked(self, timeslot: Timeslot):
+    #     """Count timeslot (chair) capacity surplus."""
+    #     return max(timeslot.enrolled_students - timeslot.room.capacity, 0)
 
     def timeslot_student_overbooked(self, timeslot: Timeslot):
         """Count surplus of students booked for timeslot."""
