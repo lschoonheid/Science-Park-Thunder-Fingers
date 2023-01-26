@@ -9,15 +9,16 @@ import copy
 class Mutations(Randomize):
     def __init__(
         self,
-        numberOfCrossoverPoints=2,
-        mutationSize=2,
-        crossoverProbability=80,
-        mutationProbability=3,
+        # numberOfCrossoverPoints=2,
+        # mutationSize=2,
+        # crossoverProbability=80,
+        # mutationProbability=3,
     ):
-        self.mutationSize = mutationSize
-        self.numberOfCrossoverPoints = numberOfCrossoverPoints
-        self.crossoverProbability = crossoverProbability
-        self.mutationProbability = mutationProbability
+        # self.mutationSize = mutationSize
+        # self.numberOfCrossoverPoints = numberOfCrossoverPoints
+        # self.crossoverProbability = crossoverProbability
+        # self.mutationProbability = mutationProbability
+        pass
 
     # TODO implement for all node types
     def fast_swap(self, node1: Timeslot, node2: Timeslot):
@@ -137,6 +138,31 @@ class Mutations(Randomize):
         self.fast_swap(timeslot1, timeslot2)
 
         return diff_sub_score
+
+    def get_swap_scores_timeslot(
+        self, result: Result, scope: int, tried_swaps: set[tuple[int, int]], ceiling: int | float | None = 0
+    ):
+        """Get scores differences for `scope` possible swaps."""
+        swap_scores: dict[tuple[int, int], int | float] = {}
+        timeslots = list(result.schedule.timeslots.values())
+        for i in range(scope):
+            draw = self.draw_uniform_recursive(
+                timeslots,
+                timeslots,
+                lambda t1, t2: self.allow_swap_timeslot(result, t1, t2, score_ceiling=ceiling),
+                return_value=True,
+                # TODO: remember illegal swaps in between tries
+                _combination_set=tried_swaps,
+            )  # type: ignore
+            if not draw:
+                break
+            tA, tB, score = draw  # type: ignore
+            if ceiling is not None and score > ceiling:
+                continue
+            # Sort by id, make sure swap_scores has no duplicates
+            id1, id2 = sorted([tA.id, tB.id])
+            swap_scores[(id1, id2)] = score
+        return swap_scores
 
     def swap_random_timeslots(self, result: Result, tried_swaps: set | None = None):
         """Swap two timeslots at random, if allowed."""
