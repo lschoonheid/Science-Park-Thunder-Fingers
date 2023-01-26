@@ -15,10 +15,10 @@ class GeneticSolve(Mutations):
         students_input,
         courses_input,
         rooms_input,
-        max_generations=30000,
-        # max_generations=35000,
-        numberOfChromosomes=100,
-        # numberOfChromosomes=100,
+        # max_generations=200,
+        max_generations=40000,
+        numberOfChromosomes=150,
+        # numberOfChromosomes=150,
         replaceByGeneration=8,
         trackBest=5,
         numberOfCrossoverPoints=2,
@@ -67,50 +67,59 @@ class GeneticSolve(Mutations):
 
         # Worst score
         best_fitness = 0
-        current_best: Result = None  # type: ignore
+        best_score = 1600
+        population_sorted: list[Result] = self.sort_objects(self.population, "score")  # type: ignore
+        current_best: Result = population_sorted[0].decompress(
+            self.students_input, self.courses_input, self.rooms_input
+        )
+        # current_best: Result = None  # type: ignore
+        backup_edges = copy.deepcopy(current_best.schedule.edges)
         generations = 0
+        # TODO: order swap pairs
+        tried_swaps: set[tuple[int, int]] = set()
         # TODO: in a loop: crossover, mutate, select best fit and repeat
         pbar = tqdm(range(self.max_generations))
         for i in pbar:
             # TODO mark lower half of population for replacement
-
-            population_sorted: list[Result] = self.sort_objects(self.population, "score")  # type: ignore
-            current_best: Result = population_sorted[0].decompress(
-                self.students_input, self.courses_input, self.rooms_input
-            )
-
-            current_best_fitness = self.get_fitness(current_best)
-            if current_best_fitness > best_fitness:
-                best_fitness = current_best_fitness
-
-            solved = current_best.check_solved()
-
             # TODO: define crossover
             # TODO: define mutations
             # TODO do different mutations, depending on highest conflict factor
             # TODO: hillclimber
-
             # TODO: recursive swapping function
             # TODO: index on swaps already tried
             # TODO: simulated annealing
             # Try swapping timeslots to get a better fitness (or score)
-            _old_score = current_best.score
 
-            backup_edges = copy.deepcopy(current_best.schedule.edges)
+            current_best_fitness = self.get_fitness(current_best)
 
-            swapped = self.swap_random_timeslots(current_best.schedule)
-            undid_swap = not swapped
+            # if current_best_fitness > best_fitness:
+            #     best_fitness = current_best_fitness
+
+            current_best.update_score()
+            if current_best.score < best_score and current_best.check_solved():
+                backup_edges = copy.deepcopy(current_best.schedule.edges)
+                best_score = current_best.score
+
+            swapped = self.swap_random_timeslots(current_best, tried_swaps=tried_swaps)
             if not swapped:
                 warnings.warn("Had to break here")
                 break
-            if self.get_fitness(current_best) < current_best_fitness or not current_best.check_solved():
-                # Undo swap
+            current_best.update_score()
+            if current_best.score > best_score:
+                # or not current_best.check_solved():
+                # Swap was uneffective, undo swap
                 self.swap_neighbors(current_best.schedule, *swapped, skip=["Room"])  # type: ignore
                 current_best.update_score()
-                undid_swap = True
+                s1, s2 = swapped
+                tried_swaps.add((s1.id, s2.id))
+                tried_swaps.add((s2.id, s1.id))
+            else:
+                # Succesful swap, clear memory of tried swaps
+                tried_swaps.clear()
 
             if not current_best.check_solved():
                 current_best = Result(Schedule(self.students_input, self.courses_input, self.rooms_input, backup_edges))
+                tried_swaps.clear()
             generations = i
             pbar.set_description(f"{type(self).__name__} ({self.method}) (score: {current_best.score})")
             # print(f"Score: {current_best.score} \t Generation: {i + 1 }/{ self.max_generations}", end="\r")
@@ -119,7 +128,8 @@ class GeneticSolve(Mutations):
 
         output_path = dump_result(current_best, f"output/genetic_{self.max_generations}_")
         print(
-            f"Best fitness {self.get_fitness(current_best):5f} \t score: {current_best.score} \nIterations: {generations} \t solved: {current_best.check_solved()} \
+            f"Best fitness {self.get_fitness(current_best):5f} \t score: {current_best.score} \
+            \nIterations: {generations} \t solved: {current_best.check_solved()} \
             \nScore vector: {current_best.score_vector} \
             \nsaved at {output_path}"
         )
