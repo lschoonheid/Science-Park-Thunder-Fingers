@@ -15,8 +15,10 @@ from program_code import (
     Data,
     SolverSC,
     generate_solutions,
-    Randomize,
-    GeneticSolve,
+    Randomizer,
+    GeneticSolver,
+    HillClimber,
+    SimulatedAnnealing,
     GraphVisualization,
     plot_statistics,
 )
@@ -37,50 +39,38 @@ def main(
     """Interface for executing scheduling program."""
     # Load dataset
     input_data = Data(stud_prefs_path, courses_path, rooms_path)
-    students_input = input_data.students
-    courses_input = input_data.courses
-    rooms_input = input_data.rooms
+    data_arguments = input_data.__dict__
 
     # Optionally take subset of data
     # TODO #40 take random students of subset to prevent overfitting
     if n_subset:
-        if n_subset > len(students_input):
+        if n_subset > len(input_data.students_input):
             warnings.warn("WARNING: Chosen subset size is larger than set size, continuing anyway.")
         else:
-            students_input = random.sample(students_input, n_subset)
+            students_input = random.sample(input_data.students_input, n_subset)
+
+    # Initialize solver
 
     match method:
         case "baseline":
-            solver = Randomize
-            method = "uniform"
-        # case "min_overlap":
-        #     solver = Randomize
-        #     method = method
-        # case "min_gaps":
-        #     solver = Randomize
-        #     method = method
-        case "genetic":
-            solver = GeneticSolve
-            method = "min_gaps_overlap"
+            solver = Randomizer(**data_arguments, method="uniform")
+        case "simulated_annealing":
+            solver = GeneticSolver(**data_arguments, mutation_supplier=SimulatedAnnealing())
+        case "hillclimber":
+            solver = GeneticSolver(**data_arguments, mutation_supplier=HillClimber())
         case _:
-            solver = Randomize
-            method = method
-            # raise ValueError("Running solver requires a method.")
+            raise ValueError("Invalid method chosen.")
 
     # Generate (compressed) results: only return scorevector and edges
     results_compressed = generate_solutions(
-        solver(students_input, courses_input, rooms_input, verbose=verbose, method=method),
+        solver,
         show_progress=show_progress,
         **kwargs,
     )
 
     # Take random sample and rebuild schedule from edges
     sampled_result = random.choice(results_compressed)
-    sampled_result.decompress(
-        students_input,
-        courses_input,
-        rooms_input,
-    )
+    sampled_result.decompress(**data_arguments)
 
     # Visualize graph
     if verbose:
@@ -103,8 +93,16 @@ if __name__ == "__main__":
     parser.add_argument(
         "-m",
         dest="method",
-        choices=["baseline", "min_overlap", "min_gaps", "min_gaps_overlap", "min_overlap_gaps", "genetic", "greedy"],
-        default="genetic",
+        choices=[
+            "baseline",
+            "min_overlap",
+            "min_gaps",
+            "min_gaps_overlap",
+            "simulated_annealing",
+            "hillclimber",
+            # "greedy",
+        ],
+        default="simulated_annealing",
         help="Choose method.",
     )
     parser.add_argument("-i", type=int, dest="i_max", help="max iterations per solve cycle.")
