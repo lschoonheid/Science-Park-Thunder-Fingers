@@ -77,7 +77,7 @@ class Data:
     """Wrapper object for data."""
 
     def __init__(self, stud_prefs_path: str, courses_path: str, rooms_path: str):
-        self.students, self.courses, self.rooms = self.load(stud_prefs_path, courses_path, rooms_path)
+        self.students_input, self.courses_input, self.rooms_input = self.load(stud_prefs_path, courses_path, rooms_path)
 
     def load(self, stud_prefs_path: str, courses_path: str, rooms_path: str, replace_blank=True):
         students = csv_to_dicts(stud_prefs_path)
