@@ -11,7 +11,7 @@ Course: Algoritmen en Heuristieken 2023
 import csv
 import matplotlib.pyplot as plt
 # import pandas as pd
-import numpy as np
+# import numpy as np
 
 import argparse
 import random
@@ -22,9 +22,9 @@ from program_code import (
     Randomize,
     Schedule, prepare_path)
 
-PERIODS = ("9 - 11", "11 - 13", "13 - 15", "15 - 17", "17 - 19")
-WEEK_DAYS = ("MA", "DI", "WO", "DO", "VR")
+WEEK_DAYS = ["MA", "DI", "WO", "DO", "VR"]
 ROOMS = ["A1.04","A1.06","A1.08","A1.10","B0.201","C0.110","C1.112"]
+COLORS = ['pink', 'lightgreen', 'lightblue', 'wheat', 'salmon']
 
 """ 
 main function is a selected copy from main.py 
@@ -101,15 +101,14 @@ def stud_sched_csv(schedule: Schedule):
         # write the data
         for timeslot in timeslots:
                 for activity in timeslot.activities.values():
-                    for course in activity.courses.values():
-                        data = [
-                            timeslot.day_names[timeslot.day],
-                            timeslot.period_names[timeslot.period],
-                            course.name,
-                            activity.act_type,
-                            timeslot.room.name,
-                        ]
-                        writer.writerow(data)
+                    data = [
+                        timeslot.day_names[timeslot.day],
+                        timeslot.period_names[timeslot.period],
+                        activity.course.name,
+                        activity.act_type,
+                        timeslot.room.name,
+                    ]
+                    writer.writerow(data)
 
         print(f"output saved to {output_path}")
         return student
@@ -186,31 +185,48 @@ def room_sched_csv(schedule: Schedule):
         print(f"output saved to {output_path}")
 
 def plot_timetable(schedule: Schedule):
+    # timeslots = sorted(list(schedule.timeslots.values()), key=lambda x: x.moment)
+    student = stud_sched_csv(schedule)
+    output_path = f"output/{student}_schedule_output.png"
     
-    timeslots = sorted(list(schedule.timeslots.values()), key=lambda x: x.moment)
-    # for timeslot in timeslots:
-    #         print(timeslot,timeslot.activities.values())
+    timeslots = sorted(list(student.timeslots.values()), key=lambda x: x.moment)
+    fig=plt.figure(figsize = (10,5.89))
 
     for timeslot in timeslots:
-        print(timeslot.day_names[timeslot.day])
-        print(timeslot.period_names[timeslot.period])
-        data = [
-            timeslot.room.name,
-            timeslot.day_names[timeslot.day],
-            timeslot.period_names[timeslot.period],
-            list(timeslot.activities.values())[0],
-            # activity.act_type,
-            list(timeslot.students.values()),
-        ]
-        # match timeslot.day
-        print(data)
-    xpoints = np.array([0,35])
-    ypoints = np.array([0,4])
-    plt.xticks(range(0,35,1))
-    plt.plot(xpoints,ypoints)
-    plt.grid('both')
-    plt.show()
+        for activity in timeslot.activities.values():
+            room = timeslot.room.name
+            event = activity.course.name + activity.act_type
+            day = timeslot.day - 0.48
+            print(day)
+            print(int(day))
+            period = timeslot.period_names[timeslot.period]
+            end = period+2
+            plt.fill_between([day, day+0.96], period, end, color=COLORS[int(round(day))], edgecolor='k', linewidth=0.5)
+            plt.text(day+0.02, period+0.05, room, va='top', fontsize=7)
+            plt.text(day+0.48, (period+end)*0.5, event, ha='center', va='center', fontsize=9)
 
+    # Set Axis
+    ax = plt.subplot()
+    ax.yaxis.grid()
+    ax.set_xlim(-0.5,len(WEEK_DAYS)+0.5)    
+    ax.set_ylim(19.1, 8.9)
+    ax.set_xticks(range(1,len(WEEK_DAYS)+1))
+    ax.set_xticklabels(WEEK_DAYS)
+    ax.set_yticks(range(9,19,2))
+    ax.set_ylabel('Time')
+
+    # Set Second Axis
+    ax2=ax.twiny().twinx()
+    ax2.set_xlim(ax.get_xlim())
+    ax2.set_ylim(ax.get_ylim())
+    ax2.set_xticks(ax.get_xticks())
+    ax2.set_xticklabels(WEEK_DAYS)
+    ax2.set_ylabel('Time')
+
+    plt.title(student,y=1.07)
+    plt.savefig(output_path, dpi=200)
+    plt.show()  
+    
 
 if __name__ == "__main__":
     # Create a command line argument parser
