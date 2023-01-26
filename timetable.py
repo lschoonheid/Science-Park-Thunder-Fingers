@@ -114,8 +114,7 @@ def course_sched_csv(schedule: Schedule):
 def room_sched_csv(schedule: Schedule):
     # generate course information from random course in schedule
     room = random.choice(list(schedule.rooms.values()))
-    # timeslots = sorted(list(room.timeslots.values()), key=lambda x: x.moment)
-    # print(timeslots)
+    timeslots = sorted(list(room.timeslots.values()), key=lambda x: x.moment)
     # output path + file name
     output_path = f"output/room_schedule_output.csv"
 
@@ -130,22 +129,20 @@ def room_sched_csv(schedule: Schedule):
         writer.writerow(field_names)
 
         # write the data
-        for room in schedule.rooms.values():
-            timeslots = sorted(list(room.timeslots.values()), key=lambda x: x.moment)
-            for timeslot in timeslots:
-                activity = list(timeslot.activities.values())[0]
-                data = [
-                    room.name,
-                    timeslot.day_names[timeslot.day],
-                    timeslot.period_names[timeslot.period],
-                    activity.course,
-                    activity.act_type,
-                    list(timeslot.students.values()),
-                ]
-                writer.writerow(data)
+        for timeslot in timeslots:
+            activity = list(timeslot.activities.values())[0]
+            data = [
+                room.name,
+                timeslot.day_names[timeslot.day],
+                timeslot.period_names[timeslot.period],
+                activity.course,
+                activity.act_type,
+                list(timeslot.students.values()),
+            ]
+            writer.writerow(data)
 
         print(f"output saved to {output_path}")
-        return room
+    return room
 
 def plot_timetable(schedule: Schedule, spec):
     # type of plot
@@ -163,8 +160,8 @@ def plot_timetable(schedule: Schedule, spec):
         timeslots = sorted(list(course.timeslots.values()), key=lambda x: x.moment)
         spec = course
     elif spec == "room":
-        room = random.choice(list(schedule.rooms.values()))
-        # room = room_sched_csv(schedule)
+        # room = random.choice(list(schedule.rooms.values()))
+        room = room_sched_csv(schedule)
         timeslots = sorted(list(room.timeslots.values()), key=lambda x: x.moment)
         spec = room
 
@@ -174,15 +171,15 @@ def plot_timetable(schedule: Schedule, spec):
     
     fig=plt.figure(figsize = (10,5.89))
     for timeslot in timeslots:
-        for activity in timeslot.activities.values():
-            room = timeslot.room.name
-            event = activity.course.name + "\n" + activity.act_type
-            day = timeslot.day - 0.48
-            period = timeslot.period_names[timeslot.period]
-            end = period+2
-            plt.fill_between([day, day+0.96], period, end, color=COLORS[int(round(day))], edgecolor='k', linewidth=0.5)
-            plt.text(day+0.02, period+0.05, room, va='top', fontsize=7)
-            plt.text(day+0.48, (period+end)*0.5, event, ha='center', va='center', fontsize=9)
+        activity = list(timeslot.activities.values())[0]
+        room = timeslot.room.name
+        event = activity.course.name + "\n" + activity.act_type
+        day = timeslot.day - 0.48
+        period = timeslot.period_names[timeslot.period]
+        end = period+2
+        plt.fill_between([day, day+0.96], period, end, color=COLORS[int(round(day))], edgecolor='k', linewidth=0.5)
+        plt.text(day+0.02, period+0.05, room, va='top', fontsize=7)
+        plt.text(day+0.48, (period+end)*0.5, event, ha='center', va='center', fontsize=9)
 
     # Set Axis
     ax = plt.subplot()
