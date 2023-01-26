@@ -122,15 +122,30 @@ class Mutations(Randomize):
         projected_score = result.score
         # Revert swap
         self.fast_swap(timeslot1, timeslot2)
-        if projected_score > current_score:
+        diff_sub_score = projected_sub_score - current_sub_score
+        if diff_sub_score > 0:
             return False
 
-        # if timeslot1.room.capacity == timeslot2.room.capacity:
-        #     return True
-        # if timeslot1.capacity == timeslot2.capacity:
-        #     return True
-
+        if timeslot1.room.capacity == timeslot2.room.capacity:
+            return True
+        if timeslot1.capacity == timeslot2.capacity:
+            return True
         return True
+
+    def swap_score_timeslot(self, result: Result, timeslot1: Timeslot, timeslot2: Timeslot):
+        """Get score difference of swapping two timeslots."""
+        # TODO: constraint relaxation for local minimas
+
+        # Get current score
+        current_sub_score = result.sub_score(timeslot1) + result.sub_score(timeslot2)
+        # Pretend to swap
+        self.fast_swap(timeslot1, timeslot2)
+        # Get projected score
+        projected_sub_score = result.sub_score(timeslot1) + result.sub_score(timeslot2)
+        diff_sub_score = projected_sub_score - current_sub_score
+        self.fast_swap(timeslot1, timeslot2)
+
+        return diff_sub_score
 
     def swap_random_timeslots(self, result: Result, tried_swaps: set | None = None):
         """Swap two timeslots at random, if allowed."""
