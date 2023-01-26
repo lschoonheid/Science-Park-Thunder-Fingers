@@ -107,9 +107,15 @@ class Result(Statistics):
                 # Evening period is 4
                 sub_evening_timeslots = int(node.period == 4)
                 sub_students_overbooked = self.aggregate(self.student_overbooked, node.students)
-                sub_gap_periods: tuple[int, int, int, int] = sum(
-                    [self.gap_periods_student(student) for student in node.students.values()]  # type: ignore
-                )
+                sub_gap_periods_list = [self.gap_periods_student(student) for student in node.students.values()]  # type: ignore
+                sub_gap_periods: tuple[int, int, int, int]
+                # Take into account timeslots with only one student
+                if len(sub_gap_periods_list) > 1:
+                    sub_gap_periods = sum(sub_gap_periods_list)  # type: ignore
+                elif len(sub_gap_periods_list) == 1:
+                    sub_gap_periods = sub_gap_periods_list[0]  # type: ignore
+                else:
+                    sub_gap_periods = (0, 0, 0, 0)
             case _:
                 raise ValueError("Node must be Timeslot.")
 
