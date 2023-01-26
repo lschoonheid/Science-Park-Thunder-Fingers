@@ -3,6 +3,8 @@ Individueel onderdeel
 Interface for executing timetable program.
 
 Execute: `python3 timetable.py`.
+In main you can choose what type of timetable for the function
+plot_timetable() with options: student, course or room
 
 Student: Julia Geisler
 Course: Algoritmen en Heuristieken 2023
@@ -64,7 +66,7 @@ def main(stud_prefs_path: str, courses_path: str, rooms_path: str, n_subset: int
         rooms_input,
     )
 
-    plot_timetable(sampled_result.schedule)
+    plot_timetable(sampled_result.schedule, "room")
  
 def csv_timetable(schedule: Schedule, spec: str | None = None):
     """Interface for executing timetable program."""
@@ -147,11 +149,11 @@ def course_sched_csv(schedule: Schedule):
                     writer.writerow(data)
 
         print(f"output saved to {output_path}")
+    return course
 
 def room_sched_csv(schedule: Schedule):
     # generate course information from random course in schedule
-    # room = random.choice(list(schedule.rooms.values()))
-    print(schedule.rooms.values())
+    room = random.choice(list(schedule.rooms.values()))
     # timeslots = sorted(list(room.timeslots.values()), key=lambda x: x.moment)
     # print(timeslots)
     # output path + file name
@@ -183,20 +185,38 @@ def room_sched_csv(schedule: Schedule):
                         writer.writerow(data)
 
         print(f"output saved to {output_path}")
+        return room
 
-def plot_timetable(schedule: Schedule):
+def plot_timetable(schedule: Schedule, spec):
+    # type of plot
+    if spec == "student":
+        student = random.choice(schedule.students)
+        # student = stud_sched_csv(schedule)
+        timeslots = sorted(list(student.timeslots.values()), key=lambda x: x.moment)
+        spec = student
+    elif spec == "course":
+        course = random.choice(list(schedule.courses.values()))
+        # course = course_sched_csv(schedule.courses)
+        for activity in course.activities.values():
+            for timeslot in activity.timeslots.values():
+                schedule.connect_nodes(course, timeslot)
+        timeslots = sorted(list(course.timeslots.values()), key=lambda x: x.moment)
+        spec = course
+    elif spec == "room":
+        room = random.choice(list(schedule.rooms.values()))
+        # room = room_sched_csv(schedule)
+        timeslots = sorted(list(room.timeslots.values()), key=lambda x: x.moment)
+        spec = room
+
     # timeslots = sorted(list(schedule.timeslots.values()), key=lambda x: x.moment)
-    student = stud_sched_csv(schedule)
-    # student = random.choice(schedule.students)
-    output_path = f"output/{student}_schedule_output.png"
-    
-    timeslots = sorted(list(student.timeslots.values()), key=lambda x: x.moment)
-    fig=plt.figure(figsize = (10,5.89))
 
+    output_path = f"output/{spec}_timetable.png"
+    
+    fig=plt.figure(figsize = (10,5.89))
     for timeslot in timeslots:
         for activity in timeslot.activities.values():
             room = timeslot.room.name
-            event = activity.course.name + activity.act_type
+            event = activity.course.name + "\n" + activity.act_type
             day = timeslot.day - 0.48
             period = timeslot.period_names[timeslot.period]
             end = period+2
@@ -223,9 +243,8 @@ def plot_timetable(schedule: Schedule):
     ax2.set_yticks(range(9,19,2))
     ax2.set_ylabel('Time')
 
-    plt.title(student,y=1.07)
+    plt.title(spec,y=1.07)
     plt.savefig(output_path, dpi=200)
-
 
 if __name__ == "__main__":
     # Create a command line argument parser
