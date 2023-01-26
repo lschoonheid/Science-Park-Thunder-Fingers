@@ -70,7 +70,7 @@ class Mutations(Randomize):
             schedule.disconnect_nodes(node2, neighbor)
             schedule.connect_nodes(node1, neighbor)
 
-    def allow_timeslot_swap(self, result: Result, timeslot1: Timeslot, timeslot2: Timeslot):
+    def allow_swap_timeslot(self, result, timeslot1: Timeslot, timeslot2: Timeslot):
         """Assumes timeslots are already legally assigned."""
         # For timeslot swap:
         # TODO: Check capacity is still valid
@@ -111,19 +111,8 @@ class Mutations(Randomize):
         if timeslot2.room.capacity < timeslot1.enrolled_students:
             return False
 
-        # TODO: constraint relaxation for local minimas
-        # Get current score
-        result.update_score()
-        current_score = result.score
-        # Pretend to swap
-        self.fast_swap(timeslot1, timeslot2)
-        # Get projected score
-        result.update_score()
-        projected_score = result.score
-        # Revert swap
-        self.fast_swap(timeslot1, timeslot2)
-        diff_sub_score = projected_sub_score - current_sub_score
-        if diff_sub_score > 0:
+        # Check wether swap would be improvement
+        if self.swap_score_timeslot(result, timeslot1, timeslot2) > 0:
             return False
 
         if timeslot1.room.capacity == timeslot2.room.capacity:
@@ -151,7 +140,7 @@ class Mutations(Randomize):
         """Swap two timeslots at random, if allowed."""
         timeslots = list(result.schedule.timeslots.values())
         # TODO: steepest decent, try 100 swaps and see which were most effective
-        draw = self.draw_uniform_recursive(timeslots, timeslots, lambda t1, t2: self.allow_timeslot_swap(result, t1, t2), _combination_set=tried_swaps)  # type: ignore
+        draw = self.draw_uniform_recursive(timeslots, timeslots, lambda t1, t2: self.allow_swap_timeslot(result, t1, t2), _combination_set=tried_swaps)  # type: ignore
         if not draw:
             return None
 
