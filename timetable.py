@@ -187,6 +187,7 @@ def room_sched_csv(schedule: Schedule):
 def plot_timetable(schedule: Schedule):
     # timeslots = sorted(list(schedule.timeslots.values()), key=lambda x: x.moment)
     student = stud_sched_csv(schedule)
+    # student = random.choice(schedule.students)
     output_path = f"output/{student}_schedule_output.png"
     
     timeslots = sorted(list(student.timeslots.values()), key=lambda x: x.moment)
@@ -197,8 +198,6 @@ def plot_timetable(schedule: Schedule):
             room = timeslot.room.name
             event = activity.course.name + activity.act_type
             day = timeslot.day - 0.48
-            print(day)
-            print(int(day))
             period = timeslot.period_names[timeslot.period]
             end = period+2
             plt.fill_between([day, day+0.96], period, end, color=COLORS[int(round(day))], edgecolor='k', linewidth=0.5)
@@ -221,12 +220,12 @@ def plot_timetable(schedule: Schedule):
     ax2.set_ylim(ax.get_ylim())
     ax2.set_xticks(ax.get_xticks())
     ax2.set_xticklabels(WEEK_DAYS)
+    ax2.set_yticks(range(9,19,2))
     ax2.set_ylabel('Time')
 
     plt.title(student,y=1.07)
     plt.savefig(output_path, dpi=200)
-    plt.show()  
-    
+
 
 if __name__ == "__main__":
     # Create a command line argument parser
