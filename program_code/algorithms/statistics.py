@@ -71,9 +71,9 @@ class Statistics:
 
     def student_has_activity_assigned(self, student: Student, activity: Activity):
         """Verify whether `student` already has a timeslot for `activity`."""
-        for assigned_slot in student.timeslots.values():
+        for assigned_timeslot in student.timeslots.values():
             for activity_timeslot in activity.timeslots.values():
-                if assigned_slot.id == activity_timeslot.id:
+                if assigned_timeslot.id == activity_timeslot.id:
                     # Student already has assigned timeslot for activity
                     return True
         return False
@@ -81,9 +81,9 @@ class Statistics:
     def student_timeslots_for_activity(self, student: Student, activity: Activity):
         """Count `student`'s assigned `timeslot`s for `activity`."""
         timeslots_assigned = 0
-        for assigned_slot in student.timeslots.values():
-            for activity_timeslot in activity.timeslots.values():
-                if assigned_slot.id == activity_timeslot.id:
+        for assigned_timeslot in student.timeslots.values():
+            for assigned_activity in assigned_timeslot.activities.values():
+                if assigned_activity == activity:
                     timeslots_assigned += 1
         if timeslots_assigned != 1:
             pass
