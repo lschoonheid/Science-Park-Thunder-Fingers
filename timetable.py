@@ -12,21 +12,19 @@ Course: Algoritmen en Heuristieken 2023
 
 import csv
 import matplotlib.pyplot as plt
+
 # import pandas as pd
 # import numpy as np
 
 import argparse
 import random
 import warnings
-from program_code import (
-    Data,
-    generate_solutions,
-    Randomize,
-    Schedule, prepare_path)
+from program_code import Data, generate_solutions, Randomizer, Schedule, prepare_path
 
 WEEK_DAYS = ["MA", "DI", "WO", "DO", "VR"]
-ROOMS = ["A1.04","A1.06","A1.08","A1.10","B0.201","C0.110","C1.112"]
-COLORS = ['pink', 'lightgreen', 'lightblue', 'wheat', 'salmon']
+ROOMS = ["A1.04", "A1.06", "A1.08", "A1.10", "B0.201", "C0.110", "C1.112"]
+COLORS = ["pink", "lightgreen", "lightblue", "wheat", "salmon"]
+
 
 def csv_timetable(schedule: Schedule, spec: str | None = None):
     """Interface for executing timetable program."""
@@ -43,6 +41,7 @@ def csv_timetable(schedule: Schedule, spec: str | None = None):
             course_sched_csv(schedule)
             room_sched_csv(schedule)
 
+
 def stud_sched_csv(schedule: Schedule):
     # generate student information from random student in schedule
     student = random.choice(schedule.students)
@@ -52,7 +51,7 @@ def stud_sched_csv(schedule: Schedule):
     output_path = f"output/{student.name}_schedule_output.csv"
 
     # header
-    field_names = ["dag","tijdslot","vak","activiteit","zaal"]
+    field_names = ["dag", "tijdslot", "vak", "activiteit", "zaal"]
     prepare_path(output_path)
     with open(output_path, "w") as csvfile:
         writer = csv.writer(csvfile)
@@ -62,18 +61,19 @@ def stud_sched_csv(schedule: Schedule):
 
         # write the data
         for timeslot in timeslots:
-                for activity in timeslot.activities.values():
-                    data = [
-                        timeslot.day_names[timeslot.day],
-                        timeslot.period_names[timeslot.period],
-                        activity.course.name,
-                        activity.act_type,
-                        timeslot.room.name,
-                    ]
-                    writer.writerow(data)
+            for activity in timeslot.activities.values():
+                data = [
+                    timeslot.day_names[timeslot.day],
+                    timeslot.period_names[timeslot.period],
+                    activity.course.name,
+                    activity.act_type,
+                    timeslot.room.name,
+                ]
+                writer.writerow(data)
 
         print(f"output saved to {output_path}")
         return student
+
 
 def course_sched_csv(schedule: Schedule):
     # generate course information from random course in schedule
@@ -87,7 +87,7 @@ def course_sched_csv(schedule: Schedule):
     output_path = f"output/{course.name}_schedule_output.csv"
 
     # header
-    field_names = ["dag","tijdslot","activiteit","zaal", "studenten"]
+    field_names = ["dag", "tijdslot", "activiteit", "zaal", "studenten"]
 
     prepare_path(output_path)
     with open(output_path, "w") as csvfile:
@@ -98,18 +98,19 @@ def course_sched_csv(schedule: Schedule):
 
         # write the data
         for timeslot in timeslots:
-                for activity in timeslot.activities.values():
-                    data = [
-                        timeslot.day_names[timeslot.day],
-                        timeslot.period_names[timeslot.period],
-                        activity.act_type,
-                        timeslot.room.name,
-                        list(timeslot.students.values()),
-                    ]
-                    writer.writerow(data)
+            for activity in timeslot.activities.values():
+                data = [
+                    timeslot.day_names[timeslot.day],
+                    timeslot.period_names[timeslot.period],
+                    activity.act_type,
+                    timeslot.room.name,
+                    list(timeslot.students.values()),
+                ]
+                writer.writerow(data)
 
         print(f"output saved to {output_path}")
     return course
+
 
 def room_sched_csv(schedule: Schedule):
     # generate course information from random course in schedule
@@ -119,7 +120,7 @@ def room_sched_csv(schedule: Schedule):
     output_path = f"output/room_schedule_output.csv"
 
     # header
-    field_names = ["zaal","dag","tijdslot","vak","activiteit", "studenten"]
+    field_names = ["zaal", "dag", "tijdslot", "vak", "activiteit", "studenten"]
 
     prepare_path(output_path)
     with open(output_path, "w") as csvfile:
@@ -143,6 +144,7 @@ def room_sched_csv(schedule: Schedule):
 
         print(f"output saved to {output_path}")
     return room
+
 
 def plot_timetable(schedule: Schedule, spec):
     # type of plot
@@ -168,45 +170,48 @@ def plot_timetable(schedule: Schedule, spec):
     # timeslots = sorted(list(schedule.timeslots.values()), key=lambda x: x.moment)
 
     output_path = f"output/{spec}_timetable.png"
-    
-    fig=plt.figure(figsize = (10,5.89))
+
+    fig = plt.figure(figsize=(10, 5.89))
     for timeslot in timeslots:
         activity = list(timeslot.activities.values())[0]
         room = timeslot.room.name
         event = activity.course.name + "\n" + activity.act_type
         day = timeslot.day - 0.48
         period = timeslot.period_names[timeslot.period]
-        end = period+2
-        plt.fill_between([day, day+0.96], period, end, color=COLORS[int(round(day))], edgecolor='k', linewidth=0.5)
-        plt.text(day+0.02, period+0.05, room, va='top', fontsize=7)
-        plt.text(day+0.48, (period+end)*0.5, event, ha='center', va='center', fontsize=9)
+        end = period + 2
+        plt.fill_between([day, day + 0.96], period, end, color=COLORS[int(round(day))], edgecolor="k", linewidth=0.5)
+        plt.text(day + 0.02, period + 0.05, room, va="top", fontsize=7)
+        plt.text(day + 0.48, (period + end) * 0.5, event, ha="center", va="center", fontsize=9)
 
     # Set Axis
     ax = plt.subplot()
     ax.yaxis.grid()
-    ax.set_xlim(-0.5,len(WEEK_DAYS)-0.5)    
+    ax.set_xlim(-0.5, len(WEEK_DAYS) - 0.5)
     ax.set_ylim(19.1, 8.9)
-    ax.set_xticks(range(0,len(WEEK_DAYS)))
+    ax.set_xticks(range(0, len(WEEK_DAYS)))
     ax.set_xticklabels(WEEK_DAYS)
-    ax.set_yticks(range(9,21,2))
-    ax.set_ylabel('Time')
+    ax.set_yticks(range(9, 21, 2))
+    ax.set_ylabel("Time")
 
     # Set Second Axis
-    ax2=ax.twiny().twinx()
+    ax2 = ax.twiny().twinx()
     ax2.set_xlim(ax.get_xlim())
     ax2.set_ylim(ax.get_ylim())
     ax2.set_xticks(ax.get_xticks())
     ax2.set_xticklabels(WEEK_DAYS)
-    ax2.set_yticks(range(9,19,2))
-    ax2.set_ylabel('Time')
+    ax2.set_yticks(range(9, 19, 2))
+    ax2.set_ylabel("Time")
 
-    plt.title(spec,y=1.07)
+    plt.title(spec, y=1.07)
     plt.savefig(output_path, dpi=200)
+
 
 """ 
 main function is a selected copy from main.py 
 to assure timetable.py can be run independently
 """
+
+
 def main(stud_prefs_path: str, courses_path: str, rooms_path: str, n_subset: int, verbose: bool = False, **kwargs):
     """Interface for executing scheduling program."""
     # Load dataset
@@ -242,7 +247,8 @@ def main(stud_prefs_path: str, courses_path: str, rooms_path: str, n_subset: int
     )
 
     plot_timetable(sampled_result.schedule, "room")
- 
+
+
 if __name__ == "__main__":
     # Create a command line argument parser
     parser = argparse.ArgumentParser(prog="main.py", description="Make a schedule.")
