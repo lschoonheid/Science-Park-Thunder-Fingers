@@ -139,6 +139,30 @@ class Mutations(Randomize):
 
         return diff_sub_score
 
+    def draw_valid_timeslot_swap(
+        self,
+        result: Result,
+        timeslots: list[Timeslot],
+        tried_swaps: set[tuple[int, int]],
+        ceiling: int | float | None = 0,
+    ):
+        """Draw a valid swap."""
+        draw = self.draw_uniform_recursive(
+            timeslots,
+            timeslots,
+            lambda t1, t2: self.allow_swap_timeslot(result, t1, t2, score_ceiling=ceiling),
+            return_value=True,
+            # TODO: remember illegal swaps in between tries
+            _combination_set=tried_swaps,
+        )  # type: ignore
+        if not draw:
+            return None
+        tA, tB, score = draw  # type: ignore
+
+        # Sort by id, make sure swap_scores has no duplicates
+        id1, id2 = sorted([tA.id, tB.id])
+        return (id1, id2), score
+
     def get_swap_scores_timeslot(
         self, result: Result, scope: int, tried_swaps: set[tuple[int, int]], ceiling: int | float | None = 0
     ):
@@ -146,21 +170,13 @@ class Mutations(Randomize):
         swap_scores: dict[tuple[int, int], int | float] = {}
         timeslots = list(result.schedule.timeslots.values())
         for i in range(scope):
-            draw = self.draw_uniform_recursive(
-                timeslots,
-                timeslots,
-                lambda t1, t2: self.allow_swap_timeslot(result, t1, t2, score_ceiling=ceiling),
-                return_value=True,
-                # TODO: remember illegal swaps in between tries
-                _combination_set=tried_swaps,
-            )  # type: ignore
+            draw = self.draw_valid_timeslot_swap(result, timeslots, tried_swaps, ceiling)
             if not draw:
                 break
-            tA, tB, score = draw  # type: ignore
+            (id1, id2), score = draw
             if ceiling is not None and score > ceiling:
                 continue
-            # Sort by id, make sure swap_scores has no duplicates
-            id1, id2 = sorted([tA.id, tB.id])
+
             swap_scores[(id1, id2)] = score
         return swap_scores
 
@@ -168,11 +184,13 @@ class Mutations(Randomize):
         """Swap two timeslots at random, if allowed."""
         timeslots = list(result.schedule.timeslots.values())
         # TODO: steepest decent, try 100 swaps and see which were most effective
-        draw = self.draw_uniform_recursive(timeslots, timeslots, lambda t1, t2: self.allow_swap_timeslot(result, t1, t2), return_value=True, _combination_set=tried_swaps)  # type: ignore
+        draw = self.draw_valid_timeslot_swap(result, timeslots, tried_swaps or set())
         if not draw:
             return None
-        t1, t2, score = draw  # type: ignore
-        self.swap_neighbors(result.schedule, t1, t2, skip=["Room"])
+        (id1, id2), score = draw  # type: ignore
+
+        nodes = result.schedule.timeslots
+        self.swap_neighbors(result.schedule, nodes[id1], nodes[id1], skip=["Room"])
 
         # TODO remove TEST
         # if not Result(schedule).check_solved():

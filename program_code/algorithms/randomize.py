@@ -34,8 +34,7 @@ class Randomize(Solver):
         """Recursively try to pick two random nodes to satisfy `condition(node1, node2) == True`."""
         # assert _recursion_limit > 0, "Reached recursion limit"
         if _recursion_limit == 0:
-            print("ERROR: reached recursion depth limit!")
-            return None
+            raise RecursionError("Recursion depth exceeded")
 
         # Initialization
         if not _combination_set:

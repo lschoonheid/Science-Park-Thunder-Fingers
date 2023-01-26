@@ -30,30 +30,39 @@ class MutationSupplier(Mutations):
     def suggest_swap(self):
         raise NotImplementedError
 
-
-class SteepestDescent(MutationSupplier):
-    def suggest_swap(self, result: Result, ceiling=0):
-        swap_scores = self.get_swap_scores_timeslot(result, self.score_scope, self.tried_swaps, ceiling=ceiling)
-
-        # TODO: make this a priority queue
-        # if len(swap_scores_memory) > 4000:
-        #     swap_scores_memory.clear()
-        # self.tried_swaps.union(swap_scores.keys())
-        self.swap_scores_memory.update(swap_scores)
-        # See which swaps are best
-        # TODO Possible to do simulated annealing here: set ceiling = temperature function
-
-        suggested_swap: tuple[int, int] = min(swap_scores, key=swap_scores.get)  # type: ignore
-        del self.swap_scores_memory[suggested_swap]
-        return suggested_swap
-
-    def reset(self):
+    def reset_swaps(self):
         self.tried_swaps.clear()
 
 
+class SteepestDescent(MutationSupplier):
+    def suggest_swap(self, result: Result, ceiling=0):
+        # See which swaps are best
+        swap_scores = self.get_swap_scores_timeslot(result, self.score_scope, self.tried_swaps, ceiling=ceiling)
+        # TODO: make this a priority queue
+        suggested_swap: tuple[int, int] = min(swap_scores, key=swap_scores.get)  # type: ignore
+
+        # if len(swap_scores_memory) > 4000:
+        #     swap_scores_memory.clear()
+        # self.tried_swaps.union(swap_scores.keys())
+
+        # Update memory
+        self.swap_scores_memory.update(swap_scores)
+        del self.swap_scores_memory[suggested_swap]
+        return suggested_swap
+
+
 class SimulatedAnnealing(MutationSupplier):
-    def __init__(self):
-        pass
+    def __init__(
+        self,
+        score_scope: int = 10,
+        tried_swaps: set[tuple[int, int]] = set(),
+        swap_scores_memory: dict[tuple[int, int], int | float] = {},
+        T_0: float = 4 / 600,
+        kB=1,
+    ):
+        self.T_0 = T_0
+        self.kB = kB
+        super().__init__(score_scope, tried_swaps, swap_scores_memory)
 
     # @jit()
     def biased_boolean(self, probability: float = 0.5) -> bool:
@@ -63,16 +72,41 @@ class SimulatedAnnealing(MutationSupplier):
             return True
         return False
 
+    # def temperature(self, T_0: float, i: int = 0, i_max: int = 0) -> float:
+    # @property
+    def temperature(self, result: Result) -> float:
+        # return T_0 * (i_max - i) / i_max
+        return self.T_0 * result.score
+
     # @jit()
     def p(self, diff, temperature) -> float:
-        k_boltzman = 1 / 5
-        beta = k_boltzman / temperature
+        k_boltzman = self.kB
+        beta = 1 / (k_boltzman * temperature)
 
+        e = exp(-beta * diff)
         return exp(-beta * diff)
 
-    def suggest_swap(self):
+    def suggest_swap(self, result: Result, ceiling=15, _recursion_depth=1000):
+        if _recursion_depth == 0:
+            raise RecursionError("Recursion depth exceeded")
+
         # For annealing important to NOT select the best swap, but a random one
-        pass
+        draw = self.draw_valid_timeslot_swap(
+            result,
+            list(result.schedule.timeslots.values()),
+            self.tried_swaps,
+            ceiling=ceiling,
+        )
+        if not draw:
+            return None
+        (id1, id2), score = draw
+
+        # Simulated annealing: accept a random swap with probability p
+        probability = self.p(score, self.temperature(result))
+        if self.biased_boolean(probability):
+            return id1, id2
+
+        return self.suggest_swap(result, ceiling, _recursion_depth - 1)
 
 
 # TODO: #14 implement genetic algorithm to combine schedules into children schedules
@@ -82,23 +116,23 @@ class GeneticSolve(Mutations):
         students_input,
         courses_input,
         rooms_input,
-        max_generations=5000,
         population_size=50,
+        max_generations=10000,
         method="min_gaps_overlap",
-        mutation_supplier=SteepestDescent(),
+        mutation_supplier=SimulatedAnnealing(),
         verbose=False,
     ) -> None:
         self.students_input = students_input
         self.courses_input = courses_input
         self.rooms_input = rooms_input
 
+        self.population_size = population_size
         self.max_generations = max_generations
 
         self.method = method
         self.mutation_supplier = mutation_supplier
-        self.verbose = verbose
 
-        self.population_size = population_size
+        self.verbose = verbose
 
     def fitness(self, score: float | int):
         """Get fitness of a result."""
@@ -122,9 +156,13 @@ class GeneticSolve(Mutations):
         TODO: fix swapping function resulting in bad solution PRIORITY
         TODO:  define mutation on swapping students
         TODO: Track score over time
-        # TODO: Sub score function per timeslot, only consider students involved with timeslot for much faster score difference calculation
-        # TODO: Build population of mutations and take best score differences , steepest decent: number of mutations = decent scope
+        - TODO: Sub score function per timeslot, only consider students involved with timeslot for much faster score difference calculation
+        - TODO: Build population of mutations and take best score differences , steepest decent: number of mutations = decent scope
         TODO: Simulated annealing
+
+        TODO: hillclimber for first part, then simulated annealing for second part? PRIORITY
+
+        Notable: simulated annealing is much faster than hillclimber, but hillclimber is much more effective
         """
         # Initialize population from prototype
         if schedule_seed is None:
@@ -143,6 +181,7 @@ class GeneticSolve(Mutations):
         )
         backup_edges = copy.deepcopy(current_best.schedule.edges)
 
+        start_time = time.time()
         best_fitness = 0
         best_score = None
         track_scores: list[float] = []
@@ -152,6 +191,15 @@ class GeneticSolve(Mutations):
         pbar = tqdm(range(self.max_generations), position=0, leave=True)
         for i in pbar:
             # Try swapping timeslots to get a better fitness (or score)
+            # Describe progress
+            pbar.set_description(
+                f"{type(self).__name__} ({type(self.mutation_supplier).__name__}) (score: {current_best.score}) (best swap memory {len(self.mutation_supplier.swap_scores_memory) } tried swaps memory {len(self.mutation_supplier.tried_swaps) })"
+            )
+            # print(f"Score: {current_best.score} \t Generation: {i + 1 }/{ self.max_generations}", end="\r")
+
+            # Check if solution is found
+            if current_best.score == 0:
+                break
 
             current_best.update_score()
             if self.fitness(current_best.score) > best_fitness and current_best.check_solved():
@@ -162,6 +210,8 @@ class GeneticSolve(Mutations):
             # TODO Possible to do relaxation here
             # Get suggestion for possible mutation
             suggested_swap = self.mutation_supplier.suggest_swap(current_best)
+            if not suggested_swap:
+                break
             id1, id2 = suggested_swap
             swapped_nodes = current_best.schedule.nodes[id1], current_best.schedule.nodes[id2]
 
@@ -174,27 +224,19 @@ class GeneticSolve(Mutations):
                 # If better, keep mutation, else revert
                 current_best = Result(Schedule(self.students_input, self.courses_input, self.rooms_input, backup_edges))
                 self.mutation_supplier.tried_swaps.add(swapped_ids)
+                continue
             #  Clear memory of swaps because of new schedule
-            self.mutation_supplier.tried_swaps.clear()
+            self.mutation_supplier.reset_swaps()
 
             # Track progress
             generations = i
-            track_scores.append(best_score)  # type: ignore
-            timestamps.append(time.time())
-
-            # Describe progress
-            pbar.set_description(
-                f"{type(self).__name__} ({self.method}) (score: {current_best.score}) (best swap memory {len(self.mutation_supplier.swap_scores_memory) } tried swaps memory {len(self.mutation_supplier.tried_swaps) })"
-            )
-            # print(f"Score: {current_best.score} \t Generation: {i + 1 }/{ self.max_generations}", end="\r")
-
-            # Check if solution is found
-            if current_best.score == 0:
-                break
+            track_scores.append(current_best.score)  # type: ignore
+            timestamps.append(time.time() - start_time)
 
         # Dump results
-        dump_result([current_best, timestamps], f"output/genetic_steepest_scorestime_{self.max_generations}_")
-        output_path = dump_result(current_best, f"output/genetic_{self.max_generations}_")
+        strategy_name = self.mutation_supplier.__class__.__name__
+        dump_result([current_best, timestamps], f"output/genetic_{strategy_name}_scorestime_{self.max_generations}_")
+        output_path = dump_result(current_best, f"output/genetic_{strategy_name}_{self.max_generations}_")
 
         # Output results to console
         print(
@@ -206,6 +248,8 @@ class GeneticSolve(Mutations):
 
         # Show score over time
         plt.plot(timestamps, track_scores)
+        plt.xlabel("Time (s)")
+        plt.ylabel("Score")
         plt.show()
 
         return current_best
