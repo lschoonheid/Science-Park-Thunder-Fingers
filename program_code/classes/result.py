@@ -100,6 +100,32 @@ class Result(Statistics):
             )
         return self.score_vector_input
 
+    def sub_score_vector(self, node):
+        """Return soft constraint scores for a single node. Consider only nodes related to `node`."""
+        match type(node).__name__:
+            case "Timeslot":
+                # Evening period is 4
+                sub_evening_timeslots = int(node.period == 4)
+                sub_students_overbooked = self.aggregate(self.student_overbooked, node.students)
+                sub_gap_periods: tuple[int, int, int, int] = sum(
+                    [self.gap_periods_student(student) for student in node.students.values()]  # type: ignore
+                )
+            case _:
+                raise ValueError("Node must be Timeslot.")
+
+        return np.array(
+            [
+                sub_evening_timeslots,
+                sub_students_overbooked,
+                sub_gap_periods[1],
+                sub_gap_periods[2],
+                sub_gap_periods[3],
+            ]
+        )
+
+    def sub_score(self, node):
+        return self.score_matrix.dot(self.sub_score_vector(node))
+
     @cached_property
     def score(self) -> float:
         return self.score_matrix.dot(self.score_vector)
