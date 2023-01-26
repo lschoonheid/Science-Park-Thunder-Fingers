@@ -21,7 +21,7 @@ import warnings
 from program_code import (
     Data,
     generate_solutions,
-    Randomize,
+    Randomizer,
     Schedule, prepare_path)
 
 WEEK_DAYS = ["MA", "DI", "WO", "DO", "VR"]
@@ -36,9 +36,9 @@ def main(stud_prefs_path: str, courses_path: str, rooms_path: str, n_subset: int
     """Interface for executing scheduling program."""
     # Load dataset
     input_data = Data(stud_prefs_path, courses_path, rooms_path)
-    students_input = input_data.students
-    courses_input = input_data.courses
-    rooms_input = input_data.rooms
+    students_input = input_data.students_input
+    courses_input = input_data.courses_input
+    rooms_input = input_data.rooms_input
 
     # Optionally take subset of data
     if n_subset:
@@ -49,7 +49,7 @@ def main(stud_prefs_path: str, courses_path: str, rooms_path: str, n_subset: int
 
     # Generate (compressed) results: only return scorevector and edges
     results_compressed = generate_solutions(
-        Randomize(
+        Randomizer(
             students_input,
             courses_input,
             rooms_input,
