@@ -1,3 +1,4 @@
+import warnings
 from program_code.classes.result import Result
 from .solver import Solver
 from ..classes import NodeSC, Node, Schedule, Timeslot
@@ -18,9 +19,30 @@ class Mutations(Randomize):
         self.crossoverProbability = crossoverProbability
         self.mutationProbability = mutationProbability
 
-    def fast_swap(self, node1: Node | NodeSC, nodes2: Node | NodeSC):
+    # TODO implement for all node types
+    def fast_swap(self, node1: Timeslot, node2: Timeslot):
         """Only swap metadata; virtual swap."""
-        pass
+        assert type(node1) == type(node2), "Can only swap nodes of same type."
+        match type(node1).__name__:
+            case "Timeslot":
+                meta1 = {
+                    "id": node1.id,
+                    "day": node1.day,
+                    "period": node1.period,
+                    "moment": node1.moment,
+                }
+                meta2 = {
+                    "id": node2.id,
+                    "day": node2.day,
+                    "period": node2.period,
+                    "moment": node2.moment,
+                }
+            case _:
+                warnings.warn("fast_swap not implemented for this node type.")
+                return
+        node1.__dict__.update(meta2)
+        node2.__dict__.update(meta1)
+        return node1, node2
 
     def swap_neighbors(
         self,
@@ -29,6 +51,7 @@ class Mutations(Randomize):
         node2: Node | NodeSC,
         skip: list[str] | None = None,
     ):
+        assert type(node1) == type(node2), "Can only swap nodes of same type."
         if not skip:
             skip = []
 
@@ -47,7 +70,7 @@ class Mutations(Randomize):
             schedule.disconnect_nodes(node2, neighbor)
             schedule.connect_nodes(node1, neighbor)
 
-    def allow_timeslot_swap(self, timeslot1: Timeslot, timeslot2: Timeslot):
+    def allow_timeslot_swap(self, result: Result, timeslot1: Timeslot, timeslot2: Timeslot):
         """Assumes timeslots are already legally assigned."""
         # For timeslot swap:
         # TODO: Check capacity is still valid
@@ -83,26 +106,41 @@ class Mutations(Randomize):
                         if self.node_has_period(bound_activity2, timeslot1):
                             return False
 
-        if timeslot1.room.capacity == timeslot2.room.capacity:
-            return True
-        if timeslot1.capacity == timeslot2.capacity:
-            return True
-
         if timeslot1.room.capacity < timeslot2.enrolled_students:
             return False
         if timeslot2.room.capacity < timeslot1.enrolled_students:
             return False
 
+        # TODO: constraint relaxation for local minimas
+        # Get current score
+        result.update_score()
+        current_score = result.score
+        # Pretend to swap
+        self.fast_swap(timeslot1, timeslot2)
+        # Get projected score
+        result.update_score()
+        projected_score = result.score
+        # Revert swap
+        self.fast_swap(timeslot1, timeslot2)
+        if projected_score > current_score:
+            return False
+
+        # if timeslot1.room.capacity == timeslot2.room.capacity:
+        #     return True
+        # if timeslot1.capacity == timeslot2.capacity:
+        #     return True
+
         return True
 
-    def swap_random_timeslots(self, schedule: Schedule):
+    def swap_random_timeslots(self, result: Result, tried_swaps: set | None = None):
         """Swap two timeslots at random, if allowed."""
-        timeslots = list(schedule.timeslots.values())
-        draw = self.draw_uniform_recursive(timeslots, timeslots, self.allow_timeslot_swap)  # type: ignore
+        timeslots = list(result.schedule.timeslots.values())
+        # TODO: steepest decent, try 100 swaps and see which were most effective
+        draw = self.draw_uniform_recursive(timeslots, timeslots, lambda t1, t2: self.allow_timeslot_swap(result, t1, t2), _combination_set=tried_swaps)  # type: ignore
         if not draw:
             return None
 
-        self.swap_neighbors(schedule, *draw, skip=["Room"])
+        self.swap_neighbors(result.schedule, *draw, skip=["Room"])
 
         # TODO remove TEST
         # if not Result(schedule).check_solved():
