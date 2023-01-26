@@ -70,7 +70,7 @@ class Mutations(Randomize):
             schedule.disconnect_nodes(node2, neighbor)
             schedule.connect_nodes(node1, neighbor)
 
-    def allow_swap_timeslot(self, result, timeslot1: Timeslot, timeslot2: Timeslot):
+    def allow_swap_timeslot(self, result, timeslot1: Timeslot, timeslot2: Timeslot, score_ceiling=None):
         """Assumes timeslots are already legally assigned."""
         # For timeslot swap:
         # TODO: Check capacity is still valid
@@ -106,20 +106,22 @@ class Mutations(Randomize):
                         if self.node_has_period(bound_activity2, timeslot1):
                             return False
 
+        if score_ceiling is None:
+            if timeslot1.room.capacity == timeslot2.room.capacity:
+                return True
+            if timeslot1.capacity == timeslot2.capacity:
+                return True
+
         if timeslot1.room.capacity < timeslot2.enrolled_students:
             return False
         if timeslot2.room.capacity < timeslot1.enrolled_students:
             return False
 
         # Check wether swap would be improvement
-        if self.swap_score_timeslot(result, timeslot1, timeslot2) > 0:
-            return False
-
-        if timeslot1.room.capacity == timeslot2.room.capacity:
-            return True
-        if timeslot1.capacity == timeslot2.capacity:
-            return True
-        return True
+        swap_score = self.swap_score_timeslot(result, timeslot1, timeslot2)
+        if swap_score <= score_ceiling:
+            return swap_score
+        return False
 
     def swap_score_timeslot(self, result: Result, timeslot1: Timeslot, timeslot2: Timeslot):
         """Get score difference of swapping two timeslots."""
@@ -140,16 +142,16 @@ class Mutations(Randomize):
         """Swap two timeslots at random, if allowed."""
         timeslots = list(result.schedule.timeslots.values())
         # TODO: steepest decent, try 100 swaps and see which were most effective
-        draw = self.draw_uniform_recursive(timeslots, timeslots, lambda t1, t2: self.allow_swap_timeslot(result, t1, t2), _combination_set=tried_swaps)  # type: ignore
+        draw = self.draw_uniform_recursive(timeslots, timeslots, lambda t1, t2: self.allow_swap_timeslot(result, t1, t2), return_value=True, _combination_set=tried_swaps)  # type: ignore
         if not draw:
             return None
-
-        self.swap_neighbors(result.schedule, *draw, skip=["Room"])
+        t1, t2, score = draw  # type: ignore
+        self.swap_neighbors(result.schedule, t1, t2, skip=["Room"])
 
         # TODO remove TEST
         # if not Result(schedule).check_solved():
         #     self.swap_neighbors(schedule, *draw, skip=["Room"])
-        #     self.allow_timeslot_swap(*draw)
+        #     self.allow_swap_timeslot(*draw)
         #     self.swap_neighbors(schedule, *draw, skip=["Room"])
         return draw
 

@@ -27,6 +27,7 @@ class Randomize(Solver):
             bool,
         ],
         negation=False,
+        return_value=False,
         _recursion_limit=10000,
         _combination_set: set | None = None,
     ):
@@ -64,10 +65,11 @@ class Randomize(Solver):
                 nodes2,
                 condition,
                 negation=negation,
+                return_value=return_value,
                 _recursion_limit=_recursion_limit - 1,
                 _combination_set=_combination_set,
             )
-        elif not condition_value:
+        elif condition_value is False:
             _combination_set.add(combination)
             assert len(_combination_set) <= max_combinations, "Combination set out of order"
 
@@ -76,10 +78,12 @@ class Randomize(Solver):
                 nodes2,
                 condition,
                 negation=negation,
+                return_value=return_value,
                 _recursion_limit=_recursion_limit - 1,
                 _combination_set=_combination_set,
             )
-
+        if return_value:
+            return node1, node2, condition_value
         return node1, node2
 
     def assign_activities_timeslots_once(self, schedule: Schedule):

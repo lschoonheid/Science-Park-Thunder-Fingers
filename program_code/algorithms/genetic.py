@@ -53,16 +53,29 @@ class GeneticSolve(Mutations):
         result.update_score()
         return 10000 / (1 + result.score)
 
-    def get_swap_scores_timeslot(self, result: Result, scope: int, tried_swaps: set[tuple[int, int]]):
+    def get_swap_scores_timeslot(
+        self, result: Result, scope: int, tried_swaps: set[tuple[int, int]], ceiling: int | float | None = 0
+    ):
         """Get scores differences for `scope` possible swaps."""
-        swap_scores: dict[tuple[Timeslot, Timeslot], int] = {}
+        swap_scores: dict[tuple[int, int], int | float] = {}
         timeslots = list(result.schedule.timeslots.values())
         for i in range(scope):
-            draw = self.draw_uniform_recursive(timeslots, timeslots, self.allow_swap_timeslot, _combination_set=tried_swaps)  # type: ignore
+            draw = self.draw_uniform_recursive(
+                timeslots,
+                timeslots,
+                lambda t1, t2: self.allow_swap_timeslot(result, t1, t2, score_ceiling=ceiling),
+                return_value=True,
+                # TODO: remember illegal swaps in between tries
+                _combination_set=tried_swaps,
+            )  # type: ignore
             if not draw:
                 break
-            score = self.swap_score_timeslot(result, *draw)
-            swap_scores[draw] = score
+            tA, tB, score = draw  # type: ignore
+            if ceiling is not None and score > ceiling:
+                continue
+            # Sort by id, make sure swap_scores has no duplicates
+            id1, id2 = sorted([tA.id, tB.id])
+            swap_scores[(id1, id2)] = score
         return swap_scores
 
     def solve(
