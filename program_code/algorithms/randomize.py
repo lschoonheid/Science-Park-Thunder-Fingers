@@ -51,7 +51,7 @@ class Randomize(Solver):
         node1 = random.choice(nodes1)
         node2 = random.choice(nodes2)
 
-        combination = (node1.id, node2.id)
+        combination = tuple(sorted([node1.id, node2.id]))
         condition_value = condition(node1, node2)
         if negation:
             # If boolean has to be mirrored, mirror it
