@@ -10,21 +10,13 @@ Student: Julia Geisler
 Course: Algoritmen en Heuristieken 2023
 """
 
-import csv
+import csv, argparse, random, warnings
 import matplotlib.pyplot as plt
-
-# import pandas as pd
-# import numpy as np
-
-import argparse
-import random
-import warnings
 from program_code import Data, generate_solutions, Randomizer, Schedule, prepare_path
 
 WEEK_DAYS = ["MA", "DI", "WO", "DO", "VR"]
 ROOMS = ["A1.04", "A1.06", "A1.08", "A1.10", "B0.201", "C0.110", "C1.112"]
 COLORS = ["pink", "lightgreen", "lightblue", "wheat", "salmon"]
-
 
 def csv_timetable(schedule: Schedule, spec: str | None = None):
     """Interface for executing timetable program."""
@@ -40,7 +32,6 @@ def csv_timetable(schedule: Schedule, spec: str | None = None):
             stud_sched_csv(schedule)
             course_sched_csv(schedule)
             room_sched_csv(schedule)
-
 
 def stud_sched_csv(schedule: Schedule):
     # generate student information from random student in schedule
@@ -73,7 +64,6 @@ def stud_sched_csv(schedule: Schedule):
 
         print(f"output saved to {output_path}")
         return student
-
 
 def course_sched_csv(schedule: Schedule):
     # generate course information from random course in schedule
@@ -111,7 +101,6 @@ def course_sched_csv(schedule: Schedule):
         print(f"output saved to {output_path}")
     return course
 
-
 def room_sched_csv(schedule: Schedule):
     # generate course information from random course in schedule
     room = random.choice(list(schedule.rooms.values()))
@@ -144,7 +133,6 @@ def room_sched_csv(schedule: Schedule):
 
         print(f"output saved to {output_path}")
     return room
-
 
 def plot_timetable(schedule: Schedule, spec):
     # type of plot
@@ -205,49 +193,36 @@ def plot_timetable(schedule: Schedule, spec):
     plt.title(spec, y=1.07)
     plt.savefig(output_path, dpi=200)
 
-
 """ 
 main function is a selected copy from main.py 
 to assure timetable.py can be run independently
 """
-
-
-def main(stud_prefs_path: str, courses_path: str, rooms_path: str, n_subset: int, verbose: bool = False, **kwargs):
+def main(stud_prefs_path: str, courses_path: str, rooms_path: str, n_subset: int, verbose: bool = False, do_plot: bool = True, show_progress=True, **kwargs):
     """Interface for executing scheduling program."""
     # Load dataset
     input_data = Data(stud_prefs_path, courses_path, rooms_path)
-    students_input = input_data.students
-    courses_input = input_data.courses
-    rooms_input = input_data.rooms
+    data_arguments = input_data.__dict__
 
     # Optionally take subset of data
     if n_subset:
-        if n_subset > len(students_input):
+        if n_subset > len(input_data.students_input):
             warnings.warn("WARNING: Chosen subset size is larger than set size, continuing anyway.")
         else:
-            students_input = random.sample(students_input, n_subset)
+            data_arguments["students_input"] = random.sample(input_data.students_input, n_subset)
 
     # Generate (compressed) results: only return scorevector and edges
+    solver = Randomizer(**data_arguments, method="uniform")
     results_compressed = generate_solutions(
-        Randomize(
-            students_input,
-            courses_input,
-            rooms_input,
-            verbose=verbose,
-        ),
+        solver,
+        show_progress=show_progress,
         **kwargs,
     )
 
     # Take random sample and rebuild schedule from edges
     sampled_result = random.choice(results_compressed)
-    sampled_result.decompress(
-        students_input,
-        courses_input,
-        rooms_input,
-    )
+    sampled_result.decompress(**data_arguments)
 
     plot_timetable(sampled_result.schedule, "room")
-
 
 if __name__ == "__main__":
     # Create a command line argument parser
