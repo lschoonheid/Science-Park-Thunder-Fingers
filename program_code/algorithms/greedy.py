@@ -105,6 +105,7 @@ class Greedy(Solver):
 
         # assign hoorcolleges with max timeslots most efficiently on capacity
         self.assign_activities_timeslots_greedy(schedule, activities_bound, timeslots, reverse=True)
+        # self.rate_timeslots_activity(schedule, activities_free)
 
         return activities_bound, activities_free
 
@@ -203,33 +204,36 @@ class Greedy(Solver):
         # Return Result
         return Result(schedule=schedule, iterations=i_max, solved=activities_finished)
 
-    def rate_timeslots(self, schedule: Schedule):
+    def rate_timeslots_activity(self, schedule: Schedule, aviable_activity: list[Activity]):
         available_timeslots = list(schedule.timeslots.values())
-        student = list(schedule.students.values())
+        aviable_student = list(schedule.students.values())
         rating = {}
 
-        for timeslot in available_timeslots:
-            # Skip timeslot if it already has activity
-            if self.verifier.node_has_activity(timeslot):
-                continue
-
-            rate = 0
-            for student_timeslots in student:
-                if self.verifier.student_has_period(student_timeslots, timeslot):
-                    rate += 1
-            rating[timeslot] = rate
-
+        for activity in aviable_activity:
+            for timeslot in available_timeslots:
+                # Skip timeslot if it already has activity
+                if self.verifier.node_has_activity(timeslot):
+                    continue
+                rate = 0
+                for student in aviable_student:
+                    if activity in student.activities.values():
+                        if self.verifier.student_has_period(student, timeslot):
+                            rate += 1
+                rating[timeslot] = rate
+                
         print(rating)
 
     def hoorcollege(self, schedule: Schedule, i_max: int):
         """Make a completely random schedule solution"""
 
         # First make sure each activity has a timeslot
-        self.assign_hoorcollege_to_room(schedule)
+        activities_bound, activities_free = self.assign_hoorcollege_to_room(schedule)
 
-        self.rate_timeslots(schedule)
+        self.assign_students_hoorcollege(schedule, i_max)
 
-        return self.assign_students_hoorcollege(schedule, i_max)
+        self.rate_timeslots_activity(schedule, activities_free)
+
+        return 1
 
 
     def solve(self, schedule: Schedule, i_max: int | None = None, method="uniform", strict=True):
