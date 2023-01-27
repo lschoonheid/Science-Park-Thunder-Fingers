@@ -46,10 +46,6 @@ class Mutator(Randomizer):
         neighbors_1 = copy.copy(node1.neighbors)
         neighbors_2 = copy.copy(node2.neighbors)
 
-        solved_before = Result(schedule).check_solved()
-        if not solved_before:
-            pass
-
         # Disconnect all neighbors
         for neighbor in neighbors_1.values():
             if type(neighbor).__name__ in skip:
@@ -69,6 +65,23 @@ class Mutator(Randomizer):
             if type(neighbor).__name__ in skip:
                 continue
             schedule.connect_nodes(node1, neighbor)
+
+        return node1, node2
+
+    def swap_score_timeslot(self, result: Result, timeslot1: Timeslot, timeslot2: Timeslot):
+        """Get score difference of swapping two timeslots."""
+        # TODO: constraint relaxation for local minimas
+
+        # Get current score
+        current_sub_score = result.sub_score(timeslot1) + result.sub_score(timeslot2)
+        # Pretend to swap
+        self.fast_swap(timeslot1, timeslot2)
+        # Get projected score
+        projected_sub_score = result.sub_score(timeslot1) + result.sub_score(timeslot2)
+        diff_sub_score = projected_sub_score - current_sub_score
+        self.fast_swap(timeslot1, timeslot2)
+
+        return diff_sub_score
 
     def allow_swap_timeslot(self, result, timeslot1: Timeslot, timeslot2: Timeslot, score_ceiling=None):
         """Assumes timeslots are already legally assigned."""
@@ -123,21 +136,6 @@ class Mutator(Randomizer):
             return swap_score
         return False
 
-    def swap_score_timeslot(self, result: Result, timeslot1: Timeslot, timeslot2: Timeslot):
-        """Get score difference of swapping two timeslots."""
-        # TODO: constraint relaxation for local minimas
-
-        # Get current score
-        current_sub_score = result.sub_score(timeslot1) + result.sub_score(timeslot2)
-        # Pretend to swap
-        self.fast_swap(timeslot1, timeslot2)
-        # Get projected score
-        projected_sub_score = result.sub_score(timeslot1) + result.sub_score(timeslot2)
-        diff_sub_score = projected_sub_score - current_sub_score
-        self.fast_swap(timeslot1, timeslot2)
-
-        return diff_sub_score
-
     def draw_valid_timeslot_swap(
         self,
         result: Result,
@@ -189,17 +187,20 @@ class Mutator(Randomizer):
         (id1, id2), score = draw  # type: ignore
 
         nodes = result.schedule.timeslots
-        self.swap_neighbors(result.schedule, nodes[id1], nodes[id1], skip=["Room"])
+        self.swap_neighbors(result.schedule, nodes[id1], nodes[id2], skip=["Room"])
 
-        # TODO remove TEST
-        # if not Result(schedule).check_solved():
-        #     self.swap_neighbors(schedule, *draw, skip=["Room"])
-        #     self.allow_swap_timeslot(*draw)
-        #     self.swap_neighbors(schedule, *draw, skip=["Room"])
         return draw
 
-    # TODO: swap two timeslots of same (room) capacity (in time)
-    # TODO: check legal/illegal timeslot/room swaps
+    def move_student_activity_timeslots(self, result: Result, tried_swaps: set | None = None):
+        """Swap student between two timeslots of same activity, if allowed."""
+        # TODO
+        pass
+
+    def swap_students_timeslots(self, result: Result, tried_swaps: set | None = None):
+        """Swap students between two timeslots, if allowed."""
+        # TODO
+        pass
+
     # TODO: permutate students between activity timeslots
     # TODO: shift timeslot to open timeslot
     # TODO: split timeslot over multiple timeslots (from 1x wc2 -> 2x 2c2)

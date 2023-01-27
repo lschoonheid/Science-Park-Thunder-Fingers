@@ -47,7 +47,7 @@ class SimulatedAnnealing(MutationSupplier):
         score_scope: int = 10,
         tried_swaps: set[tuple[int, int]] = set(),
         swap_scores_memory: dict[tuple[int, int], int | float] = {},
-        T_0: float = 4 / 600,
+        T_0: float = 1 / 600,
         kB=1,
     ):
         self.T_0 = T_0

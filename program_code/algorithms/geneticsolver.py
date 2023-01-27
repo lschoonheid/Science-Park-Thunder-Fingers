@@ -19,7 +19,7 @@ class GeneticSolver(Mutator):
         students_input,
         courses_input,
         rooms_input,
-        population_size=50,
+        population_size=5,
         max_generations=10000,
         method="min_gaps_overlap",
         mutation_supplier: MutationSupplier = SimulatedAnnealing(),
@@ -45,6 +45,7 @@ class GeneticSolver(Mutator):
         self,
         schedule_seed: Schedule | None = None,
         i_max: int | None = None,
+        self_repair=False,
     ):
         """
         TODO mark lower half of population for replacement
@@ -109,7 +110,7 @@ class GeneticSolver(Mutator):
                 break
 
             current_best.update_score()
-            if self.fitness(current_best.score) > best_fitness and current_best.check_solved():
+            if self_repair and self.fitness(current_best.score) > best_fitness and current_best.check_solved():
                 backup_edges = copy.deepcopy(current_best.schedule.edges)
                 best_score = current_best.score
                 best_fitness = self.fitness(best_score)
@@ -127,7 +128,7 @@ class GeneticSolver(Mutator):
             swapped_ids = suggested_swap
 
             # Check if mutation is better
-            if not current_best.check_solved():
+            if self_repair and not current_best.check_solved():
                 # If better, keep mutation, else revert
                 current_best = Result(Schedule(self.students_input, self.courses_input, self.rooms_input, backup_edges))
                 self.mutation_supplier.tried_swaps.add(swapped_ids)

@@ -47,7 +47,7 @@ def main(
         if n_subset > len(input_data.students_input):
             warnings.warn("WARNING: Chosen subset size is larger than set size, continuing anyway.")
         else:
-            students_input = random.sample(input_data.students_input, n_subset)
+            data_arguments["students_input"] = random.sample(input_data.students_input, n_subset)
 
     # Initialize solver
 

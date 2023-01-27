@@ -105,7 +105,7 @@ class Result(Statistics):
         match type(node).__name__:
             case "Timeslot":
                 # Evening period is 4
-                sub_evening_timeslots = int(node.period == 4)
+                sub_evening_timeslots = int(node.period == 4 and node.enrolled_students > 0)
                 sub_students_overbooked = self.aggregate(self.student_overbooked, node.students)
                 sub_gap_periods_list = [self.gap_periods_student(student) for student in node.students.values()]  # type: ignore
                 sub_gap_periods: tuple[int, int, int, int]

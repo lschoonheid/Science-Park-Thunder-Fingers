@@ -85,8 +85,6 @@ class Statistics:
             for assigned_activity in assigned_timeslot.activities.values():
                 if assigned_activity == activity:
                     timeslots_assigned += 1
-        if timeslots_assigned != 1:
-            pass
         return timeslots_assigned
 
     def timeslot_activity_overbooked(self, timeslot: Timeslot, verbose=False):
@@ -159,7 +157,7 @@ class Statistics:
         evening_period = 4
         evening_bookings = 0
         for timeslot in room.timeslots.values():
-            if timeslot.period == evening_period:
+            if timeslot.period == evening_period and timeslot.enrolled_students > 0:
                 evening_bookings += len(timeslot.activities)
         return evening_bookings
 
