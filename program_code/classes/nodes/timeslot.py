@@ -53,8 +53,9 @@ class Timeslot(Node):
         return super().add_neighbor(node)
 
     def remove_neighbor(self, node):
-        if type(node).__name__ == "Activity" and "capacity" in self.__dict__.keys():
+        if "capacity" in self.__dict__.keys() and node.__class__.__name__ == "Activity":
             del self.__dict__["capacity"]
+
         return super().remove_neighbor(node)
 
     def __repr__(self) -> str:

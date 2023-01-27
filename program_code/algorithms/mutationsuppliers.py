@@ -1,7 +1,9 @@
 # from numba import jit
 from math import exp
+import random
 import numpy as np
 from .mutator import Mutator
+from ..classes import Timeslot
 from ..classes.result import Result
 
 
@@ -9,50 +11,55 @@ class MutationSupplier(Mutator):
     def __init__(
         self,
         score_scope: int = 10,
-        tried_swaps: set[tuple[int, int]] = set(),
-        swap_scores_memory: dict[tuple[int, int], int | float] = {},
+        tried_timeslot_swaps: set[tuple[int, int]] = set(),
+        swap_scores_memory: dict[tuple[Timeslot, Timeslot], int | float] = {},
     ):
         # Score scope is how many timeslots to look at when scoring a swap
         self.score_scope = score_scope
-        self.tried_swaps = tried_swaps
+        self.tried_timeslot_swaps = tried_timeslot_swaps
         self.swap_scores_memory = swap_scores_memory
 
-    def suggest_swap(self, result: Result, ceiling=0):
+    def suggest_mutation(self, result: Result, ceiling=0):
+        """Generate possible swap."""
         raise NotImplementedError
 
-    def reset_swaps(self):
-        self.tried_swaps.clear()
+    def reset_mutations(self):
+        self.tried_timeslot_swaps.clear()
 
 
 class HillClimber(MutationSupplier):
-    def suggest_swap(self, result: Result, ceiling=0):
+    def suggest_mutation(self, result: Result, ceiling=0):
         # See which swaps are best
-        swap_scores = self.get_swap_scores_timeslot(result, self.score_scope, self.tried_swaps, ceiling=ceiling)
+        swap_scores = self.get_swap_scores_timeslot(
+            result, self.score_scope, self.tried_timeslot_swaps, ceiling=ceiling
+        )
         # TODO: make this a priority queue
-        suggested_swap: tuple[int, int] = min(swap_scores, key=swap_scores.get)  # type: ignore
+        swap: tuple[Timeslot, Timeslot] = min(swap_scores, key=swap_scores.get)  # type: ignore
 
         # if len(swap_scores_memory) > 4000:
         #     swap_scores_memory.clear()
-        # self.tried_swaps.union(swap_scores.keys())
+        # self.tried_timeslot_swaps.union(swap_scores.keys())
+
+        # TODO: implement student moving
 
         # Update memory
         self.swap_scores_memory.update(swap_scores)
-        del self.swap_scores_memory[suggested_swap]
-        return suggested_swap
+        del self.swap_scores_memory[swap]
+        return self.swap_neighbors, [result.schedule, *swap, "Room"]
 
 
 class SimulatedAnnealing(MutationSupplier):
     def __init__(
         self,
         score_scope: int = 10,
-        tried_swaps: set[tuple[int, int]] = set(),
-        swap_scores_memory: dict[tuple[int, int], int | float] = {},
+        tried_timeslot_swaps: set[tuple[int, int]] = set(),
+        swap_scores_memory: dict[tuple[Timeslot, Timeslot], int | float] = {},
         T_0: float = 1 / 600,
         kB=1,
     ):
         self.T_0 = T_0
         self.kB = kB
-        super().__init__(score_scope, tried_swaps, swap_scores_memory)
+        super().__init__(score_scope, tried_timeslot_swaps, swap_scores_memory)
 
     # @jit()
     def biased_boolean(self, probability: float = 0.5) -> bool:
@@ -73,26 +80,48 @@ class SimulatedAnnealing(MutationSupplier):
         k_boltzman = self.kB
         beta = 1 / (k_boltzman * temperature)
 
-        return exp(-beta * diff)
+        # Subtract 0.69315 so a diff of 0 results in 50 percent chance of change
+        return exp(-beta * diff - 0.69315)
 
-    def suggest_swap(self, result: Result, ceiling=15, _recursion_depth=1000):
+    def suggest_mutation(self, result: Result, ceiling=15, _recursion_depth=1000):
         if _recursion_depth == 0:
             raise RecursionError("Recursion depth exceeded")
 
+        move_mutation, swap_mutation = None, None
+
+        timeslots = list(result.schedule.timeslots.values())
+
         # For annealing important to NOT select the best swap, but a random one
-        draw = self.draw_valid_timeslot_swap(
-            result,
-            list(result.schedule.timeslots.values()),
-            self.tried_swaps,
-            ceiling=ceiling,
+        draw_move = self.draw_valid_student_move(
+            result, timeslots, tried_swaps=self.tried_timeslot_swaps, ceiling=ceiling
         )
-        if not draw:
-            return None
-        (id1, id2), score = draw
+        draw_swap = self.draw_valid_timeslot_swap(result, timeslots, self.tried_timeslot_swaps, ceiling=ceiling)
 
-        # Simulated annealing: accept a random swap with probability p
-        probability = self.p(score, self.temperature(result))
-        if self.biased_boolean(probability):
-            return id1, id2
+        if draw_move:
+            move, move_score = draw_move
+            probability_move = self.p(move_score, self.temperature(result))
+            move_mutation = self.move_node, [result.schedule, *move]
+        else:
+            probability_move = 0
 
-        return self.suggest_swap(result, ceiling, _recursion_depth - 1)
+        if draw_swap:
+            swap, swap_score = draw_swap
+            probability_swap = self.p(swap_score, self.temperature(result))
+            swap_mutation = self.swap_neighbors, [result.schedule, *swap, "Room"]
+        else:
+            probability_swap = 0
+
+        # Simulated annealing: accept a random mutation with probability p
+        do_move = self.biased_boolean(probability_move)
+        do_swap = self.biased_boolean(probability_swap)
+
+        if do_move and do_swap:
+            if probability_move > probability_swap:
+                return move_mutation
+            return swap_mutation
+        elif do_move:
+            return move_mutation
+        elif do_swap:
+            return swap_mutation
+
+        return self.suggest_mutation(result, ceiling, _recursion_depth - 1)

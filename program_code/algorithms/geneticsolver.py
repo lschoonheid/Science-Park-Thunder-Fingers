@@ -20,7 +20,7 @@ class GeneticSolver(Mutator):
         courses_input,
         rooms_input,
         population_size=5,
-        max_generations=10000,
+        max_generations=20000,
         method="min_gaps_overlap",
         mutation_supplier: MutationSupplier = SimulatedAnnealing(),
         verbose=False,
@@ -66,7 +66,6 @@ class GeneticSolver(Mutator):
 
         TODO: hillclimber for first part, then simulated annealing for second part? PRIORITY
 
-        Notable: simulated annealing is much faster than hillclimber, but hillclimber is much more effective
         """
 
         if i_max is None:
@@ -98,10 +97,11 @@ class GeneticSolver(Mutator):
         # TODO: in a loop: crossover, mutate, select best fit and repeat
         pbar = tqdm(range(i_max), position=0, leave=True)
         for i in pbar:
+            current_best.update_score()
             # Try swapping timeslots to get a better fitness (or score)
             # Describe progress
             pbar.set_description(
-                f"{type(self).__name__} ({type(self.mutation_supplier).__name__}) (score: {current_best.score}) (best swap memory {len(self.mutation_supplier.swap_scores_memory) } tried swaps memory {len(self.mutation_supplier.tried_swaps) })"
+                f"{type(self).__name__} ({type(self.mutation_supplier).__name__}) (score: {current_best.score}) (best swap memory {len(self.mutation_supplier.swap_scores_memory) } tried swaps memory {len(self.mutation_supplier.tried_timeslot_swaps) })"
             )
             # print(f"Score: {current_best.score} \t Generation: {i + 1 }/{ self.max_generations}", end="\r")
 
@@ -109,7 +109,6 @@ class GeneticSolver(Mutator):
             if current_best.score == 0:
                 break
 
-            current_best.update_score()
             if self_repair and self.fitness(current_best.score) > best_fitness and current_best.check_solved():
                 backup_edges = copy.deepcopy(current_best.schedule.edges)
                 best_score = current_best.score
@@ -117,24 +116,22 @@ class GeneticSolver(Mutator):
 
             # TODO Possible to do relaxation here
             # Get suggestion for possible mutation
-            suggested_swap = self.mutation_supplier.suggest_swap(current_best)
-            if not suggested_swap:
+            mutation, arguments = self.mutation_supplier.suggest_mutation(current_best)
+            if not mutation:
                 break
-            id1, id2 = suggested_swap
-            swapped_nodes = current_best.schedule.nodes[id1], current_best.schedule.nodes[id2]
 
             # Apply mutation
-            self.swap_neighbors(current_best.schedule, *swapped_nodes, skip=["Room"])  # type: ignore
-            swapped_ids = suggested_swap
+            mutation(*arguments)
 
             # Check if mutation is better
             if self_repair and not current_best.check_solved():
                 # If better, keep mutation, else revert
+                # TODO execute inverse of mutation for any mutation
                 current_best = Result(Schedule(self.students_input, self.courses_input, self.rooms_input, backup_edges))
-                self.mutation_supplier.tried_swaps.add(swapped_ids)
+                # self.mutation_supplier.tried_timeslot_swaps.add(swapped_ids)
                 continue
             #  Clear memory of swaps because of new schedule
-            self.mutation_supplier.reset_swaps()
+            self.mutation_supplier.reset_mutations()
 
             # Track progress
             generations = i
@@ -143,12 +140,16 @@ class GeneticSolver(Mutator):
 
         # Dump results
         strategy_name = self.mutation_supplier.__class__.__name__
-        dump_result([current_best, timestamps], f"output/genetic_{strategy_name}_scorestime_{self.max_generations}_")
-        output_path = dump_result(current_best, f"output/genetic_{strategy_name}_{self.max_generations}_")
+        score = current_best.score
+        dump_result(
+            [current_best, timestamps],
+            f"output/genetic_{strategy_name}_score{score}_scorestime_{self.max_generations}_",
+        )
+        output_path = dump_result(current_best, f"output/genetic_{strategy_name}_{score}_{self.max_generations}_")
 
         # Output results to console
         print(
-            f"Best score: {current_best.score} \
+            f"\nBest score: {current_best.score} \
             \nIterations: {generations} \t solved: {current_best.check_solved()} \
             \nScore vector: {current_best.score_vector} \
             \nsaved at {output_path}"
