@@ -2,9 +2,8 @@ import warnings
 from ..classes import Schedule, Timeslot, dump_result
 from .generate import generate_solutions
 from .randomizer import Randomizer
-
 from .mutator import Mutator
-from .mutationsuppliers import MutationSupplier, SimulatedAnnealing, HillClimber
+from .mutationsuppliers import MutationSupplier, SimulatedAnnealing, HillClimber, Mutation
 from ..classes.result import Result
 import copy
 from tqdm import tqdm
@@ -53,18 +52,18 @@ class GeneticSolver(Mutator):
         TODO: define mutations
         TODO do different mutations, depending on highest conflict factor
         TODO: statistics of different methods
-        TODO: hillclimber
-        TODO: recursive swapping function
+        - TODO: hillclimber
+        - TODO: recursive swapping function
         TODO: index on swaps already tried
-        TODO: simulated annealing PRIORITY
-        TODO: fix swapping function resulting in bad solution PRIORITY
+        - TODO: simulated annealing PRIORITY
+        - TODO: fix swapping function resulting in bad solution PRIORITY
         TODO:  define mutation on swapping students
         TODO: Track score over time
         - TODO: Sub score function per timeslot, only consider students involved with timeslot for much faster score difference calculation
         - TODO: Build population of mutations and take best score differences , steepest decent: number of mutations = decent scope
-        TODO: Simulated annealing
+        - TODO: Simulated annealing
 
-        TODO: hillclimber for first part, then simulated annealing for second part? PRIORITY
+        - TODO: hillclimber for first part, then simulated annealing for second part? PRIORITY
 
         """
 
@@ -97,13 +96,6 @@ class GeneticSolver(Mutator):
         # TODO: in a loop: crossover, mutate, select best fit and repeat
         pbar = tqdm(range(i_max), position=0, leave=True)
         for i in pbar:
-            current_best.update_score()
-            # Try swapping timeslots to get a better fitness (or score)
-            # Describe progress
-            pbar.set_description(
-                f"{type(self).__name__} ({type(self.mutation_supplier).__name__}) (score: {current_best.score}) (best swap memory {len(self.mutation_supplier.swap_scores_memory) } tried swaps memory {len(self.mutation_supplier.tried_timeslot_swaps) })"
-            )
-            # print(f"Score: {current_best.score} \t Generation: {i + 1 }/{ self.max_generations}", end="\r")
 
             # Check if solution is found
             if current_best.score == 0:
@@ -116,12 +108,10 @@ class GeneticSolver(Mutator):
 
             # TODO Possible to do relaxation here
             # Get suggestion for possible mutation
-            mutation, arguments = self.mutation_supplier.suggest_mutation(current_best)
-            if not mutation:
-                break
+            mutation: Mutation = self.mutation_supplier.suggest_mutation(current_best)
 
             # Apply mutation
-            mutation(*arguments)
+            mutation.apply()
 
             # Check if mutation is better
             if self_repair and not current_best.check_solved():
@@ -133,6 +123,16 @@ class GeneticSolver(Mutator):
             #  Clear memory of swaps because of new schedule
             self.mutation_supplier.reset_mutations()
 
+            current_best.update_score()
+            # Try swapping timeslots to get a better fitness (or score)
+            # Describe progress
+            pbar.set_description(
+                f"{type(self).__name__} ({type(self.mutation_supplier).__name__}) (score: {current_best.score}) (best swap memory {len(self.mutation_supplier.swap_scores_memory) } tried swaps memory {len(self.mutation_supplier.tried_timeslot_swaps) })"
+            )
+            # print(f"Score: {current_best.score} \t Generation: {i + 1 }/{ self.max_generations}", end="\r")
+
+            if mutation.type == "swap_students_timeslots":
+                pass
             # Track progress
             generations = i
             track_scores.append(current_best.score)  # type: ignore

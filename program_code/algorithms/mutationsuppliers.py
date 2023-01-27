@@ -2,9 +2,55 @@
 from math import exp
 import random
 import numpy as np
+from typing import Callable
+from functools import total_ordering
 from .mutator import Mutator
 from ..classes import Timeslot
 from ..classes.result import Result
+
+
+class Mutation(Mutator):
+    def __init__(
+        self,
+        action: Callable,
+        drawer: Callable[[Result, list, set | None, int | None], tuple | None],
+        result: Result,
+        targets: list,
+        ceiling: int | None = None,
+        tried_mutations: set | None = None,
+        arguments: dict | None = None,
+        inverse: Callable | None = None,
+    ):
+        self.type = action.__name__
+        self.action = action
+        self.inverse = inverse
+        self.result = result
+        self.arguments = arguments
+
+        draw = drawer(result, targets, tried_mutations, ceiling)
+        if draw:
+            self.subjects, self.score = draw
+        else:
+            pass
+        #     probability_move = self.p(move_score, self.temperature(result))
+        #     move_mutation = self.move_node, [result.schedule, *move]
+        # else:
+        #     probability_move = 0
+
+        # do_move = self.biased_boolean(probability_move)
+
+    def apply(self):
+        if self.arguments:
+            return self.action(self.result.schedule, *self.subjects, **self.arguments)
+        return self.action(self.result.schedule, *self.subjects)
+
+    def revert(self):
+        if self.inverse:
+            if self.arguments:
+                return self.inverse(self.result.schedule, *self.subjects, **self.arguments)
+            return self.inverse(self.result.schedule, *self.subjects)
+
+        raise NotImplementedError
 
 
 class MutationSupplier(Mutator):
@@ -54,11 +100,11 @@ class SimulatedAnnealing(MutationSupplier):
         score_scope: int = 10,
         tried_timeslot_swaps: set[tuple[int, int]] = set(),
         swap_scores_memory: dict[tuple[Timeslot, Timeslot], int | float] = {},
-        T_0: float = 1 / 600,
-        kB=1,
+        # T_0: float = 1 / 1000000,
+        T_0: float = 2,
+        # T_0: float = 1 / 10,
     ):
         self.T_0 = T_0
-        self.kB = kB
         super().__init__(score_scope, tried_timeslot_swaps, swap_scores_memory)
 
     # @jit()
@@ -69,59 +115,75 @@ class SimulatedAnnealing(MutationSupplier):
             return True
         return False
 
-    # def temperature(self, T_0: float, i: int = 0, i_max: int = 0) -> float:
-    # @property
-    def temperature(self, result: Result) -> float:
-        # return T_0 * (i_max - i) / i_max
-        return self.T_0 * result.score
+    # TODO: temperature as function of iterations that score was constant
+    def temperature(self, score) -> float:
+        c = score / 600
+        return self.T_0 * c
+
+    def temperature_lin2(self, score: int | float) -> float:
+        floor = 5
+        score_0 = 600 + floor
+        return self.T_0 * (score + floor) / score_0
+
+    def temperature_sqr(self, score: int | float) -> float:
+        floor = 5
+        score_0 = 600 + floor
+        return self.T_0 * ((score + floor) / score_0) ** 2
+
+    def temperature_exp(self, score: int | float) -> float:
+        floor = 5
+        score_0 = 600 - floor
+        ex = np.exp(-score_0 / (score + floor) + 1)
+        return self.T_0 * ex
 
     # @jit()
-    def p(self, diff, temperature) -> float:
-        k_boltzman = self.kB
-        beta = 1 / (k_boltzman * temperature)
+    def probability(self, diff, temperature) -> float:
 
         # Subtract 0.69315 so a diff of 0 results in 50 percent chance of change
-        return exp(-beta * diff - 0.69315)
+        return np.exp(-diff / temperature)
+        return np.exp(-diff / temperature - 0.69315)
 
-    def suggest_mutation(self, result: Result, ceiling=15, _recursion_depth=1000):
+    def suggest_mutation(self, result: Result, ceiling=10, _recursion_depth=1000):
         if _recursion_depth == 0:
             raise RecursionError("Recursion depth exceeded")
-
-        move_mutation, swap_mutation = None, None
 
         timeslots = list(result.schedule.timeslots.values())
 
         # For annealing important to NOT select the best swap, but a random one
-        draw_move = self.draw_valid_student_move(
-            result, timeslots, tried_swaps=self.tried_timeslot_swaps, ceiling=ceiling
-        )
-        draw_swap = self.draw_valid_timeslot_swap(result, timeslots, self.tried_timeslot_swaps, ceiling=ceiling)
+        possible_mutations = [
+            Mutation(
+                self.move_node,
+                self.draw_valid_student_move,
+                result,
+                timeslots,
+                ceiling,
+            ),
+            Mutation(
+                self.swap_neighbors,
+                self.draw_valid_timeslot_swap,
+                result,
+                timeslots,
+                ceiling,
+                self.tried_timeslot_swaps,
+                {"skip": "Room"},
+            ),
+            Mutation(
+                self.swap_students_timeslots,
+                self.draw_valid_student_swap,
+                result,
+                timeslots,
+                ceiling,
+                self.tried_timeslot_swaps,
+            ),
+        ]
 
-        if draw_move:
-            move, move_score = draw_move
-            probability_move = self.p(move_score, self.temperature(result))
-            move_mutation = self.move_node, [result.schedule, *move]
-        else:
-            probability_move = 0
+        for mutation in self.sort_objects(possible_mutations, "score"):
+            P = self.probability(mutation.score, self.temperature(result.score))
+            do_mutation = self.biased_boolean(P)
 
-        if draw_swap:
-            swap, swap_score = draw_swap
-            probability_swap = self.p(swap_score, self.temperature(result))
-            swap_mutation = self.swap_neighbors, [result.schedule, *swap, "Room"]
-        else:
-            probability_swap = 0
-
-        # Simulated annealing: accept a random mutation with probability p
-        do_move = self.biased_boolean(probability_move)
-        do_swap = self.biased_boolean(probability_swap)
-
-        if do_move and do_swap:
-            if probability_move > probability_swap:
-                return move_mutation
-            return swap_mutation
-        elif do_move:
-            return move_mutation
-        elif do_swap:
-            return swap_mutation
+            if do_mutation:
+                if mutation.type == "swap_students_timeslots":
+                    pass
+                return mutation
 
         return self.suggest_mutation(result, ceiling, _recursion_depth - 1)
