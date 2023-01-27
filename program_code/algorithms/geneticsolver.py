@@ -123,7 +123,8 @@ class GeneticSolver(Mutator):
             #  Clear memory of swaps because of new schedule
             self.mutation_supplier.reset_mutations()
 
-            current_best.update_score()
+            if not self_repair and i % 20 == 0:
+                current_best.update_score()
             # Try swapping timeslots to get a better fitness (or score)
             # Describe progress
             pbar.set_description(
