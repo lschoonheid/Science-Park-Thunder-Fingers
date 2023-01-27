@@ -76,10 +76,13 @@ class Mutator(Randomizer):
         """Get score difference of swapping two timeslots."""
         # Get current score
         current_sub_score = result.sub_score(timeslot1) + result.sub_score(timeslot2)
+
         # Pretend to swap
         self.fast_swap(timeslot1, timeslot2)
         # Get projected score
         projected_sub_score = result.sub_score(timeslot1) + result.sub_score(timeslot2)
+
+        # Revert swap
         self.fast_swap(timeslot1, timeslot2)
 
         diff_sub_score = projected_sub_score - current_sub_score
@@ -142,8 +145,8 @@ class Mutator(Randomizer):
         self,
         result: Result,
         timeslots: list[Timeslot],
-        tried_swaps: set[tuple[int, int]],
-        ceiling: int | float | None = 0,
+        tried_swaps: set | None = None,
+        ceiling: int | float | None = None,
     ):
         """Draw a valid swap."""
         draw = self.draw_uniform_recursive(
@@ -194,7 +197,7 @@ class Mutator(Randomizer):
 
         return draw
 
-    def swap_score_move_student(self, result: Result, student: Student, timeslot1: Timeslot, timeslot2: Timeslot):
+    def move_score_student(self, result: Result, student: Student, timeslot1: Timeslot, timeslot2: Timeslot):
         """Calculate score difference for moving student from `timeslot1` to `timeslot2`."""
         # Get current score
         current_sub_score = result.sub_score(student)
@@ -204,13 +207,15 @@ class Mutator(Randomizer):
 
         # Pretend to swap
         self.fast_swap(timeslot1, timeslot2)
+
         # Get projected score
         projected_sub_score = result.sub_score(student)
+
+        # Revert swap
         self.fast_swap(timeslot1, timeslot2)
 
         # Calculate difference
         diff_sub_score = projected_sub_score - current_sub_score
-
         return diff_sub_score
 
     def allow_move_student(
@@ -231,7 +236,7 @@ class Mutator(Randomizer):
             return False
 
         # Check wether swap would be improvement
-        swap_score = self.swap_score_move_student(result, student, timeslot1, timeslot2)
+        swap_score = self.move_score_student(result, student, timeslot1, timeslot2)
         if score_ceiling and swap_score > score_ceiling:
             return False
         return swap_score
@@ -264,10 +269,106 @@ class Mutator(Randomizer):
         student, timeslot2, score = draw  # type: ignore
         return (student, timeslot1, timeslot2), score
 
-    def swap_students_timeslots(self, result: Result, tried_swaps: set | None = None):
+    def swap_students_timeslots(
+        self,
+        schedule: Schedule,
+        student1: Student,
+        student2: Student,
+        timeslot1: Timeslot,
+        timeslot2: Timeslot,
+        tried_swaps: set | None = None,
+    ):
         """Swap students between two timeslots, if allowed."""
-        # TODO
+        schedule.disconnect_nodes(student1, timeslot1)
+        schedule.disconnect_nodes(student2, timeslot2)
+        schedule.connect_nodes(student1, timeslot2)
+        schedule.connect_nodes(student2, timeslot1)
         pass
+
+    def swap_score_student(
+        self,
+        result: Result,
+        student1: Student,
+        student2: Student,
+        timeslot1: Timeslot,
+        timeslot2: Timeslot,
+    ):
+        """Calculate score difference for swapping `student1` and `student2` between `timeslot1` and `timeslot2`."""
+        # Get current score
+        current_sub_score = result.sub_score(student1) + result.sub_score(student2)
+
+        # Try swap
+        self.fast_swap(timeslot1, timeslot2)
+        # self.swap_students_timeslots(result.schedule, student1, student2, timeslot1, timeslot2)
+
+        # Calculate projected score
+        projected_sub_score = result.sub_score(student1) + result.sub_score(student2)
+
+        # Revert swap
+        self.fast_swap(timeslot1, timeslot2)
+        # self.swap_students_timeslots(result.schedule, student1, student2, timeslot1, timeslot2)
+
+        # Calculate difference
+        diff_sub_score = projected_sub_score - current_sub_score
+        # TODO: cannot swap students twice?
+
+        return diff_sub_score
+
+    def allow_swap_student(
+        self,
+        result: Result,
+        student1: Student,
+        student2: Student,
+        timeslot1: Timeslot,
+        timeslot2: Timeslot,
+        ceiling: int | float | None = None,
+    ):
+        if timeslot1 is timeslot2:
+            return False
+
+        if timeslot1.enrolled_students == 0 or timeslot2.enrolled_students == 0:
+            return False
+
+        if list(timeslot1.activities.values())[0] != list(timeslot2.activities.values())[0]:
+            return False
+
+        swap_score = self.swap_score_student(result, student1, student2, timeslot1, timeslot2)
+        if ceiling is not None and swap_score > ceiling:
+            return False
+        return swap_score
+
+    def draw_valid_student_swap(
+        self,
+        result: Result,
+        timeslots: list[Timeslot],
+        tried_swaps: set | None = None,
+        ceiling: int | float | None = None,
+    ):
+        """Draw a valid swap of two students."""
+        timeslot1 = random.choice(timeslots)
+        # Assuming hard constraint timeslot only has 1 activity
+        activity = list(timeslot1.activities.values())[0]
+
+        # Check wether another timeslot for activity and a student for swap are available
+        if activity.timeslots.values() == 1 or timeslot1.enrolled_students == 0:
+            return self.draw_valid_student_swap(result, timeslots, tried_swaps, ceiling)
+
+        timeslot2 = random.choice(list(activity.timeslots.values()))
+        if timeslot2 is timeslot1:
+            return self.draw_valid_student_swap(result, timeslots, tried_swaps, ceiling)
+
+        draw = self.draw_uniform_recursive(
+            list(timeslot1.students.values()),
+            list(timeslot2.students.values()),
+            lambda s1, s2: self.allow_swap_student(result, s1, s2, timeslot1, timeslot2, ceiling),  # type: ignore
+            return_value=True,
+            _combination_set=tried_swaps,
+        )
+        if not draw:
+            return self.draw_valid_student_swap(result, timeslots, tried_swaps, ceiling)
+
+        student1, student2, score = draw  # type: ignore
+        return (student1, student2, timeslot1, timeslot2), score
 
     # TODO: permutate students between activity timeslots
     # TODO: shift timeslot to open timeslot

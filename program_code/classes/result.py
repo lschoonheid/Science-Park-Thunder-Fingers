@@ -117,7 +117,6 @@ class Result(Statistics):
                 else:
                     sub_gap_periods = (0, 0, 0, 0)
             case "Student":
-                # TODO: define difference in evening score for moving one student
                 sub_evening_timeslots = 0
                 sub_students_overbooked = self.student_overbooked(node)
                 sub_gap_periods = self.gap_periods_student(node)  # type: ignore
