@@ -8,16 +8,6 @@ from ..classes import *
 from ..classes.result import Result
 
 class Greedy(Solver):
-    def connect_random(self, schedule: Schedule, i_max: int = 5):
-        """Make a completely random schedule"""
-        for _ in range(i_max):
-            student: Student = random.choice(list(schedule.students.values()))
-
-            activity: Activity = random.choice(list(student.activities.values()))
-            timeslot: Timeslot = random.choice(list(schedule.timeslots.values()))
-            schedule.connect_nodes(student, timeslot)
-            schedule.connect_nodes(activity, timeslot)
-
     def draw_uniform_recursive(
             self,
             nodes1: list[NodeSC],
@@ -109,27 +99,6 @@ class Greedy(Solver):
 
         return activities_bound, activities_free
 
-    # def assign_hoorcollege_to_room(self, schedule: Schedule):
-    #     # Make shuffled list of timeslots so they will be picked randomly
-    #     timeslots_shuffled = list(schedule.timeslots.values())
-    #     random.shuffle(timeslots_shuffled)
-
-    #     # Get the seperated hoorcolleges and Werkcolleges en practica activities
-    #     activities_bound, activities_free = self.seperate_activities(schedule)
-
-    #     # Hard constraint to never double book a timeslot, so iterate over them
-    #     for timeslot in timeslots_shuffled:
-    #         # Skip timeslot if it already has activity
-    #         if self.verifier.node_has_activity(timeslot):
-    #             continue
-
-    #         # Draw an activity that doesnt already have its max timeslots
-    #         draw = self.draw_uniform_recursive([timeslot], activities_bound, self.verifier.can_assign_timeslot_activity)  # type: ignore
-
-    #         if draw:
-    #             activities_bound = draw[1]
-    #             schedule.connect_nodes(activities_bound, timeslot)
-
     def assign_students_hoorcollege(self, schedule: Schedule, i_max=10000):
         available_activities = list(schedule.activities.values())
 
@@ -208,8 +177,11 @@ class Greedy(Solver):
         available_timeslots = list(schedule.timeslots.values())
         aviable_student = list(schedule.students.values())
         rating = {}
+        i = 0
 
         for activity in aviable_activity:
+            activity_enrolments = activity.enrolled_students
+            total_capacity = 0
             for timeslot in available_timeslots:
                 # Skip timeslot if it already has activity
                 if self.verifier.node_has_activity(timeslot):
@@ -220,8 +192,20 @@ class Greedy(Solver):
                         if self.verifier.student_has_period(student, timeslot):
                             rate += 1
                 rating[timeslot] = rate
-                
-        print(rating)
+
+            max_val = max(rating.values())
+            max_keys = [k for k in rating if rating[k] == max_val]
+            while total_capacity < activity_enrolments:
+                highest_timeslots: Timeslot = random.choice(max_keys)
+                max_keys.remove(highest_timeslots)
+                del rating[highest_timeslots]
+                schedule.connect_nodes(activity, highest_timeslots)
+                total_capacity += min(activity.capacity, highest_timeslots.capacity)
+                if len(max_keys) == 0:
+                    max_val = max(rating.values())
+                    max_keys = [k for k in rating if rating[k] == max_val]
+
+        return Result(schedule=schedule, iterations=i, solved=True)
 
     def hoorcollege(self, schedule: Schedule, i_max: int):
         """Make a completely random schedule solution"""
@@ -233,7 +217,7 @@ class Greedy(Solver):
 
         self.rate_timeslots_activity(schedule, activities_free)
 
-        return 1
+        return self.assign_students_hoorcollege(schedule, i_max)
 
 
     def solve(self, schedule: Schedule, i_max: int | None = None, method="uniform", strict=True):
