@@ -236,6 +236,33 @@ class Statistics:
             return True
         return False
 
+    def student_day_gaps_frequency(self, student: Student, day_index: int):
+        """Count gaps ."""
+        # gaps_on_day will never be smaller than 0
+
+        # Pretend timeslot is assigned to student
+        # TODO: possible to assign relaxation here, only check if there are already some timeslots
+        if len(student.timeslots.values()) == 0:
+            return False
+
+        # Only consider timeslots on same day as `timeslot`
+        day: list[Timeslot] = []
+        for booked_timeslot in student.timeslots.values():
+            if booked_timeslot.day == day_index:
+                day.append(booked_timeslot)
+        if len(day) == 0:
+            return 0
+
+        gap_frequency = np.zeros((4,), dtype=int)
+        gaps_today = self.gaps_on_day(day)
+        # Count gaps on day of new timeslot if timeslot was added
+        if gaps_today >= 3:
+            gap_frequency[3] += 1
+        else:
+            gap_frequency[gaps_today] += 1
+
+        return gap_frequency
+
     def gap_periods_student(self, student: Student):
         """Count free periods in between the first and last active period of `student`."""
         timeslot_day = self.sort_to_day(student.timeslots.values())

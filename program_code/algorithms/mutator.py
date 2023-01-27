@@ -27,8 +27,7 @@ class Mutator(Randomizer):
                     "moment": node2.moment,
                 }
             case _:
-                warnings.warn("fast_swap not implemented for this node type.")
-                return
+                raise NotImplementedError
         node1.__dict__.update(meta2)
         node2.__dict__.update(meta1)
         return node1, node2

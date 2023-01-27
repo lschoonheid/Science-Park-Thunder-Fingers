@@ -77,13 +77,15 @@ def main(
         sampled_result.score_vector
         print(sampled_result)
 
+    if not do_plot:
+        return
+
     G = GraphVisualization(sampled_result.schedule)
     G.visualize()
     schedule_to_csv(sampled_result.schedule)
 
     # Visualize score dimensions
-    if do_plot:
-        plot_statistics(results_compressed)
+    plot_statistics(results_compressed)
 
 
 if __name__ == "__main__":

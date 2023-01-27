@@ -101,7 +101,7 @@ class SimulatedAnnealing(MutationSupplier):
         tried_timeslot_swaps: set[tuple[int, int]] = set(),
         swap_scores_memory: dict[tuple[Timeslot, Timeslot], int | float] = {},
         # T_0: float = 1 / 1000000,
-        T_0: float = 2,
+        T_0: float = 1,
         # T_0: float = 1 / 10,
     ):
         self.T_0 = T_0
@@ -115,13 +115,8 @@ class SimulatedAnnealing(MutationSupplier):
             return True
         return False
 
-    # TODO: temperature as function of iterations that score was constant
-    def temperature(self, score) -> float:
-        c = score / 600
-        return self.T_0 * c
-
-    def temperature_lin2(self, score: int | float) -> float:
-        floor = 5
+    def temperature(self, score: int | float) -> float:
+        floor = 2
         score_0 = 600 + floor
         return self.T_0 * (score + floor) / score_0
 
@@ -176,6 +171,9 @@ class SimulatedAnnealing(MutationSupplier):
                 self.tried_timeslot_swaps,
             ),
         ]
+
+        # Shuffle mutations so that we don't always pick move_node if scores are equal
+        random.shuffle(possible_mutations)
 
         for mutation in self.sort_objects(possible_mutations, "score"):
             P = self.probability(mutation.score, self.temperature(result.score))

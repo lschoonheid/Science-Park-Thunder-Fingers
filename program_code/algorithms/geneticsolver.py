@@ -19,7 +19,7 @@ class GeneticSolver(Mutator):
         courses_input,
         rooms_input,
         population_size=5,
-        max_generations=20000,
+        max_generations=100000,
         method="min_gaps_overlap",
         mutation_supplier: MutationSupplier = SimulatedAnnealing(),
         verbose=False,
@@ -52,6 +52,7 @@ class GeneticSolver(Mutator):
         TODO: define mutations
         TODO do different mutations, depending on highest conflict factor
         TODO: statistics of different methods
+        TODO: statistics where most score increase comes from
         - TODO: hillclimber
         - TODO: recursive swapping function
         TODO: index on swaps already tried
@@ -106,7 +107,6 @@ class GeneticSolver(Mutator):
                 best_score = current_best.score
                 best_fitness = self.fitness(best_score)
 
-            # TODO Possible to do relaxation here
             # Get suggestion for possible mutation
             mutation: Mutation = self.mutation_supplier.suggest_mutation(current_best)
 
@@ -120,20 +120,19 @@ class GeneticSolver(Mutator):
                 current_best = Result(Schedule(self.students_input, self.courses_input, self.rooms_input, backup_edges))
                 # self.mutation_supplier.tried_timeslot_swaps.add(swapped_ids)
                 continue
+
             #  Clear memory of swaps because of new schedule
             self.mutation_supplier.reset_mutations()
 
-            if not self_repair and i % 20 == 0:
+            # Save performance by only updating total score every 20 generations
+            if not self_repair and i % 50 == 0:
                 current_best.update_score()
-            # Try swapping timeslots to get a better fitness (or score)
-            # Describe progress
-            pbar.set_description(
-                f"{type(self).__name__} ({type(self.mutation_supplier).__name__}) (score: {current_best.score}) (best swap memory {len(self.mutation_supplier.swap_scores_memory) } tried swaps memory {len(self.mutation_supplier.tried_timeslot_swaps) })"
-            )
+                # Describe progress
+                pbar.set_description(
+                    f"{type(self).__name__} ({type(self.mutation_supplier).__name__}) (score: {current_best.score}) (best swap memory {len(self.mutation_supplier.swap_scores_memory) } tried swaps memory {len(self.mutation_supplier.tried_timeslot_swaps) })"
+                )
             # print(f"Score: {current_best.score} \t Generation: {i + 1 }/{ self.max_generations}", end="\r")
 
-            if mutation.type == "swap_students_timeslots":
-                pass
             # Track progress
             generations = i
             track_scores.append(current_best.score)  # type: ignore
