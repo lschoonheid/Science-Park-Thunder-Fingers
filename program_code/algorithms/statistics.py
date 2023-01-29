@@ -41,6 +41,21 @@ class Statistics:
     def sort_objects(self, objects, attr: str, reverse=False):
         return sorted(objects, key=operator.attrgetter(attr), reverse=reverse)
 
+    def biased_boolean(self, probability: float = 0.5) -> bool:
+        """Returns `True` with probability `probability`. Otherwise returns False."""
+        assert probability >= 0, "Probability cannot be less than zero"
+        if np.random.rand() < probability:
+            return True
+        return False
+
+    def bias_activity(self, activity: Activity, normalizer) -> float:
+        """Returns a bias for `activity` based on the number of students enrolled."""
+        current = activity.enrolled_students
+        select = self.biased_boolean(normalizer * activity.enrolled_students)
+        if select:
+            pass
+        return select
+
     def node_has_activity(self, node):
         if len(node.activities) > 0:
             return True

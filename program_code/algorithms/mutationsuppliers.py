@@ -107,14 +107,6 @@ class SimulatedAnnealing(MutationSupplier):
         self.T_0 = T_0
         super().__init__(score_scope, tried_timeslot_swaps, swap_scores_memory)
 
-    # @jit()
-    def biased_boolean(self, probability: float = 0.5) -> bool:
-        """Returns `True` with probability `probability`. Otherwise returns False."""
-        assert probability >= 0, "Probability cannot be less than zero"
-        if np.random.rand() < probability:
-            return True
-        return False
-
     def temperature(self, score: int | float) -> float:
         floor = 2
         score_0 = 600 + floor

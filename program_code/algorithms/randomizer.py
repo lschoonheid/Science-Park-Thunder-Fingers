@@ -97,8 +97,10 @@ class Randomizer(Solver):
         self.assign_activities_timeslots_prioritized(schedule, activities, timeslots)
 
     def assign_activities_timeslots_uniform(self, schedule: Schedule):
+        """Assign timeslots to activities uniformly. Results in uniform distribution but does not ensure each enrolled student can book timeslot for activity."""
         # Make shuffled list of timeslots so they will be picked randomly
-        timeslots_shuffled = list(schedule.timeslots.values())
+        available_timeslots = [timeslot for timeslot in schedule.timeslots.values() if len(timeslot.activities) == 0]
+        timeslots_shuffled = list(available_timeslots)
         random.shuffle(timeslots_shuffled)
 
         activities = list(schedule.activities.values())
@@ -115,6 +117,31 @@ class Randomizer(Solver):
             if draw:
                 activity: Activity = draw[1]  # type: ignore
                 schedule.connect_nodes(activity, timeslot)
+
+    def assign_activities_timeslots_biased(self, schedule: Schedule):
+        """Assign timeslots to activities with bias towards number of enrolments. Results in non-uniform distribution with more timeslots assigned to preferred activities."""
+        # Make shuffled list of timeslots so they will be picked randomly
+        available_timeslots = [timeslot for timeslot in schedule.timeslots.values() if len(timeslot.activities) == 0]
+        timeslots_shuffled = list(available_timeslots)
+        random.shuffle(timeslots_shuffled)
+
+        activities = list(schedule.activities.values())
+
+        normalizer = len(available_timeslots) / sum([activity.enrolled_students for activity in activities])
+
+        # Hard constraint to never double book a timeslot, so iterate over them
+        for timeslot in timeslots_shuffled:
+            # Skip timeslot if it already has activity
+            if self.node_has_activity(timeslot):
+                continue
+
+            # Draw an activity that doesnt already have its max timeslots
+            draw = self.draw_uniform_recursive([timeslot], activities, lambda t, a: self.can_assign_timeslot_activity(t, a) and self.bias_activity(a, normalizer))  # type: ignore
+
+            if draw:
+                activity: Activity = draw[1]  # type: ignore
+                schedule.connect_nodes(activity, timeslot)
+        pass
 
     def assign_students_timeslots(self, schedule: Schedule, i_max=10000, method="uniform"):
         available_activities = list(schedule.activities.values())
@@ -261,7 +288,8 @@ class Randomizer(Solver):
         # First make sure each activity has a timeslot
         self.assign_activities_timeslots_once(schedule)
         # Divide leftover timeslots over activities
-        self.assign_activities_timeslots_uniform(schedule)
+        # self.assign_activities_timeslots_uniform(schedule)
+        self.assign_activities_timeslots_biased(schedule)
 
         return self.assign_students_timeslots(schedule, i_max, method=method)
 
