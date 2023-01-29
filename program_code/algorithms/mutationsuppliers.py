@@ -138,11 +138,14 @@ class SimulatedAnnealing(MutationSupplier):
         return np.exp(-diff / temperature)
         return np.exp(-diff / temperature - 0.69315)
 
-    def suggest_mutation(self, result: Result, ceiling=10, _recursion_depth=1000):
+    def suggest_mutation(
+        self, result: Result, ceiling=10, _recursion_depth=1000, timeslots: list[Timeslot] | None = None
+    ):
         if _recursion_depth == 0:
             raise RecursionError("Recursion depth exceeded")
 
-        timeslots = list(result.schedule.timeslots.values())
+        if timeslots is None:
+            timeslots = list(result.schedule.timeslots.values())
 
         # For annealing important to NOT select the best swap, but a random one
         possible_mutations = [
@@ -185,3 +188,27 @@ class SimulatedAnnealing(MutationSupplier):
                 return mutation
 
         return self.suggest_mutation(result, ceiling, _recursion_depth - 1)
+
+
+class DirectedSA(SimulatedAnnealing):
+    def biased_subjects(self, result: Result, timeslots: list[Timeslot], fraction: float = 1 / 10):
+        """Returns a list of subjects that are biased towards the worst subjects."""
+        scores = np.array([result.sub_score(t) for t in timeslots])
+        total_score = sum(scores)
+
+        selection_size = int(len(timeslots) // (1 / fraction))
+        probabilities = selection_size * scores / total_score
+        select = [self.biased_boolean(p) for p in probabilities]
+
+        selection = [subject for subject, select in zip(timeslots, select) if select]
+
+        return selection
+
+    def suggest_mutation(self, result: Result, ceiling=10, _recursion_depth=1000):
+        if _recursion_depth == 0:
+            raise RecursionError("Recursion depth exceeded")
+
+        all_timeslots = list(result.schedule.timeslots.values())
+        timeslots = self.biased_subjects(result, all_timeslots, 1 / 2)
+
+        return super().suggest_mutation(result, ceiling, _recursion_depth, timeslots)

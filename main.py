@@ -19,6 +19,7 @@ from program_code import (
     GeneticSolver,
     HillClimber,
     SimulatedAnnealing,
+    DirectedSA,
     GraphVisualization,
     plot_statistics,
 )
@@ -54,6 +55,8 @@ def main(
     match method:
         case "baseline":
             solver = Randomizer(**data_arguments, method="uniform")
+        case "directed_sa":
+            solver = GeneticSolver(**data_arguments, mutation_supplier=DirectedSA())
         case "simulated_annealing":
             solver = GeneticSolver(**data_arguments, mutation_supplier=SimulatedAnnealing())
         case "hillclimber":
@@ -100,6 +103,7 @@ if __name__ == "__main__":
             "min_overlap",
             "min_gaps",
             "min_gaps_overlap",
+            "directed_sa",
             "simulated_annealing",
             "hillclimber",
             # "greedy",

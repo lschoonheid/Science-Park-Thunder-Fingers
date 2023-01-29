@@ -3,7 +3,7 @@ from ..classes import Schedule, Timeslot, dump_result
 from .generate import generate_solutions
 from .randomizer import Randomizer
 from .mutator import Mutator
-from .mutationsuppliers import MutationSupplier, SimulatedAnnealing, HillClimber, Mutation
+from .mutationsuppliers import MutationSupplier, DirectedSA, SimulatedAnnealing, HillClimber, Mutation
 from ..classes.result import Result
 import copy
 from tqdm import tqdm
@@ -20,7 +20,7 @@ class GeneticSolver(Mutator):
         rooms_input,
         population_size=5,
         max_generations=100000,
-        method="min_gaps_overlap",
+        method="uniform",
         mutation_supplier: MutationSupplier = SimulatedAnnealing(),
         verbose=False,
     ) -> None:
@@ -143,9 +143,9 @@ class GeneticSolver(Mutator):
         score = current_best.score
         dump_result(
             [current_best, timestamps],
-            f"output/genetic_{strategy_name}_score{score}_scorestime_{self.max_generations}_",
+            f"output/genetic_{strategy_name}_score_{score}_scorestime_{generations}_",
         )
-        output_path = dump_result(current_best, f"output/genetic_{strategy_name}_{score}_{self.max_generations}_")
+        output_path = dump_result(current_best, f"output/genetic_{strategy_name}_{score}_{generations}_")
 
         # Output results to console
         print(
@@ -156,9 +156,9 @@ class GeneticSolver(Mutator):
         )
 
         # Show score over time
-        plt.plot(timestamps, track_scores)
-        plt.xlabel("Time (s)")
-        plt.ylabel("Score")
-        plt.show()
+        # plt.plot(timestamps, track_scores)
+        # plt.xlabel("Time (s)")
+        # plt.ylabel("Score")
+        # plt.show()
 
         return current_best
