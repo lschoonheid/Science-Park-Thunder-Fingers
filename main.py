@@ -106,7 +106,7 @@ if __name__ == "__main__":
             "directed_sa",
             "simulated_annealing",
             "hillclimber",
-            # "greedy",
+            "greedy",
         ],
         default="simulated_annealing",
         help="Choose method.",

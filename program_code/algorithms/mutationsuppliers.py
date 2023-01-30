@@ -74,24 +74,49 @@ class MutationSupplier(Mutator):
 
 
 class HillClimber(MutationSupplier):
-    def suggest_mutation(self, result: Result, ceiling=0):
+    def suggest_mutation(self, result: Result, ceiling=0, timeslots=None):
         # See which swaps are best
-        swap_scores = self.get_swap_scores_timeslot(
-            result, self.score_scope, self.tried_timeslot_swaps, ceiling=ceiling
-        )
-        # TODO: make this a priority queue
-        swap: tuple[Timeslot, Timeslot] = min(swap_scores, key=swap_scores.get)  # type: ignore
 
-        # if len(swap_scores_memory) > 4000:
-        #     swap_scores_memory.clear()
-        # self.tried_timeslot_swaps.union(swap_scores.keys())
+        if timeslots is None:
+            timeslots = list(result.schedule.timeslots.values())
 
-        # TODO: implement student moving
+        timeslots = list(result.schedule.timeslots.values())
+        # For annealing important to NOT select the best swap, but a random one
+        possible_mutations = []
 
-        # Update memory
-        self.swap_scores_memory.update(swap_scores)
-        del self.swap_scores_memory[swap]
-        return self.swap_neighbors, [result.schedule, *swap, "Room"]
+        for i in range(self.score_scope):
+            possible_mutations.extend(
+                [
+                    Mutation(
+                        self.move_node,
+                        self.draw_valid_student_move,
+                        result,
+                        timeslots,
+                        ceiling,
+                    ),
+                    Mutation(
+                        self.swap_neighbors,
+                        self.draw_valid_timeslot_swap,
+                        result,
+                        timeslots,
+                        ceiling,
+                        self.tried_timeslot_swaps,
+                        {"skip": "Room"},
+                    ),
+                    Mutation(
+                        self.swap_students_timeslots,
+                        self.draw_valid_student_swap,
+                        result,
+                        timeslots,
+                        ceiling,
+                        self.tried_timeslot_swaps,
+                    ),
+                ]
+            )
+
+        best_mutation = min(possible_mutations, key=lambda m: m.score)
+
+        return best_mutation
 
 
 class SimulatedAnnealing(MutationSupplier):
