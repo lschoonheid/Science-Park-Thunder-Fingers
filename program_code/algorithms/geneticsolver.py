@@ -46,7 +46,7 @@ class GeneticSolver(Mutator):
         schedule_seed: Schedule | None = None,
         i_max: int | None = None,
         self_repair=False,
-        show_progress=False,
+        show_progress=True,
     ):
         """
         TODO mark lower half of population for replacement
@@ -70,6 +70,8 @@ class GeneticSolver(Mutator):
 
         """
 
+        process_id = multiprocessing.current_process()._identity[0]
+
         if i_max is None:
             i_max = self.max_generations
 
@@ -79,7 +81,7 @@ class GeneticSolver(Mutator):
                 Randomizer(self.students_input, self.courses_input, self.rooms_input, method=self.method),
                 n=self.population_size,
                 compress=True,
-                show_progress=show_progress,
+                show_progress=False,
             )
         else:
             self.population = [Result(copy.deepcopy(schedule_seed)).compress() for i in range(self.population_size)]
@@ -90,8 +92,6 @@ class GeneticSolver(Mutator):
         )
         backup_edges = copy.deepcopy(current_best.schedule.edges)
 
-        process_id = multiprocessing.current_process()._identity[0]
-
         start_time = time.time()
         best_fitness = 0
         best_score = None
@@ -99,8 +99,8 @@ class GeneticSolver(Mutator):
         timestamps = []
         generations = 0
         # TODO: in a loop: crossover, mutate, select best fit and repeat
-        pbar = tqdm(range(i_max), position=process_id, leave=True, disable=not True)
-        for i in pbar:
+        pbar = tqdm(range(i_max), position=process_id, leave=False, disable=not show_progress)
+        for i in range(i_max):
 
             # Check if solution is found
             if current_best.score == 0:
@@ -131,7 +131,10 @@ class GeneticSolver(Mutator):
             # Save performance by only updating total score every 20 generations
             if not self_repair and i % 50 == 0:
                 current_best.update_score()
+
                 # Describe progress
+                pbar.n = i
+                pbar.update()
                 pbar.set_description(
                     # f"{type(self).__name__} ({type(self.mutation_supplier).__name__}) (score: {current_best.score}) (best swap memory {len(self.mutation_supplier.swap_scores_memory) } tried swaps memory {len(self.mutation_supplier.tried_timeslot_swaps) })"
                     f"{process_id}: {type(self).__name__} ({type(self.mutation_supplier).__name__}) (score: {current_best.score})"
@@ -142,6 +145,8 @@ class GeneticSolver(Mutator):
             generations = i
             track_scores.append(current_best.score)  # type: ignore
             timestamps.append(time.time() - start_time)
+
+        pbar.close()
 
         # Dump results
         strategy_name = self.mutation_supplier.__class__.__name__
@@ -161,7 +166,7 @@ class GeneticSolver(Mutator):
         )
         output_path = dump_result(current_best, f"output/genetic_{strategy_name}_{score}_{generations}_")
 
-        if show_progress:
+        if self.verbose:
             # Output results to console
             print(
                 f"\nBest score: {current_best.score} \
