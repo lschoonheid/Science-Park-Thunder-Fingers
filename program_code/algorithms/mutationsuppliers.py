@@ -30,14 +30,6 @@ class Mutation(Mutator):
         draw = drawer(result, targets, tried_mutations, ceiling)
         if draw:
             self.subjects, self.score = draw
-        else:
-            pass
-        #     probability_move = self.p(move_score, self.temperature(result))
-        #     move_mutation = self.move_node, [result.schedule, *move]
-        # else:
-        #     probability_move = 0
-
-        # do_move = self.biased_boolean(probability_move)
 
     def apply(self):
         if self.arguments:
@@ -57,11 +49,13 @@ class MutationSupplier(Mutator):
     def __init__(
         self,
         score_scope: int = 2,
+        ceiling=0,
         tried_timeslot_swaps: set[tuple[int, int]] = set(),
         swap_scores_memory: dict[tuple[Timeslot, Timeslot], int | float] = {},
     ):
         # Score scope is how many timeslots to look at when scoring a swap
         self.score_scope = score_scope
+        self.ceiling = ceiling
         self.tried_timeslot_swaps = tried_timeslot_swaps
         self.swap_scores_memory = swap_scores_memory
 
@@ -74,13 +68,22 @@ class MutationSupplier(Mutator):
 
 
 class HillClimber(MutationSupplier):
+    def __init__(
+        self,
+        score_scope: int = 2,
+        ceiling=0,
+        tried_timeslot_swaps: set[tuple[int, int]] = set(),
+        swap_scores_memory: dict[tuple[Timeslot, Timeslot], int | float] = {},
+    ):
+        super().__init__(score_scope, ceiling, tried_timeslot_swaps, swap_scores_memory)
+
     def suggest_mutation(
         self,
         result: Result,
-        ceiling=0,
         timeslots=None,
         _recursion_depth=1000,
     ):
+        ceiling = self.ceiling
         # See which swaps are best
 
         if timeslots is None:
@@ -126,7 +129,7 @@ class HillClimber(MutationSupplier):
         best_mutation = min(possible_mutations, key=lambda m: m.score)
 
         if best_mutation.score > 0:
-            return self.suggest_mutation(result, ceiling, timeslots, _recursion_depth - 1)
+            return self.suggest_mutation(result, timeslots, _recursion_depth - 1)
 
         return best_mutation
 
@@ -139,10 +142,11 @@ class SimulatedAnnealing(MutationSupplier):
         swap_scores_memory: dict[tuple[Timeslot, Timeslot], int | float] = {},
         # T_0: float = 1 / 1000000,
         T_0: float = 1,
+        ceiling=10,
         # T_0: float = 1 / 10,
     ):
         self.T_0 = T_0
-        super().__init__(score_scope, tried_timeslot_swaps, swap_scores_memory)
+        super().__init__(score_scope, ceiling, tried_timeslot_swaps, swap_scores_memory)
 
     def temperature(self, score: int | float) -> float:
         floor = 2
@@ -170,10 +174,10 @@ class SimulatedAnnealing(MutationSupplier):
     def suggest_mutation(
         self,
         result: Result,
-        ceiling=10,
         timeslots: list[Timeslot] | None = None,
         _recursion_depth=1000,
     ):
+        ceiling = self.ceiling
         if _recursion_depth == 0:
             raise RecursionError("Recursion depth exceeded")
 
@@ -221,7 +225,7 @@ class SimulatedAnnealing(MutationSupplier):
                     pass
                 return mutation
 
-        return self.suggest_mutation(result, ceiling, _recursion_depth=_recursion_depth - 1)
+        return self.suggest_mutation(result, _recursion_depth=_recursion_depth - 1)
 
 
 class DirectedSA(SimulatedAnnealing):
@@ -245,4 +249,4 @@ class DirectedSA(SimulatedAnnealing):
         all_timeslots = list(result.schedule.timeslots.values())
         timeslots = self.biased_subjects(result, all_timeslots, 1 / 2)
 
-        return super().suggest_mutation(result, ceiling, timeslots, _recursion_depth)
+        return super().suggest_mutation(result, timeslots, _recursion_depth)

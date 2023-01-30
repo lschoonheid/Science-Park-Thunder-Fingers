@@ -19,7 +19,7 @@ class GeneticSolver(Mutator):
         courses_input,
         rooms_input,
         population_size=5,
-        max_generations=100000,
+        max_generations=300000,
         method="uniform",
         mutation_supplier: MutationSupplier = SimulatedAnnealing(),
         verbose=False,
@@ -45,6 +45,7 @@ class GeneticSolver(Mutator):
         schedule_seed: Schedule | None = None,
         i_max: int | None = None,
         self_repair=False,
+        show_progress=False,
     ):
         """
         TODO mark lower half of population for replacement
@@ -77,7 +78,7 @@ class GeneticSolver(Mutator):
                 Randomizer(self.students_input, self.courses_input, self.rooms_input, method=self.method),
                 n=self.population_size,
                 compress=True,
-                show_progress=True,
+                show_progress=show_progress,
             )
         else:
             self.population = [Result(copy.deepcopy(schedule_seed)).compress() for i in range(self.population_size)]
@@ -95,7 +96,7 @@ class GeneticSolver(Mutator):
         timestamps = []
         generations = 0
         # TODO: in a loop: crossover, mutate, select best fit and repeat
-        pbar = tqdm(range(i_max), position=0, leave=True)
+        pbar = tqdm(range(i_max), position=0, leave=True, disable=not show_progress)
         for i in pbar:
 
             # Check if solution is found
@@ -140,20 +141,30 @@ class GeneticSolver(Mutator):
 
         # Dump results
         strategy_name = self.mutation_supplier.__class__.__name__
+        current_best.update_score()
         score = current_best.score
+
+        arguments = copy.deepcopy(self.__dict__)
+        del arguments["population"]
+        del arguments["students_input"]
+        del arguments["rooms_input"]
+        del arguments["courses_input"]
+
+        setattr(current_best, "_solve_arguments", arguments)
         dump_result(
             [current_best, timestamps],
             f"output/genetic_{strategy_name}_score_{score}_scorestime_{generations}_",
         )
         output_path = dump_result(current_best, f"output/genetic_{strategy_name}_{score}_{generations}_")
 
-        # Output results to console
-        print(
-            f"\nBest score: {current_best.score} \
-            \nIterations: {generations} \t solved: {current_best.check_solved()} \
-            \nScore vector: {current_best.score_vector} \
-            \nsaved at {output_path}"
-        )
+        if show_progress:
+            # Output results to console
+            print(
+                f"\nBest score: {current_best.score} \
+                \nIterations: {generations} \t solved: {current_best.check_solved()} \
+                \nScore vector: {current_best.score_vector} \
+                \nsaved at {output_path}"
+            )
 
         # Show score over time
         # plt.plot(timestamps, track_scores)

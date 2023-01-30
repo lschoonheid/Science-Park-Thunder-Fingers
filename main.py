@@ -24,6 +24,7 @@ from program_code import (
     GraphVisualization,
     plot_statistics,
 )
+from program_code.algorithms.multiprocess import multi_solve
 from sched_csv_output import schedule_to_csv
 
 # TODO: write interface code to execute complete program from command line
@@ -66,7 +67,12 @@ def main(
             raise ValueError("Invalid method chosen.")
 
     # Generate (compressed) results: only return scorevector and edges
-    results_compressed = generate_solutions(
+    # results_compressed = generate_solutions(
+    #     solver,
+    #     show_progress=show_progress,
+    #     **kwargs,
+    # )
+    results_compressed = multi_solve(
         solver,
         show_progress=show_progress,
         **kwargs,
