@@ -56,7 +56,7 @@ class Mutation(Mutator):
 class MutationSupplier(Mutator):
     def __init__(
         self,
-        score_scope: int = 10,
+        score_scope: int = 2,
         tried_timeslot_swaps: set[tuple[int, int]] = set(),
         swap_scores_memory: dict[tuple[Timeslot, Timeslot], int | float] = {},
     ):
@@ -74,7 +74,13 @@ class MutationSupplier(Mutator):
 
 
 class HillClimber(MutationSupplier):
-    def suggest_mutation(self, result: Result, ceiling=0, timeslots=None):
+    def suggest_mutation(
+        self,
+        result: Result,
+        ceiling=0,
+        timeslots=None,
+        _recursion_depth=1000,
+    ):
         # See which swaps are best
 
         if timeslots is None:
@@ -116,6 +122,9 @@ class HillClimber(MutationSupplier):
 
         best_mutation = min(possible_mutations, key=lambda m: m.score)
 
+        if best_mutation.score > 0:
+            return self.suggest_mutation(result, ceiling, timeslots, _recursion_depth - 1)
+
         return best_mutation
 
 
@@ -156,7 +165,11 @@ class SimulatedAnnealing(MutationSupplier):
         return np.exp(-diff / temperature - 0.69315)
 
     def suggest_mutation(
-        self, result: Result, ceiling=10, _recursion_depth=1000, timeslots: list[Timeslot] | None = None
+        self,
+        result: Result,
+        ceiling=10,
+        timeslots: list[Timeslot] | None = None,
+        _recursion_depth=1000,
     ):
         if _recursion_depth == 0:
             raise RecursionError("Recursion depth exceeded")
@@ -165,6 +178,7 @@ class SimulatedAnnealing(MutationSupplier):
             timeslots = list(result.schedule.timeslots.values())
 
         # For annealing important to NOT select the best swap, but a random one
+        # TODO implement score scope, try more mutations
         possible_mutations = [
             Mutation(
                 self.move_node,
@@ -204,7 +218,7 @@ class SimulatedAnnealing(MutationSupplier):
                     pass
                 return mutation
 
-        return self.suggest_mutation(result, ceiling, _recursion_depth - 1)
+        return self.suggest_mutation(result, ceiling, _recursion_depth=_recursion_depth - 1)
 
 
 class DirectedSA(SimulatedAnnealing):
@@ -228,4 +242,4 @@ class DirectedSA(SimulatedAnnealing):
         all_timeslots = list(result.schedule.timeslots.values())
         timeslots = self.biased_subjects(result, all_timeslots, 1 / 2)
 
-        return super().suggest_mutation(result, ceiling, _recursion_depth, timeslots)
+        return super().suggest_mutation(result, ceiling, timeslots, _recursion_depth)
