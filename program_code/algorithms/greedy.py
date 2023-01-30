@@ -7,70 +7,71 @@ from .solver import Solver
 from ..classes import *
 from ..classes.result import Result
 
+
 class Greedy(Solver):
     def draw_uniform_recursive(
-            self,
-            nodes1: list[NodeSC],
-            nodes2: list[NodeSC],
-            condition: Callable[
-                [NodeSC, NodeSC],
-                bool,
-            ],
-            negation=False,
-            _recursion_limit=10000,
-            _combination_set: set | None = None,
-        ):
-            """Recursively try to pick two random nodes to satisfy `condition(node1, node2) == True`."""
-            # assert _recursion_limit > 0, "Reached recursion limit"
-            if _recursion_limit == 0:
-                print("ERROR: reached recursion depth limit!")
-                return None
+        self,
+        nodes1: list[NodeSC],
+        nodes2: list[NodeSC],
+        condition: Callable[
+            [NodeSC, NodeSC],
+            bool,
+        ],
+        negation=False,
+        _recursion_limit=10000,
+        _combination_set: set | None = None,
+    ):
+        """Recursively try to pick two random nodes to satisfy `condition(node1, node2) == True`."""
+        # assert _recursion_limit > 0, "Reached recursion limit"
+        if _recursion_limit == 0:
+            print("ERROR: reached recursion depth limit!")
+            return None
 
-            # Initialization
-            if not _combination_set:
-                _combination_set = set()
+        # Initialization
+        if not _combination_set:
+            _combination_set = set()
 
-            max_combinations = len(nodes1) * len(nodes2)
-            # print(f"{1000 - _recursion_limit}/{max_combinations}")
+        max_combinations = len(nodes1) * len(nodes2)
+        # print(f"{1000 - _recursion_limit}/{max_combinations}")
 
-            if len(_combination_set) == max_combinations:
-                # Reached all possible combinations
-                return None
+        if len(_combination_set) == max_combinations:
+            # Reached all possible combinations
+            return None
 
-            node1 = random.choice(nodes1)
-            node2 = random.choice(nodes2)
+        node1 = random.choice(nodes1)
+        node2 = random.choice(nodes2)
 
-            combination = (node1.id, node2.id)
-            condition_value = condition(node1, node2)
-            if negation:
-                # If boolean has to be mirrored, mirror it
-                condition_value = not condition_value
+        combination = (node1.id, node2.id)
+        condition_value = condition(node1, node2)
+        if negation:
+            # If boolean has to be mirrored, mirror it
+            condition_value = not condition_value
 
-            # TODO: Possibly faster to generate all combinations and iterate?
-            if combination in _combination_set:
-                # Combination already tried, try again with different combination
-                return self.draw_uniform_recursive(
-                    nodes1,
-                    nodes2,
-                    condition,
-                    negation=negation,
-                    _recursion_limit=_recursion_limit - 1,
-                    _combination_set=_combination_set,
-                )
-            elif not condition_value:
-                _combination_set.add(combination)
-                assert len(_combination_set) <= max_combinations, "Combination set out of order"
+        # TODO: Possibly faster to generate all combinations and iterate?
+        if combination in _combination_set:
+            # Combination already tried, try again with different combination
+            return self.draw_uniform_recursive(
+                nodes1,
+                nodes2,
+                condition,
+                negation=negation,
+                _recursion_limit=_recursion_limit - 1,
+                _combination_set=_combination_set,
+            )
+        elif not condition_value:
+            _combination_set.add(combination)
+            assert len(_combination_set) <= max_combinations, "Combination set out of order"
 
-                return self.draw_uniform_recursive(
-                    nodes1,
-                    nodes2,
-                    condition,
-                    negation=negation,
-                    _recursion_limit=_recursion_limit - 1,
-                    _combination_set=_combination_set,
-                )
+            return self.draw_uniform_recursive(
+                nodes1,
+                nodes2,
+                condition,
+                negation=negation,
+                _recursion_limit=_recursion_limit - 1,
+                _combination_set=_combination_set,
+            )
 
-            return node1, node2
+        return node1, node2
 
     def sort_nodes(self, nodes, attr: str, reverse=False):
         return sorted(nodes, key=operator.attrgetter(attr), reverse=reverse)
@@ -157,7 +158,7 @@ class Greedy(Solver):
 
             timeslot_list = []
             for timeslot_chose in timeslots_linked:
-                if self.verifier.student_has_period(student, timeslot_chose):
+                if self.node_has_period(student, timeslot_chose):
                     timeslot_list.append(timeslot_chose)
 
             if len(timeslot_list) == 0:
@@ -204,7 +205,7 @@ class Greedy(Solver):
             # Go trough all timeslots
             for timeslot in available_timeslots:
                 # Skip timeslot if it already has activity
-                if self.verifier.node_has_activity(timeslot):
+                if self.node_has_activity(timeslot):
                     continue
                 # Set rate to 0
                 rate = 0
@@ -213,7 +214,7 @@ class Greedy(Solver):
                     # Check if the students has the activity
                     if activity in student.activities.values():
                         # Check if the student already has activity in the current period
-                        if self.verifier.student_has_period(student, timeslot):
+                        if self.node_has_period(student, timeslot):
                             # If studens has no activity in current period increase rating
                             rate += 1
                 # Save the total rating for every timeslot
@@ -223,7 +224,7 @@ class Greedy(Solver):
             max_val = max(rating.values())
             max_keys = [k for k in rating if rating[k] == max_val]
 
-            # Keep adding activities until the total_capacity is higher then the enrolment 
+            # Keep adding activities until the total_capacity is higher then the enrolment
             while total_capacity < activity_enrolments:
                 # Randomly chose on of the highest rated timeslots
                 highest_timeslots: Timeslot = random.choice(max_keys)
@@ -232,7 +233,7 @@ class Greedy(Solver):
                 del rating[highest_timeslots]
                 # Connect the nodes of activity and timeslot
                 schedule.connect_nodes(activity, highest_timeslots)
-                # Change total capacity 
+                # Change total capacity
                 total_capacity += min(activity.capacity, highest_timeslots.capacity)
                 # If the lenght of the list with the highest timeslot is 0 make new list
                 if len(max_keys) == 0:
@@ -249,7 +250,6 @@ class Greedy(Solver):
         self.rate_timeslots_activity(schedule, activities_free)
 
         return self.assign_students_try(schedule, activities_free)
-
 
     def solve(self, schedule: Schedule, i_max: int | None = None, method="uniform", strict=True):
         if i_max is None:
