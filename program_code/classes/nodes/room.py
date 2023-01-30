@@ -16,7 +16,14 @@ class Room(Node):
         self.capacity = capacity
 
         # Neighbors
-        self.timeslots = {}
+        self.neighbors = {}
+        self.timeslots = self.neighbors
+
+    def remove_neighbor(self, node):
+        del self.neighbors[node.id]
+
+    def __repr__(self) -> str:
+        return f"{self.name}"
 
     def __str__(self) -> str:
         return f"{self.name}"

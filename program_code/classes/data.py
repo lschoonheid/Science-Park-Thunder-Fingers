@@ -1,15 +1,39 @@
+import os
 import pickle
 import hashlib
 from typing import Callable
 from functools import wraps
 from csv import DictReader
+import time
+
+
+def prepare_path(path: str):
+    """If a directory for `path` doesn't exist, make it."""
+
+    # Filter directory from path
+    directory = "/".join(path.split("/")[:-1])
+    if directory == "":
+        return
+
+    isExist = os.path.exists(directory)
+    if not isExist:
+        # Create a new directory because it does not exist
+        os.makedirs(directory)
 
 
 def dump_pickle(data, output: str):
     """Dump pickle file."""
+    prepare_path(output)
     with open(output, "wb") as handle:
         pickle.dump(data, handle)
     return data
+
+
+def dump_result(data, directory: str):
+    time_string = time.strftime("%Y%m%d-%H%M%S")
+    path = directory + time_string + ".pyc"
+    dump_pickle(data, path)
+    return path
 
 
 def load_pickle(location: str):
@@ -53,7 +77,7 @@ class Data:
     """Wrapper object for data."""
 
     def __init__(self, stud_prefs_path: str, courses_path: str, rooms_path: str):
-        self.students, self.courses, self.rooms = self.load(stud_prefs_path, courses_path, rooms_path)
+        self.students_input, self.courses_input, self.rooms_input = self.load(stud_prefs_path, courses_path, rooms_path)
 
     def load(self, stud_prefs_path: str, courses_path: str, rooms_path: str, replace_blank=True):
         students = csv_to_dicts(stud_prefs_path)

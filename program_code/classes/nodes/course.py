@@ -7,6 +7,7 @@ class Course(Node):
     Is linked with:
     - activities
     - students
+    - timeslots
     """
 
     def __init__(
@@ -32,8 +33,33 @@ class Course(Node):
         self.expected_stud = expected_stud
 
         # Neighbors
+        self.neighbors = {}
         self.activities = {}
+        self.bound_activities = {}
+        self.unbound_activities = {}
         self.students = {}
+        self.timeslots = {}
+
+    def add_neighbor(self, node):
+        """Does the same as regular `add_neighbor` function except it also sorts activity into bound and unbound."""
+        if type(node).__name__ == "Activity":
+            if node.max_timeslots:
+                self.bound_activities[node.id] = node
+            else:
+                self.unbound_activities[node.id] = node
+        return super().add_neighbor(node)
+
+    def remove_neighbor(self, node):
+        if type(node).__name__ == "Activity":
+            if node.max_timeslots:
+                del self.bound_activities[node.id]
+            else:
+                del self.unbound_activities[node.id]
+        return super().remove_neighbor(node)
+
+    def __repr__(self) -> str:
+        """Output name to string"""
+        return self.name
 
     def __str__(self) -> str:
         """Output name to string"""

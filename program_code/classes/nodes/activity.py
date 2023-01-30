@@ -1,3 +1,4 @@
+from functools import cached_property
 from .node import Node
 from .course import Course
 from .timeslot import Timeslot
@@ -8,6 +9,7 @@ class Activity(Node):
     """Node that represents an activity. Eg: `wc1 of analyise`'.
 
     Is linked with:
+    - course
     - timeslots
     - students
     """
@@ -21,18 +23,33 @@ class Activity(Node):
         self.max_timeslots = max_timeslots
 
         # Neighbors
-        self.courses: dict[int, Course] = {}
+        self.neighbors: dict[int, Node] = {}
+        self.course: Course
         self.timeslots: dict[int, Timeslot] = {}
         self.students: dict[int, Student] = {}
 
-    @property
+    def add_neighbor(self, node):
+        if type(node).__name__ == "Course":
+            self.course = node
+            self.neighbors[node.id] = node
+            return
+        return super().add_neighbor(node)
+
+    def remove_neighbor(self, node):
+        if type(node).__name__ == "Course":
+            self.course = None  # type: ignore
+            del self.neighbors[node.id]
+            return
+        return super().remove_neighbor(node)
+
+    @cached_property
     def capacity(self):
         if self.capacity_input:
             return self.capacity_input
-        return self.enrolled_students
+        return None
 
     def __repr__(self) -> str:
-        return f"{self.act_type} of {str(*(self.courses.values()))}"
+        return f"{self.act_type} of {self.course}"
 
     def __str__(self) -> str:
-        return f"{self.act_type} of {str(*(self.courses.values()))}"
+        return f"{self.act_type} of {self.course}"
