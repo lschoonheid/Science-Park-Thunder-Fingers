@@ -114,82 +114,8 @@ class Greedy(Solver):
                     # Connect timeslot of activity to the student
                     schedule.connect_nodes(student, timeslots_linked[0])
 
-    def assign_students_wc_en_p(self, schedule: Schedule, i_max=10000):
-        available_activities = list(schedule.activities.values())
-
-        # Remember students that have already been assigned a timeslot for activities
-        # Uses tuples of (activity.id, student.id)
-        activity_students_assigned: set[tuple[int, int]] = set()
-
-        # Try making connections for i_max iterations
-        edges = set()
-        for i in tqdm(range(i_max), disable=not self.verbose, desc="Trying connections:"):
-            if len(available_activities) == 0:
-                # Solver has come to completion: all activities have its students assigned to timeslots
-                return Result(schedule=schedule, iterations=i, solved=True)
-
-            # Take random unfinished activity
-            activity = random.choice(available_activities)
-
-            # Build index on students that don't yet have a timeslot assigned for this activity
-            if not hasattr(activity, "_unassigned_students"):
-                setattr(activity, "_unassigned_students", set(activity.students.values()))
-
-            available_students_linked = list(getattr(activity, "_unassigned_students"))
-            timeslots_linked = list(activity.timeslots.values())
-
-            # Pick student that does not have a timeslot for this activity
-            draw_student = self.draw_uniform_recursive(
-                [activity], available_students_linked, lambda a, s: s in getattr(a, "_unassigned_students")  # type: ignore
-            )
-
-            # No available students means this activity has been assigned to all its students, it's finished.
-            if not draw_student:
-                # Remove activity from available activities
-                for index, test_activity in enumerate(available_activities):
-                    if activity == test_activity:
-                        available_activities.pop(index)
-                # Remove index
-                delattr(activity, "_unassigned_students")
-                continue
-            student: Student = draw_student[1]  # type: ignore
-
-            draw_timeslot = self.draw_uniform_recursive([student], timeslots_linked, self.verifier.can_assign_student_timeslot)  # type: ignore
-            if not draw_timeslot:
-                if self.verbose:
-                    warn(f"ERROR: Could no longer find available timeslots for {activity} after {i} iterations.")
-                continue
-            timeslot = draw_timeslot[1]
-
-            # TODO: #30 improvement would be to first see if there is an available one, but it wouldn't necessarily be uniform (see commented code)
-
-            # Skip if timeslot is already linked to student
-            edge = (student.id, timeslot.id)
-            if edge in edges:
-                if self.verbose:
-                    warn("ERROR: attempted adding same edge twice.")
-                continue
-
-            # Success: found a pair of student, timeslot that meet all requirements and can be booked
-            schedule.connect_nodes(student, timeslot)
-            edges.add(edge)
-            # Remove student from index of unassigned students for this activity
-            getattr(activity, "_unassigned_students").remove(student)
-            activity_students_assigned.add((activity.id, student.id))
-        activities_finished = len(available_activities) == 0
-
-        if not activities_finished:
-            if self.verbose:
-                warn(
-                    f"ERROR: could not finish schedule within {i_max} iterations. Unfinished activities: {available_activities}"
-                )
-            # TODO: #31 reassign timeslots with no connected students and try again (allowed to ignore non uniform redraw to permit solution)
-
-        # Return Result
-        return Result(schedule=schedule, iterations=i_max, solved=activities_finished)
-
-    def assign_students_try(self, schedule: Schedule, i_max=10000, activities_free: list[Activity]):
-
+    def assign_students_try(self, schedule: Schedule, activities_free: list[Activity]):
+        i_max = 10000
         available_activities = activities_free
 
         # Remember students that have already been assigned a timeslot for activities
@@ -229,14 +155,15 @@ class Greedy(Solver):
                 continue
             student: Student = draw_student[1]  # type: ignore
 
-            draw_timeslot = self.draw_uniform_recursive([student], timeslots_linked, self.verifier.can_assign_student_timeslot)  # type: ignore
-            if not draw_timeslot:
-                if self.verbose:
-                    warn(f"ERROR: Could no longer find available timeslots for {activity} after {i} iterations.")
-                continue
-            timeslot = draw_timeslot[1]
+            timeslot_list = []
+            for timeslot_chose in timeslots_linked:
+                if self.verifier.student_has_period(student, timeslot_chose):
+                    timeslot_list.append(timeslot_chose)
 
-            # TODO: #30 improvement would be to first see if there is an available one, but it wouldn't necessarily be uniform (see commented code)
+            if len(timeslot_list) == 0:
+                timeslot = random.choice(timeslots_linked)
+            else:
+                timeslot = random.choice(timeslot_list)
 
             # Skip if timeslot is already linked to student
             edge = (student.id, timeslot.id)
@@ -258,11 +185,9 @@ class Greedy(Solver):
                 warn(
                     f"ERROR: could not finish schedule within {i_max} iterations. Unfinished activities: {available_activities}"
                 )
-            # TODO: #31 reassign timeslots with no connected students and try again (allowed to ignore non uniform redraw to permit solution)
 
         # Return Result
         return Result(schedule=schedule, iterations=i_max, solved=activities_finished)
-
 
     def rate_timeslots_activity(self, schedule: Schedule, aviable_activity: list[Activity]):
         # Get a list of timeslots and students
@@ -323,9 +248,7 @@ class Greedy(Solver):
 
         self.rate_timeslots_activity(schedule, activities_free)
 
-        self.assign_students_try(schedule, i_max, activities_free)
-
-        return self.assign_students_wc_en_p(schedule, i_max)
+        return self.assign_students_try(schedule, activities_free)
 
 
     def solve(self, schedule: Schedule, i_max: int | None = None, method="uniform", strict=True):
