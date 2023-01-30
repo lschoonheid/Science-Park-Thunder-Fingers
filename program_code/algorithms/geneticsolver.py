@@ -9,6 +9,7 @@ import copy
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 import time
+import multiprocessing
 
 
 # TODO: #14 implement genetic algorithm to combine schedules into children schedules
@@ -89,6 +90,8 @@ class GeneticSolver(Mutator):
         )
         backup_edges = copy.deepcopy(current_best.schedule.edges)
 
+        process_id = multiprocessing.current_process()._identity[0]
+
         start_time = time.time()
         best_fitness = 0
         best_score = None
@@ -96,7 +99,7 @@ class GeneticSolver(Mutator):
         timestamps = []
         generations = 0
         # TODO: in a loop: crossover, mutate, select best fit and repeat
-        pbar = tqdm(range(i_max), position=0, leave=True, disable=not show_progress)
+        pbar = tqdm(range(i_max), position=process_id, leave=True, disable=not True)
         for i in pbar:
 
             # Check if solution is found
@@ -130,7 +133,8 @@ class GeneticSolver(Mutator):
                 current_best.update_score()
                 # Describe progress
                 pbar.set_description(
-                    f"{type(self).__name__} ({type(self.mutation_supplier).__name__}) (score: {current_best.score}) (best swap memory {len(self.mutation_supplier.swap_scores_memory) } tried swaps memory {len(self.mutation_supplier.tried_timeslot_swaps) })"
+                    # f"{type(self).__name__} ({type(self.mutation_supplier).__name__}) (score: {current_best.score}) (best swap memory {len(self.mutation_supplier.swap_scores_memory) } tried swaps memory {len(self.mutation_supplier.tried_timeslot_swaps) })"
+                    f"{process_id}: {type(self).__name__} ({type(self.mutation_supplier).__name__}) (score: {current_best.score})"
                 )
             # print(f"Score: {current_best.score} \t Generation: {i + 1 }/{ self.max_generations}", end="\r")
 
