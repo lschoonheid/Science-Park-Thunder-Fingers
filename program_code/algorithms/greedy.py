@@ -234,7 +234,8 @@ class Greedy(Solver):
                 # Connect the nodes of activity and timeslot
                 schedule.connect_nodes(activity, highest_timeslots)
                 # Change total capacity
-                total_capacity += min(activity.capacity, highest_timeslots.capacity)
+                if activity.capacity_input != None:
+                    total_capacity += min(activity.capacity_input, highest_timeslots.capacity)
                 # If the lenght of the list with the highest timeslot is 0 make new list
                 if len(max_keys) == 0:
                     max_val = max(rating.values())

@@ -16,6 +16,7 @@ from program_code import (
     SolverSC,
     generate_solutions,
     Randomizer,
+    Greedy,
     GeneticSolver,
     HillClimber,
     SimulatedAnnealing,
