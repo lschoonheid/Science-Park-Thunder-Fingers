@@ -57,6 +57,14 @@ def main(
     match method:
         case "baseline":
             solver = Randomizer(**data_arguments, method="uniform")
+        case "greedy":
+            solver = Greedy(**data_arguments)
+        case "min_overlap":
+            solver = Randomizer(**data_arguments, method="min_overlap")
+        case "min_gaps":
+            solver = Randomizer(**data_arguments, method="min_gaps")
+        case "min_gaps_overlap":
+            solver = Randomizer(**data_arguments, method="min_gaps_overlap")
         case "directed_sa":
             solver = GeneticSolver(**data_arguments, mutation_supplier=DirectedSA())
         case "simulated_annealing":

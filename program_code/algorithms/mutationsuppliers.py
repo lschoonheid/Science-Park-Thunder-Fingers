@@ -126,6 +126,7 @@ class HillClimber(MutationSupplier):
                 ]
             )
 
+        random.shuffle(possible_mutations)
         best_mutation = min(possible_mutations, key=lambda m: m.score)
 
         if best_mutation.score > 0:
