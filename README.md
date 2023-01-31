@@ -1,6 +1,51 @@
-# Science-Park-Thunder-Fingers
+# Science-Park-Thunder-Fingers Lectures & Lesroosters
 
-Sources:
+Algoritmes voor het maken van een lesrooster. Het doel is om een lesrooster te maken met de volgende
+hard constraints:
+- per tijdslot één activiteit
+- hoorcollege in één tijdslot 
+- elke student één tijdslot per activiteit
+- capaciteit van zaal
+- capaciteit van practicum/werkcollege
+- studenten geen 3 tussenuren achter elkaar
+
+Verder heeft het algoritme de volgende soft constraints:
+- avondtijdsloten (5 pt.)
+- enkele tussenuren (1 pt.)
+- dubbele tussenuren (2 pt.)
+- vakconflicten (1 pt.)
+
+# Installation
+Om de library's te downloaden run:
+```
+pip3 install -r requirements.txt
+```
+# Runnen van het algoritme
+Je runt de baseline van het algoritme met:
+```
+python3 main.py
+```
+
+# Opties #
+main.py accepteerd te volgende command line argumenten
+```
+-m baseline                run de baseline                        
+-m min_overlap             run de baseline waarin de overlap worden geminimaliseerd
+-m min_gaps                run de baseline waarin de gaps worden geminimaliseerd
+-m min_gaps_overlap        run de baseline waarin de gaps en overlap worden geminimaliseerd
+-m directed_sa              
+-m simulated_annealing     run het simulated annealing algoritme
+-m hillclimber             run het hillclimber algoritme
+-m greedy                  run het greedy algoritme
+-i I_MAX                   maximale iteraties per cycle
+-n N                       aantal oplossingen
+-sub
+-v
+```
+
+
+
+# Sources:
 
 - https://ah.proglab.nl/cases/lectures-en-lesroosters
 
@@ -25,3 +70,18 @@ Een beschrijving van de (sub)structuur van de repository
 Een lijst van gebruikte modules, libraries, of programma’s die nodig zijn om de code in dit project te runnen
 Een beschrijving van hoe de code in dit project gebruikt kan worden of een kort voorbeeld of referentie naar een voorbeeld van hoe je de code kan gebruiken
 Een lijst met auteurs
+
+#Experimenteren:#
+
+Er zijn 4 verschillende algoritme: Randomizer, Greedy, Hill Climber en Population based algoritme. 
+Randomizer kun je op 4 verschillende manieren runnen:
+- baseline
+- min_gaps
+- min_overlap
+- min_gaps_overlap
+Greedy kun je op 
+
+Bij Hill Climber
+- Aantal mutaties
+- Type mutaties
+
