@@ -22,6 +22,7 @@ from program_code import (
     SimulatedAnnealing,
     DirectedSA,
     GraphVisualization,
+    dump_result,
     plot_statistics,
 )
 from program_code.algorithms.multiprocess import multi_solve
@@ -85,6 +86,9 @@ def main(
         show_progress=show_progress,
         **kwargs,
     )
+
+    dumped_loc = dump_result(results_compressed, f"output/results_{method}_{kwargs}_")
+    print("Dumped results to", dumped_loc)
 
     # Take random sample and rebuild schedule from edges
     sampled_result = random.choice(results_compressed)
