@@ -161,7 +161,7 @@ class GeneticSolver(Mutator):
 
         setattr(current_best, "_solve_arguments", arguments)
         dump_result(
-            [current_best, timestamps],
+            [track_scores, timestamps],
             f"output/genetic_{strategy_name}_score_{score}_scorestime_{generations}_",
         )
         output_path = dump_result(current_best, f"output/genetic_{strategy_name}_{score}_{generations}_")
