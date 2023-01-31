@@ -47,7 +47,7 @@ Als je de baseline 1000 keer runt met:
 python3 main.py -m baseline -n 1000
 ```
 Word de onderstaande output gegenereerd.
-<img src="docs/baseline_1000.png" width="128"/>
+<img src="docs/baseline_1000.png" width="1500"/>
 
 # Experimenteren:
 
@@ -57,11 +57,20 @@ Randomizer kun je op 4 verschillende manieren runnen:
 - min_gaps
 - min_overlap
 - min_gaps_overlap
-Greedy kun je op 
 
-Bij Hill Climber
-- Aantal mutaties
+Bij greedy zijn twee verschillende functies gebruikt om de studenten te verbinden met de Hc en P
+- Random geselecteerde studenten
+- Uniform geselecteerde studenten
+
+Bij Hill Climber is gezogd naar een optimum door te kijken naar:
+- Aantal mutaties per iteraties (tussen 1 en 3)
 - Type mutaties
+    - Tijdsloten van activiteiten omwisselen
+    - Studenten omwisselen van werkgroep/practicumgroep
+    - Student assignen aan een andere werkgroep/practicumgroep
+- Aantal iteraties
+
+Bij population 
 
 # Sources:
 
