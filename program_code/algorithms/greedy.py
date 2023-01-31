@@ -3,7 +3,9 @@ import operator
 from tqdm import tqdm
 from typing import Callable
 from warnings import warn
+from .generate import make_prototype
 from .solver import Solver
+# from .randomizer import Randomizer
 from ..classes import *
 from ..classes.result import Result
 
@@ -71,7 +73,7 @@ class Greedy(Solver):
                 _combination_set=_combination_set,
             )
 
-        return node1, node2
+        return node1, node2 
 
     def sort_nodes(self, nodes, attr: str, reverse=False):
         return sorted(nodes, key=operator.attrgetter(attr), reverse=reverse)
@@ -114,6 +116,43 @@ class Greedy(Solver):
                 if activity in student.activities.values():
                     # Connect timeslot of activity to the student
                     schedule.connect_nodes(student, timeslots_linked[0])
+
+    def assign_students_wc_p(self, schedule: Schedule, activities_free: list[Activity]):
+        edges = set()
+        i = 1000
+
+        for activity in activities_free:
+
+            # Build index on students that don't yet have a timeslot assigned for this activity
+            if not hasattr(activity, "_unassigned_students"):
+                setattr(activity, "_unassigned_students", set(activity.students.values()))
+
+            available_students_linked = list(getattr(activity, "_unassigned_students"))
+            timeslots_linked = list(activity.timeslots.values())
+
+            for student in available_students_linked:
+                timeslot_list = []
+                for timeslot_chose in timeslots_linked:
+                    if self.node_has_period(student, timeslot_chose):
+                        timeslot_list.append(timeslot_chose)
+
+                    if len(timeslot_list) == 0:
+                        timeslot = random.choice(timeslots_linked)
+                    else:
+                        timeslot = random.choice(timeslot_list)
+
+                    # Skip if timeslot is already linked to student
+                    edge = (student.id, timeslot.id)
+                    if edge in edges:
+                        if self.verbose:
+                            warn("ERROR: attempted adding same edge twice.")
+                        continue
+
+                    # Success: found a pair of student, timeslot that meet all requirements and can be booked
+                    schedule.connect_nodes(student, timeslot)
+                    edges.add(edge)
+        return Result(schedule=schedule, iterations=i, solved=True)
+
 
     def assign_students_try(self, schedule: Schedule, activities_free: list[Activity]):
         i_max = 10000
@@ -252,7 +291,9 @@ class Greedy(Solver):
 
         return self.assign_students_try(schedule, activities_free)
 
-    def solve(self, schedule: Schedule, i_max: int | None = None, method="uniform", strict=True):
+    def solve(self, schedule: Schedule | None = None, i_max: int | None = None, method=None, strict=True):
+        if schedule is None:
+            schedule = make_prototype(self.students_input, self.courses_input, self.rooms_input)
         if i_max is None:
             # Program on average has to iterate over each activity once, which with a random distribution it takes more iterations
             i_min = 100 * len(schedule.activities)
@@ -261,6 +302,4 @@ class Greedy(Solver):
                 guess_required_edges += activity.enrolled_students
             i_max = max(guess_required_edges, i_min)
 
-        if method == "uniform" and strict:
-            return self.greedy_random(schedule, i_max)  # type: ignore
-        raise ValueError("Did not recognize solver.")
+        return self.greedy_random(schedule, i_max)  # type: ignore
