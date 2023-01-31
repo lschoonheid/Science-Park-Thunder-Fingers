@@ -12,8 +12,7 @@ Student: Julia Geisler
 Course: Algoritmen en Heuristieken 2023
 """
 
-import random, warnings, argparse
-import matplotlib
+import random, warnings, argparse, matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 from program_code import (
@@ -21,8 +20,11 @@ from program_code import (
     generate_solutions,
     Randomizer,
     Schedule,
-    Result)
+    Result,
+    data)
 
+
+# DEFINE CONSTANTS
 WEEK_DAYS = ["MA", "DI", "WO", "DO", "VR"]
 ROOMS = ["A1.04","A1.06","A1.08","A1.10","B0.201","C0.110","C1.112"] # col labels
 PERIODS = ["9-11","11-13","13-15","15-17","17-19"] # row labels
@@ -35,7 +37,7 @@ class Heatmap:
         self.data = self._create_array(schedule)
         self.timetableplot = self.timetable()
         self.heatmapview = self.plot_heatmap()
-        
+
 
     def _create_array(self, schedule: Schedule):
         """ Creates array of subscores from result.py of 35 (5 days * 7 rooms) by 5 (periods)"""
@@ -53,6 +55,8 @@ class Heatmap:
     
     def timetable(self):
         """Creates full timetable plot for all rooms in the week"""
+        output_path = f"output/timetable.png"
+
         # Set Axis
         fig = plt.figure()
         gs = fig.add_gridspec(1,5, wspace=0)
@@ -68,9 +72,12 @@ class Heatmap:
         for day in WEEK_DAYS:
             weekday_plot = WEEK_DAYS.index(day)
             ax[weekday_plot].set_xlim(-0.5,len(ROOMS)-0.5)
-            ax[weekday_plot].set_xticks(range(0,len(ROOMS)))
-            ax[weekday_plot].set_xticklabels(ROOMS, fontsize=5)
-            ax[weekday_plot].tick_params(axis=u'y', which=u'both',length=0)
+            ax[weekday_plot].set_xticks(range(0,len(ROOMS)), rotation=-30, ha="right",
+                rotation_mode="anchor")
+            ax[weekday_plot].set_xticklabels(ROOMS, fontsize=5, rotation=-30, ha="right",
+                rotation_mode="anchor")
+            # Let the horizontal axes labeling appear on top.
+            ax[weekday_plot].tick_params(top=True, bottom=False,labeltop=True, labelbottom=False)
 
         for timeslot in self.timeslots:
             # full time table plot
@@ -82,23 +89,27 @@ class Heatmap:
             ax[timeslot.day].fill_between([room, room+0.96], period, end, color=COLORS[ROOMS.index(timeslot.room.name)], edgecolor='k', linewidth=0.5)
             ax[timeslot.day].text(room+0.48, (period+end)*0.5, event, ha='center', va='center', fontsize=5, rotation=90)
         
-        output_path = f"output/timetable.png"
+        print(f"Timetable plot saved to {output_path}")
         plt.savefig(output_path, dpi=200)
 
-    def heatmap(self, row_labels, col_labels, cbarlabel ="", **kwargs):
+    def heatmap(self, row_labels, col_labels, ax, cbarlabel ="", **kwargs):
+        """Creates heatmap with labels and colorbar"""
         # Initialize Axes, colorbar dictionary, colorbar label
-        ax = plt.gca()
+        # ax = plt.gca()
         
-        # Plot heatmap
-        im = ax.imshow(self.data, **kwargs)
+        # Plot heatmap without zeros
+        data_masked = np.ma.masked_where(self.data == 0, self.data)
+        im = ax.imshow(data_masked, **kwargs)
 
         # Create colorbar
-        cbar = ax.figure.colorbar(im, ax=ax)
-        cbar.ax.set_ylabel(cbarlabel, rotation=-90, va="bottom")
+        im_ratio = self.data.shape[0]/self.data.shape[1]
+        # fraction=0.047*im_ratio //  orientation='horizontal'
+        cbar = ax.figure.colorbar(im, ax=ax, fraction=0.047*im_ratio)
+        cbar.ax.set_ylabel(cbarlabel, rotation=-90, va="bottom", fontsize=9)
 
         # Show all ticks and label them with the respective list entries.
-        ax.set_xticks(np.arange(self.data.shape[1]), labels=col_labels)
-        ax.set_yticks(np.arange(self.data.shape[0]), labels=row_labels)
+        ax.set_xticks(np.arange(self.data.shape[1]), labels=col_labels, fontsize=7)
+        ax.set_yticks(np.arange(self.data.shape[0]), labels=row_labels, fontsize=7)
 
         # Let the horizontal axes labeling appear on top.
         ax.tick_params(top=True, bottom=False,
@@ -118,7 +129,7 @@ class Heatmap:
 
         return im, cbar
 
-    def annotate_heatmap(self, im, valfmt="{x:.2f}", textcolors=("black", "white"), threshold=None, **textkw):
+    def annotate_heatmap(self, im, textcolors=("black", "white"), threshold=None, **textkw):
 
         # Normalize the threshold to the images color range.
         if threshold is not None:
@@ -133,28 +144,30 @@ class Heatmap:
         kw.update(textkw)
 
         # Get the formatter in case a string is supplied
-        if isinstance(valfmt, str):
-            valfmt = matplotlib.ticker.StrMethodFormatter(valfmt)
+        valfmt = matplotlib.ticker.StrMethodFormatter("{x}")
 
         # Loop over the data and create a `Text` for each "pixel".
         # Change the text's color depending on the data.
         texts = []
         for i in range(self.data.shape[0]):
             for j in range(self.data.shape[1]):
-                kw.update(color=textcolors[int(im.norm(self.data[i, j]) > threshold)])
-                text = im.axes.text(j, i, valfmt(self.data[i, j], None), **kw)
-                texts.append(text)
+                if self.data[i,j] != 0:
+                    kw.update(color=textcolors[int(im.norm(self.data[i, j]) > threshold)])
+                    text = im.axes.text(j, i, valfmt(self.data[i, j], None), **kw)
+                    texts.append(text)
 
         return texts
 
     def plot_heatmap(self):
-        output_path = f"output/heatmap_timetable.png"
+        output_path = f"output/heatmap.png"
+        plt.rcParams["figure.figsize"] = [10, 3.50]
+        plt.rcParams["figure.autolayout"] = True
         fig, ax = plt.subplots()
-
-        im, cbar = self.heatmap(PERIODS, ROOMS*5, cmap="YlGn", cbarlabel="conflict [score/period]")
-        texts = self.annotate_heatmap(im, valfmt="{x:.1f}")
+        im, cbar = self.heatmap(PERIODS, ROOMS*5, ax, cmap="rainbow", vmin=0, vmax=300, cbarlabel="conflict [score/period]")
+        texts = self.annotate_heatmap(im, size=7)
 
         fig.tight_layout()
+        print(f"Heatmap saved to {output_path}")
         plt.savefig(output_path, dpi=200)
 
 """ 
@@ -185,8 +198,8 @@ def main(stud_prefs_path: str, courses_path: str, rooms_path: str, n_subset: int
     # Take random sample and rebuild schedule from edges
     sampled_result = random.choice(results_compressed)
     sampled_result.decompress(**data_arguments)
-
-    sched_heatmap = Heatmap(sampled_result.schedule)
+    last_result = data.load_pickle("output/J1_genetic_HillClimber_119_1499_20230130-143959.pyc")
+    sched_heatmap = Heatmap(last_result.schedule)
 
 if __name__ == "__main__":
     # Create a command line argument parser
