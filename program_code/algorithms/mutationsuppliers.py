@@ -96,7 +96,7 @@ class HillClimber(MutationSupplier):
         for i in range(self.score_scope):
             possible_mutations.extend(
                 [
-                    # enkele student verplaatsen
+                    # Move single student
                     Mutation(
                         self.move_node,
                         self.draw_valid_student_move,
@@ -104,7 +104,7 @@ class HillClimber(MutationSupplier):
                         timeslots,
                         ceiling,
                     ),
-                    # heel tijdslot verplaatsen
+                    # Swap two timeslots
                     Mutation(
                         self.swap_neighbors,
                         self.draw_valid_timeslot_swap,
@@ -114,7 +114,7 @@ class HillClimber(MutationSupplier):
                         self.tried_timeslot_swaps,
                         {"skip": "Room"},
                     ),
-                    # twee studenten onderling wisselen van tijdslot
+                    # Swap two students within 2 timeslots
                     Mutation(
                         self.swap_students_timeslots,
                         self.draw_valid_student_swap,
