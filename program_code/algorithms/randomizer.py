@@ -31,7 +31,10 @@ class Randomizer(Solver):
         _recursion_limit=10000,
         _combination_set: set | None = None,
     ):
-        """Recursively try to pick two random nodes to satisfy `condition(node1, node2) == True`."""
+        """Recursively try to pick two random nodes to satisfy `condition(node1, node2) == True`.
+
+        Recursion appears to be faster than a for-loop because of the random.choice() function being faster than random.suffle()."""
+        # TODO try for-loop instead of recursion
         # assert _recursion_limit > 0, "Reached recursion limit"
         if _recursion_limit == 0:
             raise RecursionError("Recursion depth exceeded")

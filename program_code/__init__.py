@@ -1,5 +1,5 @@
 from .classes import *
-from .classes.data import pickle_cache, prepare_path, dump_result
+from .classes.data import *
 from .algorithms import *
 from .classes.result import Result
 from .visualisation import GraphVisualization, plot_statistics

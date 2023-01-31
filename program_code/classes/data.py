@@ -6,6 +6,8 @@ from functools import wraps
 from csv import DictReader
 import time
 
+# TODO move to helpers file
+
 
 def prepare_path(path: str):
     """If a directory for `path` doesn't exist, make it."""
