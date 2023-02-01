@@ -18,7 +18,7 @@ class Randomizer(Solver):
             schedule.connect_nodes(student, timeslot)
             schedule.connect_nodes(activity, timeslot)
 
-    def draw_uniform_recursive(
+    def draw_uniform(
         self,
         nodes1: list[NodeSC],
         nodes2: list[NodeSC],
@@ -29,16 +29,10 @@ class Randomizer(Solver):
         negation=False,
         return_value=False,
         symmetric_condition=True,
-        _recursion_limit=1000,
         _combination_set: set | None = None,
+        _limit=10000,
     ):
-        """Recursively try to pick two random nodes to satisfy `condition(node1, node2) == True`.
-
-        Recursion appears to be faster than a for-loop because of the random.choice() function being faster than random.suffle().
-        In profiling tests it was also measured to be faster than comparable for-loop."""
-        # TODO try for-loop instead of recursion
-        if _recursion_limit == 0:
-            raise RecursionError("Recursion depth exceeded")
+        """Try to pick two random nodes to satisfy `condition(node1, node2) == True`."""
 
         # Initialization
         if not _combination_set:
@@ -49,56 +43,46 @@ class Randomizer(Solver):
         if symmetric_condition:
             max_combinations *= 2
 
-        if len(_combination_set) == max_combinations:
-            # Reached all possible combinations
-            return None
+        for i in range(max_combinations**2):
+            # Pick two random nodes
+            node1 = random.choice(nodes1)
+            node2 = random.choice(nodes2)
 
-        node1 = random.choice(nodes1)
-        node2 = random.choice(nodes2)
+            # Some conditions are the same for `combination` and the swap of `combination`
+            combination = (node1.id, node2.id)
+            combination_mirror = (node2.id, node1.id)
 
-        combination = (node1.id, node2.id)
-        combination_mirror = (node2.id, node1.id)
+            # If combination has already been tried, try again with different combination
+            if combination in _combination_set or (symmetric_condition and combination_mirror in _combination_set):
+                continue
 
-        # TODO: Possibly faster to generate all combinations and iterate?
-        if combination in _combination_set or (symmetric_condition and combination_mirror in _combination_set):
-            # Combination already tried, try again with different combination
-            return self.draw_uniform_recursive(
-                nodes1,
-                nodes2,
-                condition,
-                negation=negation,
-                return_value=return_value,
-                symmetric_condition=symmetric_condition,
-                _recursion_limit=_recursion_limit - 1,
-                _combination_set=_combination_set,
-            )
+            # Check the value of condition function for combination
+            condition_value = condition(node1, node2)
+            # Take the inverse of `condition_value` if required
+            if negation:
+                condition_value = not condition_value
 
-        condition_value = condition(node1, node2)
-        if negation:
-            # If boolean has to be mirrored, mirror it
-            condition_value = not condition_value
+            # If combination meets requirement, return pair. Optionally return the value of `condition` (non boolean values possible).
+            if condition_value is not False:
+                if return_value:
+                    return node1, node2, condition_value
+                return node1, node2
 
-        elif condition_value is False:
+            # Combination unsuccesful, add it to tried combinations
             _combination_set.add(combination)
             if symmetric_condition:
                 _combination_set.add(combination_mirror)
-            assert len(_combination_set) <= max_combinations, "Combination set out of order"
 
-            return self.draw_uniform_recursive(
-                nodes1,
-                nodes2,
-                condition,
-                negation=negation,
-                return_value=return_value,
-                symmetric_condition=symmetric_condition,
-                _recursion_limit=_recursion_limit - 1,
-                _combination_set=_combination_set,
-            )
+            # If all possible combinations have been tried, fail
+            if len(_combination_set) == max_combinations:
+                return None
 
-        # If combination meets requirement, return pair
-        if return_value:
-            return node1, node2, condition_value
-        return node1, node2
+            # To prohibit endlessly searching for combinations with an unlikely condition, use limit
+            if i > _limit:
+                break
+
+        # No succesful combinations found, fail
+        return None
 
     def assign_activities_timeslots_once(self, schedule: Schedule):
         """Assign each activity the amount of timeslots it requires. Results in non-uniform distribution but ensures each enrolled student can book timeslot for activity."""
@@ -127,7 +111,7 @@ class Randomizer(Solver):
                 continue
 
             # Draw an activity that doesnt already have its max timeslots
-            draw = self.draw_uniform_recursive([timeslot], activities, lambda t, a: self.can_assign_timeslot_activity(t, a) and a.course.enrolled_students != 0)  # type: ignore
+            draw = self.draw_uniform([timeslot], activities, lambda t, a: self.can_assign_timeslot_activity(t, a) and a.course.enrolled_students != 0)  # type: ignore
 
             if draw:
                 activity: Activity = draw[1]  # type: ignore
@@ -151,7 +135,7 @@ class Randomizer(Solver):
                 continue
 
             # Draw an activity that doesnt already have its max timeslots
-            draw = self.draw_uniform_recursive([timeslot], activities, lambda t, a: self.can_assign_timeslot_activity(t, a) and self.bias_activity(a, normalizer))  # type: ignore
+            draw = self.draw_uniform([timeslot], activities, lambda t, a: self.can_assign_timeslot_activity(t, a) and self.bias_activity(a, normalizer))  # type: ignore
 
             if draw:
                 activity: Activity = draw[1]  # type: ignore
@@ -195,14 +179,14 @@ class Randomizer(Solver):
             draw_timeslot = None
             match method:
                 case "min_overlap":
-                    draw_timeslot = self.draw_uniform_recursive(
+                    draw_timeslot = self.draw_uniform(
                         [student],
                         timeslots_linked,
                         lambda s, t: self.can_assign_student_timeslot(s, t) and not self.node_has_period(s, t),
                     )
                 case "min_gaps":
                     for limit in range(1, 4):
-                        draw_timeslot = self.draw_uniform_recursive(
+                        draw_timeslot = self.draw_uniform(
                             [student],
                             timeslots_linked,
                             lambda s, t: self.can_assign_student_timeslot(s, t)
@@ -215,7 +199,7 @@ class Randomizer(Solver):
 
                     # Try meeting requirements: no overlap AND no gap of size `limit` for increasing limit
                     for limit in range(1, 4):
-                        draw_timeslot = self.draw_uniform_recursive(
+                        draw_timeslot = self.draw_uniform(
                             [student],
                             timeslots_linked,
                             lambda s, t: self.can_assign_student_timeslot(s, t)
@@ -228,7 +212,7 @@ class Randomizer(Solver):
                     # If failed, try meeting requirements: no gaps of size `limit` for increasing limit
                     if not draw_timeslot:
                         for limit in range(1, 4):
-                            draw_timeslot = self.draw_uniform_recursive(
+                            draw_timeslot = self.draw_uniform(
                                 [student],
                                 timeslots_linked,
                                 lambda s, t: self.can_assign_student_timeslot(s, t)
@@ -239,7 +223,7 @@ class Randomizer(Solver):
 
                     # If still failed, try meeting requirement: no overlap
                     if not draw_timeslot:
-                        draw_timeslot = self.draw_uniform_recursive(
+                        draw_timeslot = self.draw_uniform(
                             [student],
                             timeslots_linked,
                             lambda s, t: self.can_assign_student_timeslot(s, t) and not self.node_has_period(s, t),
@@ -250,9 +234,7 @@ class Randomizer(Solver):
                     draw_timeslot = None
             # Draw a random timeslot if method="uniform" or if method's restrictions did not result in a succesful draw.
             if not draw_timeslot:
-                draw_timeslot = self.draw_uniform_recursive(
-                    [student], timeslots_linked, self.can_assign_student_timeslot
-                )
+                draw_timeslot = self.draw_uniform([student], timeslots_linked, self.can_assign_student_timeslot)
 
             if not draw_timeslot:
                 if self.verbose:

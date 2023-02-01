@@ -70,7 +70,7 @@ class MutationSupplier(Mutator):
 class HillClimber(MutationSupplier):
     def __init__(
         self,
-        score_scope: int = 2,
+        score_scope: int = 1,
         ceiling=0,
         tried_timeslot_swaps: set[tuple[int, int]] = set(),
         swap_scores_memory: dict[tuple[Timeslot, Timeslot], int | float] = {},
@@ -83,6 +83,8 @@ class HillClimber(MutationSupplier):
         timeslots=None,
         _recursion_depth=1000,
     ):
+        if _recursion_depth == 0:
+            raise RecursionError("Recursion depth exceeded")
         ceiling = self.ceiling
         # See which swaps are best
 

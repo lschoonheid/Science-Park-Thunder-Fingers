@@ -5,13 +5,14 @@ from typing import Callable
 from warnings import warn
 from .generate import make_prototype
 from .solver import Solver
+
 # from .randomizer import Randomizer
 from ..classes import *
 from ..classes.result import Result
 
 
 class Greedy(Solver):
-    def draw_uniform_recursive(
+    def draw_uniform(
         self,
         nodes1: list[NodeSC],
         nodes2: list[NodeSC],
@@ -52,7 +53,7 @@ class Greedy(Solver):
         # TODO: Possibly faster to generate all combinations and iterate?
         if combination in _combination_set:
             # Combination already tried, try again with different combination
-            return self.draw_uniform_recursive(
+            return self.draw_uniform(
                 nodes1,
                 nodes2,
                 condition,
@@ -64,7 +65,7 @@ class Greedy(Solver):
             _combination_set.add(combination)
             assert len(_combination_set) <= max_combinations, "Combination set out of order"
 
-            return self.draw_uniform_recursive(
+            return self.draw_uniform(
                 nodes1,
                 nodes2,
                 condition,
@@ -73,7 +74,7 @@ class Greedy(Solver):
                 _combination_set=_combination_set,
             )
 
-        return node1, node2 
+        return node1, node2
 
     def sort_nodes(self, nodes, attr: str, reverse=False):
         return sorted(nodes, key=operator.attrgetter(attr), reverse=reverse)
@@ -153,7 +154,6 @@ class Greedy(Solver):
                     edges.add(edge)
         return Result(schedule=schedule, iterations=i, solved=True)
 
-
     def assign_students_try(self, schedule: Schedule, activities_free: list[Activity]):
         i_max = 10000
         available_activities = activities_free
@@ -180,7 +180,7 @@ class Greedy(Solver):
             timeslots_linked = list(activity.timeslots.values())
 
             # Pick student that does not have a timeslot for this activity
-            draw_student = self.draw_uniform_recursive(
+            draw_student = self.draw_uniform(
                 [activity], available_students_linked, lambda a, s: s in getattr(a, "_unassigned_students")  # type: ignore
             )
 

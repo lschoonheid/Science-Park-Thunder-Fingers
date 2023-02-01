@@ -148,7 +148,7 @@ class Mutator(Randomizer):
         ceiling: int | float | None = None,
     ):
         """Draw a valid swap."""
-        draw = self.draw_uniform_recursive(
+        draw = self.draw_uniform(
             timeslots,
             timeslots,
             lambda t1, t2: self.allow_swap_timeslot(result, t1, t2, score_ceiling=ceiling),
@@ -256,11 +256,12 @@ class Mutator(Randomizer):
         activity = list(timeslot1.activities.values())[0]
 
         # CHECK: timeslot2 has enough capacity
-        draw = self.draw_uniform_recursive(
+        draw = self.draw_uniform(
             list(timeslot1.students.values()),
             list(activity.timeslots.values()),  # type: ignore
             lambda s, t2: self.allow_move_student(result, s, timeslot1, t2, ceiling),  # type: ignore
             return_value=True,
+            symmetric_condition=False,
             _combination_set=tried_swaps,
         )
         if not draw:
@@ -356,7 +357,7 @@ class Mutator(Randomizer):
         if timeslot2 is timeslot1:
             return self.draw_valid_student_swap(result, timeslots, tried_swaps, ceiling)
 
-        draw = self.draw_uniform_recursive(
+        draw = self.draw_uniform(
             list(timeslot1.students.values()),
             list(timeslot2.students.values()),
             lambda s1, s2: self.allow_swap_student(result, s1, s2, timeslot1, timeslot2, ceiling),  # type: ignore
