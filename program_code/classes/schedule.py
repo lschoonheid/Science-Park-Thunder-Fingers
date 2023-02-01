@@ -1,5 +1,3 @@
-# First test program to make schedules with object oriented programming.
-
 from .nodes import *
 
 
@@ -13,6 +11,7 @@ class Schedule:
         rooms_input: list[dict],
         edges_input: set[tuple[int, int]] | None = None,
     ) -> None:
+        # Keep track of node id's during generation
         self._id_count = 0
 
         # keeps track of uids assigned to named nodes
@@ -28,7 +27,7 @@ class Schedule:
         self.students: dict[int, Student] = self.get_student_nodes(students_input)
         # Courses is a dictionary that holds course name with corresponding info
         self.courses: dict[int, Course] = self.get_course_nodes(courses_input)
-        self.activities: dict[int, Activity] = self.get_activity_nodes()
+        self.activities: dict[int, Activity] = self.get_activity_nodes(self.courses.values())
         # Rooms is a dictionary that hold all rooms with corresponding capacity
         self.rooms: dict[int, Room] = self.get_room_nodes(rooms_input)
         self.timeslots: dict[int, Timeslot] = self.get_timeslot_nodes(self.rooms.values())
@@ -38,14 +37,8 @@ class Schedule:
         # Add new edges
         self.edges = self.edges.union(self.get_edges(edges_input, students_input))
 
-    # def track_self._id_count(self):
-    #     """Keeps track of node id's ensuring each node is assigned a unique id."""
-    #     return len(self.nodes)
-
     def get_student_nodes(self, students_input: list[dict]):
-        """
-        Get all student nodes into student dictionary in __init__
-        """
+        """Generate student nodes from `students_input`."""
         students = {}
 
         for student in students_input:
@@ -54,21 +47,18 @@ class Schedule:
             stud_no = int(s["Stud.Nr."])
 
             students[self._id_count] = Student(self._id_count, s["Achternaam"], s["Voornaam"], stud_no)
-            # self.nodes[self._id_count] = students[self._id_count]
             self._student_index[stud_no] = self._id_count
             self._id_count += 1
 
         return students
 
     def get_course_nodes(self, courses_input: list[dict]):
-        """
-        Get all course nodes into course dictionary in __init__
-        """
+        """Generate course nodes from `courses_input`."""
         courses = {}
 
         for course in courses_input:
             c = course
-            # TODO: #25 There is one course that is referenced as "Zoeken, sturen en bewegen" in `vakken.csv` but as "Zoeken sturen en bewegen" in `studenten_en_vakken.csv`.
+            # There is one course that is referenced as "Zoeken, sturen en bewegen" in `vakken.csv` but as "Zoeken sturen en bewegen" in `studenten_en_vakken.csv`.
             name = c["Vak"].replace(",", "")
 
             courses[self._id_count] = Course(
@@ -81,20 +71,19 @@ class Schedule:
                 c["Max. stud. Practicum"],  # type: ignore
                 int(c["Verwacht"]),
             )
-            # self.nodes[self._id_count] = courses[self._id_count]
             self._course_index[name] = self._id_count
             self._id_count += 1
 
         return courses
 
-    def get_activity_nodes(self):
-        """
-        Get all course nodes into course dictionary in __init__
-        """
+    def get_activity_nodes(self, courses):
+        """Generate activity nodes from `courses`."""
+        # Keep track of generated activities
         activities = {}
-        # Add children activities to courses and vice versa
-        for course in self.courses.values():
 
+        # Generate children activities of courses and connect them with their parents
+        for course in courses:
+            # Generate lectures
             for i in range(course.num_lec):
                 activity = {
                     "act_type": f"hc{i+1}",
@@ -102,54 +91,51 @@ class Schedule:
                     "max_timeslots": 1,
                 }
                 activities[self._id_count] = Activity(self._id_count, **activity)
-                # self.nodes[self._id_count] = activities[self._id_count]
                 self.connect_nodes(course, activities[self._id_count])
                 self._id_count += 1
 
+            # Generate tutorials
             for i in range(course.num_tut):
                 activity = {
                     "act_type": f"wc{i+1}",
                     "capacity_input": course.max_stud_tut,
                 }
                 activities[self._id_count] = Activity(self._id_count, **activity)
-                # self.nodes[self._id_count] = activities[self._id_count]
                 self.connect_nodes(course, activities[self._id_count])
                 self._id_count += 1
 
+            # Generate practicals
             for i in range(course.num_prac):
                 activity = {
                     "act_type": f"p{i+1}",
                     "capacity_input": course.max_stud_prac,
                 }
                 activities[self._id_count] = Activity(self._id_count, **activity)
-                # self.nodes[self._id_count] = activities[self._id_count]
                 self.connect_nodes(course, activities[self._id_count])
                 self._id_count += 1
 
         return activities
 
     def get_room_nodes(self, rooms_input: list[dict]):
-        """
-        Get all room nodes into room dictionary in __init__
-        """
+        """Generate room nodes from `rooms_input`."""
         rooms = {}
 
         for room in rooms_input:
             r = room
             rooms[self._id_count] = Room(self._id_count, r["\ufeffZaalnummber"], int(r["Max. capaciteit"]))  # type: ignore
-            # self.nodes[self._id_count] = rooms[self._id_count]
             self._id_count += 1
 
         return rooms
 
     def get_timeslot_nodes(self, rooms):
+        """Generate timeslot nodes from `rooms`."""
         timeslots = {}
 
         # Add timeslots
         for room in rooms:
             period_range: int = 4
 
-            # De grootste zaal heeft ook een avondslot van 17:00-19:00
+            # "De grootste zaal heeft ook een avondslot van 17:00-19:00"
             if room.name == "C0.110":
                 period_range = 5
 
@@ -162,8 +148,6 @@ class Schedule:
                     self._id_count += 1
 
         return timeslots
-
-    # TODO: general add_node function
 
     def connect_nodes(self, node1: NodeSC, node2: NodeSC, add_edge=True, check=False):
         """Connect two nodes by adding neighbor to both nodes symmetrically.
@@ -196,9 +180,7 @@ class Schedule:
         return edge
 
     def get_edges(self, edges: set[tuple[int, int]] | None = None, students_input: list[dict] | None = None):
-        """
-        Get all the neighbours into the geted nodes.
-        """
+        """Build edges between nodes from optional `edges` data and student enrolments `students_input`."""
         new_edges: set[tuple[int, int]] = set()
 
         # Add neighbors from input

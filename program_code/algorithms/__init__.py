@@ -1,3 +1,4 @@
+"""All constructive and iterative solver algorithms."""
 from .randomizer import Randomizer
 from .greedy import Greedy
 from .solver import Solver, SolverSC

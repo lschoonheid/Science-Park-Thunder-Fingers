@@ -3,6 +3,8 @@ import operator
 from tqdm import tqdm
 from typing import Callable
 from warnings import warn
+
+from program_code.algorithms.randomizer import Randomizer
 from .generate import make_prototype
 from .solver import Solver
 
@@ -11,73 +13,8 @@ from ..classes.result import Result
 
 
 class Greedy(Solver):
-    def draw_uniform(
-        self,
-        nodes1: list[NodeSC],
-        nodes2: list[NodeSC],
-        condition: Callable[
-            [NodeSC, NodeSC],
-            bool,
-        ],
-        negation=False,
-        _recursion_limit=10000,
-        _combination_set: set | None = None,
-    ):
-        """Recursively try to pick two random nodes to satisfy `condition(node1, node2) == True`.
-        Recursion appears to be faster than a for-loop because of the random.choice() function being faster than random.suffle()."""
-        # assert _recursion_limit > 0, "Reached recursion limit"
-        if _recursion_limit == 0:
-            print("ERROR: reached recursion depth limit!")
-            return None
-
-        # Initialization
-        if not _combination_set:
-            _combination_set = set()
-
-        max_combinations = len(nodes1) * len(nodes2)
-        # print(f"{1000 - _recursion_limit}/{max_combinations}")
-
-        if len(_combination_set) == max_combinations:
-            # Reached all possible combinations
-            return None
-
-        node1 = random.choice(nodes1)
-        node2 = random.choice(nodes2)
-
-        combination = (node1.id, node2.id)
-        condition_value = condition(node1, node2)
-        if negation:
-            # If boolean has to be mirrored, mirror it
-            condition_value = not condition_value
-
-        # TODO: Possibly faster to generate all combinations and iterate?
-        if combination in _combination_set:
-            # Combination already tried, try again with different combination
-            return self.draw_uniform(
-                nodes1,
-                nodes2,
-                condition,
-                negation=negation,
-                _recursion_limit=_recursion_limit - 1,
-                _combination_set=_combination_set,
-            )
-        elif not condition_value:
-            _combination_set.add(combination)
-            assert len(_combination_set) <= max_combinations, "Combination set out of order"
-
-            return self.draw_uniform(
-                nodes1,
-                nodes2,
-                condition,
-                negation=negation,
-                _recursion_limit=_recursion_limit - 1,
-                _combination_set=_combination_set,
-            )
-
-        return node1, node2 
-
     def assign_hoorcollege_to_room(self, schedule: Schedule):
-        """ Seperate the activities into hoorcollege and werkcollege and practica and
+        """Seperate the activities into hoorcollege and werkcollege and practica and
         assign hoorcolleges to timeslot.
         pre: schedule
         post: seperated activities
@@ -105,7 +42,7 @@ class Greedy(Solver):
         return activities_bound, activities_free
 
     def assign_students_to_hc(self, schedule: Schedule, activities_bound: list[Activity]):
-        """ Assign students to the timeslots of the hoorcollege activities
+        """Assign students to the timeslots of the hoorcollege activities
         pre: schedule, list of activities (hoorcollege)
         """
         # Get a list of all the students
@@ -123,7 +60,7 @@ class Greedy(Solver):
                     schedule.connect_nodes(student, timeslots_linked[0])
 
     def assign_students_wc_p(self, schedule: Schedule, activities_free: list[Activity]):
-        """ Assign students to the timeslots of the werkcollege and practicum activities without using
+        """Assign students to the timeslots of the werkcollege and practicum activities without using
         draw uniform recursive. Uniform recursive works better.
         pre: schedule, list of activities (werkcollege and practicum)
         post: schedule
@@ -172,7 +109,7 @@ class Greedy(Solver):
         return Result(schedule=schedule, iterations=i, solved=True)
 
     def assign_students_wc_p_uniform(self, schedule: Schedule, activities_free: list[Activity]):
-        """ Assign students to the timeslots of the werkcollege and practicum activities without using
+        """Assign students to the timeslots of the werkcollege and practicum activities without using
         draw uniform recursive. Uniform recursive works better.
         pre: schedule, list of activities (werkcollege and practicum)
         post: schedule
@@ -203,7 +140,7 @@ class Greedy(Solver):
             timeslots_linked = list(activity.timeslots.values())
 
             # Pick student that does not have a timeslot for this activity
-            draw_student = self.draw_uniform(
+            draw_student = Randomizer.draw_uniform(
                 [activity], available_students_linked, lambda a, s: s in getattr(a, "_unassigned_students")  # type: ignore
             )
 
@@ -258,7 +195,7 @@ class Greedy(Solver):
         return Result(schedule=schedule, iterations=i_max, solved=activities_finished)
 
     def rate_timeslots_activity(self, schedule: Schedule, aviable_activity: list[Activity]):
-        """ Rate the timeslots for the werkcollege and practicum activities and assign the 
+        """Rate the timeslots for the werkcollege and practicum activities and assign the
         highest rates timeslots to the activites
         pre: schedule, list of activities (werkcollege and practicum)
         post: schedule
@@ -316,7 +253,7 @@ class Greedy(Solver):
         return Result(schedule=schedule, solved=True)
 
     def greedy_random(self, schedule: Schedule, i_max: int):
-        """ Perform the greedy algorithm
+        """Perform the greedy algorithm
         pre: schedule
         post: schedule (solved)
         """
@@ -329,7 +266,7 @@ class Greedy(Solver):
         return self.assign_students_wc_p_uniform(schedule, activities_free)
 
     def solve(self, schedule: Schedule | None = None, i_max: int | None = None, method=None, strict=True):
-        """ Solve function for the algorithm
+        """Solve function for the algorithm
         pre: schedule
         post: schedule (solved)
         """

@@ -36,6 +36,7 @@ class Timeslot(Node):
         return len(self.students)
 
     def calculate_capacity(self):
+        """Calculate capacity. Returns smallest value of capacity[room, activity]"""
         min_capacity = self.room.capacity
         if len(self.activities):
             for activity in self.activities.values():

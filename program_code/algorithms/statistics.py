@@ -2,16 +2,12 @@ from typing import Callable
 import operator
 import numpy as np
 from ..classes.nodes import *
-from ..classes import Schedule
-
-# from ..classes.result import Result
 
 
-# TODO: #15 Implement objective function which couples a score to a schedule
-# TODO: #27 see if some functions can be cached
 class Statistics:
-    # TODO: #26 complete list below
     """
+    Class for verifying constraints and retrieving statistics of a schedule.
+
     Check for hard constraints:
      * overbooked timeslots (more than one activity linked)
      * overbooked timeslots (over room capacity)
@@ -23,45 +19,35 @@ class Statistics:
      * student should only follow each class once (eg: one wc1 and one wc2 in student schedule)
 
      Check for soft constraints:
+     * using evening timeslot
+     * students with double booked hours
      * One gap period on a day
      * Two gap periods on a day
      * Three gap periods on a day (not allowed)
-     * students with double booked hours
-     - timeslots without assigned students
-     * using evening timeslot
-
-     Optional:
-     - least amount of unique classes (wc1 only given once etc.)
     """
 
-    # def __init__(self) -> None:
-    #     self.statistics: dict = {}
-    #     self.score: float = 0
-
-    def sort_objects(self, objects, attr: str, reverse=False):
+    @staticmethod
+    def sort_objects(objects, attr: str, reverse=False):
+        """Sort objects on attribute."""
         return sorted(objects, key=operator.attrgetter(attr), reverse=reverse)
 
-    def biased_boolean(self, probability: float = 0.5) -> bool:
-        """Returns `True` with probability `probability`. Otherwise returns False."""
-        assert probability >= 0, "Probability cannot be less than zero"
-        if np.random.rand() < probability:
-            return True
-        return False
+    @staticmethod
+    def aggregate(count_function: Callable[[NodeSC], int], nodes_dict: dict[int, NodeSC]):
+        """Return sum of `count_function` for all `Node` in `nodes_dict`."""
+        count = 0
+        for node in nodes_dict.values():
+            count += count_function(node)
+        return count
 
-    def bias_activity(self, activity: Activity, normalizer) -> float:
-        """Returns a bias for `activity` based on the number of students enrolled."""
-        current = activity.enrolled_students
-        select = self.biased_boolean(normalizer * activity.enrolled_students)
-        if select:
-            pass
-        return select
-
-    def node_has_activity(self, node):
+    @staticmethod
+    def node_has_activity(node):
+        """Verify whether node has any activities assigned."""
         if len(node.activities) > 0:
             return True
         return False
 
-    def node_has_period(self, node, timeslot: Timeslot):
+    @staticmethod
+    def node_has_period(node, timeslot: Timeslot):
         """Verify if `node` already has period of `timeslot` booked"""
         new_moment = timeslot.moment
         for booked_timeslot in node.timeslots.values():
@@ -70,8 +56,7 @@ class Statistics:
         return False
 
     def moment_conflicts(self, nodes1, nodes2):
-        """Count same time bookings between `nodes1` and `nodes2`"""
-        conflicts = 0
+        """Find if any bookings between `nodes1` and `nodes2` conflict."""
         for node1 in nodes1:
             for node2 in nodes2:
                 if node1.id == node2.id:
@@ -79,10 +64,8 @@ class Statistics:
                 for timeslot1 in node1.timeslots.values():
                     for timeslot2 in node2.timeslots.values():
                         if timeslot1.moment == timeslot2.moment:
-                            conflicts += 1
-        # TODO: possible this has to be divided by two when nodes1 == nodes2
-        # TODO: or build index on pairs checked
-        return conflicts
+                            return True
+        return False
 
     def student_has_activity_assigned(self, student: Student, activity: Activity):
         """Verify whether `student` already has a timeslot for `activity`."""
@@ -101,20 +84,6 @@ class Statistics:
                 if assigned_activity == activity:
                     timeslots_assigned += 1
         return timeslots_assigned
-
-    def timeslot_activity_overbooked(self, timeslot: Timeslot, verbose=False):
-        """Count overbooked `activity` for `timeslot`."""
-        overbookings = max(len(timeslot.activities) - 1, 0)
-        if overbookings > 0:
-            bookings = [str(activity) for activity in timeslot.activities.values()]
-
-            if verbose:
-                print(f"HARD CONSTRAINT: Overbooked timeslot: {timeslot.id} {timeslot} has {bookings}")
-        return overbookings
-
-    # def room_overbooked(self, timeslot: Timeslot):
-    #     """Count timeslot (chair) capacity surplus."""
-    #     return max(timeslot.enrolled_students - timeslot.room.capacity, 0)
 
     def timeslot_student_overbooked(self, timeslot: Timeslot):
         """Count surplus of students booked for timeslot."""
@@ -143,13 +112,13 @@ class Statistics:
         if activity.max_timeslots == 1 and timeslot.room.capacity >= activity.enrolled_students:
             return True
 
+        # Verify `activity` doesn't already have its maximum amount of timeslots assigned (max=1 for lectures)
         return len(activity.timeslots) < activity.max_timeslots
 
     def can_assign_student_timeslot(self, student: Student, timeslot: Timeslot):
         """Verify if a `student` can be added to `timeslot`."""
         if timeslot.enrolled_students >= timeslot.capacity:
             return False
-        # TODO also check if student already has activity assigned
         return True
 
     def activity_overbooked(self, activity: Activity):
@@ -165,10 +134,9 @@ class Statistics:
             unbooked_students += int(not self.student_has_activity_assigned(student, activity))
         return unbooked_students
 
-    # Soft constraints:
     def evening_bookings(self, room: Room):
         """Count booked evening timeslots for `room`."""
-        # Evening timeslot
+        # Evening timeslot is the 4th period
         evening_period = 4
         evening_bookings = 0
         for timeslot in room.timeslots.values():
@@ -176,21 +144,19 @@ class Statistics:
                 evening_bookings += len(timeslot.activities)
         return evening_bookings
 
-    def student_overbooked(self, student: Student, verbose=False):
+    def student_overbooked(self, student: Student):
         """Count overbooked periods for `student`."""
         bookings = set()
         double_bookings: int = 0
         for timeslot in student.timeslots.values():
+            # See if moment had already been booked once
             if timeslot.moment in bookings:
                 double_bookings += 1
-
-                if verbose:
-                    print(f"MALUS: overbooked period for {student.name}: {timeslot.moment} >1 times")
             else:
                 bookings.add(timeslot.moment)
         return double_bookings
 
-    def sort_to_day(self, timeslots):
+    def sort_to_day(self, timeslots) -> dict[int, list[Timeslot]]:
         """Sorts `timeslots` per day to dict[day, timeslots]."""
 
         timeslot_day: dict[int, list[Timeslot]] = {}
@@ -202,6 +168,7 @@ class Statistics:
             else:
                 timeslot_day[timeslot.day].append(timeslot)
 
+        # Sort timeslots in periods per day
         for day_index in timeslot_day:
             if len(timeslot_day[day_index]) == 1:
                 continue
@@ -211,11 +178,18 @@ class Statistics:
     def gaps_on_day(self, day: list[Timeslot]):
         """Count gaps on `day` between timeslots in day.
         Assumes list `day` only includes timeslots of one day."""
+
+        # Sort timeslots to day and period
         day_sorted = self.sort_objects(day, "moment")  # type: ignore
+
+        # Initial counters
         gaps_today = 0
         previous_period = -1
+
+        # Iterate over timeslots per day
         for i, timeslot in enumerate(day_sorted):
             if i == 0:
+                # New day, reset
                 previous_period = timeslot.period - 1
             current_period = timeslot.period
             # Gap is difference between current and last period - 1, if the timeslots are simultaneous take gap = 0
@@ -225,13 +199,12 @@ class Statistics:
         return gaps_today
 
     def timeslot_gives_gaps(self, student: Student, timeslot: Timeslot, limit=3):
-        """See adding `timeslot` to `student` results in  `student` having `limit` or more gaps on that day."""
+        """See if adding `timeslot` to `student` results in  `student` having `limit` or more gaps on that day."""
         # gaps_on_day will never be smaller than 0
         if limit == 0:
             return True
 
         # Pretend timeslot is assigned to student
-        # TODO: possible to assign relaxation here, only check if there are already some timeslots
         if len(student.timeslots.values()) == 0:
             return False
 
@@ -252,11 +225,7 @@ class Statistics:
         return False
 
     def student_day_gaps_frequency(self, student: Student, day_index: int):
-        """Count gaps ."""
-        # gaps_on_day will never be smaller than 0
-
-        # Pretend timeslot is assigned to student
-        # TODO: possible to assign relaxation here, only check if there are already some timeslots
+        """DEPRECATED: Count frequency of 1-gap, 2-gap and >2-gaps on day."""
         if len(student.timeslots.values()) == 0:
             return False
 
@@ -279,7 +248,7 @@ class Statistics:
         return gap_frequency
 
     def gap_periods_student(self, student: Student):
-        """Count free periods in between the first and last active period of `student`."""
+        """Count free periods per day in between the first and last active period of `student`. Sort to buckets of gaps per day."""
         timeslot_day = self.sort_to_day(student.timeslots.values())
         # Index is the gaps on a day, value is the number of occurences
         gap_frequency = np.zeros((4,), dtype=int)
@@ -291,10 +260,3 @@ class Statistics:
                 gap_frequency[gaps_today] += 1
 
         return gap_frequency
-
-    def aggregate(self, count_function: Callable[[NodeSC], int], nodes_dict: dict[int, NodeSC]):
-        """Return sum of `count_function` for all `Node` in `nodes_dict`."""
-        count = 0
-        for node in nodes_dict.values():
-            count += count_function(node)
-        return count

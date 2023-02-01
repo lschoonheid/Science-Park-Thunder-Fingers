@@ -1,54 +1,32 @@
-# from numba import jit
-from math import exp
+"""
+Individual part
+Class for mutation strategies as base for population based algorithms.
+
+Execute from main.py: choose strategy (HillClimber, Simulated Annealing, Directed Simulated Annealing).
+
+Student: Laszlo Schoonheid
+Course: Algoritmen en Heuristieken 2023
+"""
+
+
 import random
 import numpy as np
-from typing import Callable
-from functools import total_ordering
-from .mutator import Mutator
+from .randomizer import Randomizer
+from .statistics import Statistics
+from .mutations import MoveStudent, Mutation, SwapStudents, SwapTimeslots
 from ..classes import Timeslot
 from ..classes.result import Result
 
 
-class Mutation(Mutator):
+class MutationSupplier(Statistics):
+    """Mutation supplier parent class. Suggests mutations.
+
+    Increasing `score_scope` increases the amount of mutations to try out.
+    `ceiling` defines the maximum score difference a mutation is allowed to bring."""
+
     def __init__(
         self,
-        action: Callable,
-        drawer: Callable[[Result, list, set | None, int | None], tuple | None],
-        result: Result,
-        targets: list,
-        ceiling: int | None = None,
-        tried_mutations: set | None = None,
-        arguments: dict | None = None,
-        inverse: Callable | None = None,
-    ):
-        self.type = action.__name__
-        self.action = action
-        self.inverse = inverse
-        self.result = result
-        self.arguments = arguments
-
-        draw = drawer(result, targets, tried_mutations, ceiling)
-        if draw:
-            self.subjects, self.score = draw
-
-    def apply(self):
-        if self.arguments:
-            return self.action(self.result.schedule, *self.subjects, **self.arguments)
-        return self.action(self.result.schedule, *self.subjects)
-
-    def revert(self):
-        if self.inverse:
-            if self.arguments:
-                return self.inverse(self.result.schedule, *self.subjects, **self.arguments)
-            return self.inverse(self.result.schedule, *self.subjects)
-
-        raise NotImplementedError
-
-
-class MutationSupplier(Mutator):
-    def __init__(
-        self,
-        score_scope: int = 2,
+        score_scope: int = 1,
         ceiling=0,
         tried_timeslot_swaps: set[tuple[int, int]] = set(),
         swap_scores_memory: dict[tuple[Timeslot, Timeslot], int | float] = {},
@@ -59,15 +37,29 @@ class MutationSupplier(Mutator):
         self.tried_timeslot_swaps = tried_timeslot_swaps
         self.swap_scores_memory = swap_scores_memory
 
-    def suggest_mutation(self, result: Result, ceiling=0):
-        """Generate possible swap."""
+    def find_mutations(self, result: Result, timeslots: list[Timeslot]) -> list[Mutation]:
+        """Find available mutations for each type of mutation"""
+        return [
+            # Move single student
+            MoveStudent(result, timeslots, self.ceiling, self.tried_timeslot_swaps),
+            # Swap two students within 2 timeslots
+            SwapStudents(result, timeslots, self.ceiling, self.tried_timeslot_swaps),
+            # Swap two timeslots
+            SwapTimeslots(result, timeslots, self.ceiling, self.tried_timeslot_swaps),
+        ]
+
+    def suggest_mutation(self, result: Result, ceiling=0) -> Mutation:
+        """Return best possible mutation according to chosen strategy."""
         raise NotImplementedError
 
     def reset_mutations(self):
+        """Clear memory of tried swaps."""
         self.tried_timeslot_swaps.clear()
 
 
 class HillClimber(MutationSupplier):
+    """Supplies mutations with hillclimber strategy. Increasing `score_scope` > 1 results in steepest descent hillclimber."""
+
     def __init__(
         self,
         score_scope: int = 1,
@@ -82,156 +74,109 @@ class HillClimber(MutationSupplier):
         result: Result,
         timeslots=None,
         _recursion_depth=1000,
-    ):
+    ) -> Mutation:
+        """Return best possible mutation according to hillclimber strategy."""
         if _recursion_depth == 0:
             raise RecursionError("Recursion depth exceeded")
-        ceiling = self.ceiling
-        # See which swaps are best
 
+        # Find targets
         if timeslots is None:
             timeslots = list(result.schedule.timeslots.values())
 
-        timeslots = list(result.schedule.timeslots.values())
-        # For annealing important to NOT select the best swap, but a random one
+        # Generate possible mutations
         possible_mutations = []
-
         for i in range(self.score_scope):
-            possible_mutations.extend(
-                [
-                    # Move single student
-                    Mutation(
-                        self.move_node,
-                        self.draw_valid_student_move,
-                        result,
-                        timeslots,
-                        ceiling,
-                    ),
-                    # Swap two timeslots
-                    Mutation(
-                        self.swap_neighbors,
-                        self.draw_valid_timeslot_swap,
-                        result,
-                        timeslots,
-                        ceiling,
-                        self.tried_timeslot_swaps,
-                        {"skip": "Room"},
-                    ),
-                    # Swap two students within 2 timeslots
-                    Mutation(
-                        self.swap_students_timeslots,
-                        self.draw_valid_student_swap,
-                        result,
-                        timeslots,
-                        ceiling,
-                        self.tried_timeslot_swaps,
-                    ),
-                ]
-            )
+            possible_mutations.extend(self.find_mutations(result, timeslots))
 
+        # See which swaps are best
         random.shuffle(possible_mutations)
         best_mutation = min(possible_mutations, key=lambda m: m.score)
 
+        # If best mutation isn't an improvement, try again.
         if best_mutation.score > 0:
             return self.suggest_mutation(result, timeslots, _recursion_depth - 1)
 
+        # Return best found mutation
         return best_mutation
 
 
 class SimulatedAnnealing(MutationSupplier):
+    """Supplies mutations with simulated annealing algorithm."""
+
     def __init__(
         self,
-        score_scope: int = 10,
+        score_scope: int = 1,
         tried_timeslot_swaps: set[tuple[int, int]] = set(),
         swap_scores_memory: dict[tuple[Timeslot, Timeslot], int | float] = {},
-        # T_0: float = 1 / 1000000,
         T_0: float = 1,
         ceiling=10,
-        # T_0: float = 1 / 10,
     ):
         self.T_0 = T_0
         super().__init__(score_scope, ceiling, tried_timeslot_swaps, swap_scores_memory)
 
     def temperature(self, score: int | float) -> float:
+        """Linear temperature schedule."""
         floor = 2
         score_0 = 600 + floor
         return self.T_0 * (score + floor) / score_0
 
     def temperature_sqr(self, score: int | float) -> float:
+        """Quadratic temperature schedule."""
         floor = 5
         score_0 = 600 + floor
         return self.T_0 * ((score + floor) / score_0) ** 2
 
     def temperature_exp(self, score: int | float) -> float:
+        """Exponential temperature schedule."""
         floor = 5
         score_0 = 600 - floor
         ex = np.exp(-score_0 / (score + floor) + 1)
         return self.T_0 * ex
 
-    # @jit()
-    def probability(self, diff, temperature) -> float:
-
-        # Subtract 0.69315 so a diff of 0 results in 50 percent chance of change
+    def probability(self, diff: int | float, temperature: int | float) -> float:
+        """Simulated annealing mutation acceptance probability."""
         return np.exp(-diff / temperature)
-        return np.exp(-diff / temperature - 0.69315)
 
     def suggest_mutation(
         self,
         result: Result,
         timeslots: list[Timeslot] | None = None,
         _recursion_depth=1000,
-    ):
+    ) -> Mutation:
+        """Return best mutation with simulated annealing."""
         ceiling = self.ceiling
         if _recursion_depth == 0:
             raise RecursionError("Recursion depth exceeded")
 
+        # Find targets
         if timeslots is None:
             timeslots = list(result.schedule.timeslots.values())
 
-        # For annealing important to NOT select the best swap, but a random one
-        # TODO implement score scope, try more mutations
-        possible_mutations = [
-            Mutation(
-                self.move_node,
-                self.draw_valid_student_move,
-                result,
-                timeslots,
-                ceiling,
-            ),
-            Mutation(
-                self.swap_neighbors,
-                self.draw_valid_timeslot_swap,
-                result,
-                timeslots,
-                ceiling,
-                self.tried_timeslot_swaps,
-                {"skip": "Room"},
-            ),
-            Mutation(
-                self.swap_students_timeslots,
-                self.draw_valid_student_swap,
-                result,
-                timeslots,
-                ceiling,
-                self.tried_timeslot_swaps,
-            ),
-        ]
+        # Generate possible mutations
+        possible_mutations = []
+        for i in range(self.score_scope):
+            possible_mutations.extend(self.find_mutations(result, timeslots))
 
-        # Shuffle mutations so that we don't always pick move_node if scores are equal
+        # Shuffle mutations so that we don't always pick first listed mutation if scores are equal
         random.shuffle(possible_mutations)
 
-        for mutation in self.sort_objects(possible_mutations, "score"):
+        # Go through mutations and return mutation if acceptance critaria are fulfilled
+        for mutation in Statistics.sort_objects(possible_mutations, "score"):
             P = self.probability(mutation.score, self.temperature(result.score))
-            do_mutation = self.biased_boolean(P)
+            do_mutation = Randomizer.biased_boolean(P)
 
             if do_mutation:
                 if mutation.type == "swap_students_timeslots":
                     pass
                 return mutation
 
+        # Return accepted mutation
         return self.suggest_mutation(result, _recursion_depth=_recursion_depth - 1)
 
 
 class DirectedSA(SimulatedAnnealing):
+    """Supplied mutations with bias towards mutating highest conflict areas."""
+
     def biased_subjects(self, result: Result, timeslots: list[Timeslot], fraction: float = 1 / 10):
         """Returns a list of subjects that are biased towards the worst subjects."""
         scores = np.array([result.sub_score(t) for t in timeslots])
@@ -239,13 +184,14 @@ class DirectedSA(SimulatedAnnealing):
 
         selection_size = int(len(timeslots) // (1 / fraction))
         probabilities = selection_size * scores / total_score
-        select = [self.biased_boolean(p) for p in probabilities]
+        select = [Randomizer.biased_boolean(p) for p in probabilities]
 
         selection = [subject for subject, select in zip(timeslots, select) if select]
 
         return selection
 
-    def suggest_mutation(self, result: Result, ceiling=10, _recursion_depth=1000):
+    def suggest_mutation(self, result: Result, ceiling=10, _recursion_depth=1000) -> Mutation:
+        """Return best mutation."""
         if _recursion_depth == 0:
             raise RecursionError("Recursion depth exceeded")
 
