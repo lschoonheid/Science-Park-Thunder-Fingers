@@ -2,8 +2,7 @@
 Individueel onderdeel
 Interface for executing heatmap program.
 
-Execute: `python3 heatmap.py`.
-Can also be used in main by calling heatmap(schedule)
+Execute: `python3 heatmap.py` or use in main by calling heatmap(schedule)
 
 heatmap, annotate_heatmap and plot_heatmap are helpers functions from matplotlib
 source code: https://matplotlib.org/stable/gallery/images_contours_and_fields/image_annotated_heatmap.html
@@ -76,11 +75,11 @@ class Heatmap:
                 rotation_mode="anchor")
             ax[weekday_plot].set_xticklabels(ROOMS, fontsize=5, rotation=-30, ha="right",
                 rotation_mode="anchor")
-            # Let the horizontal axes labeling appear on top.
+            # Let the horizontal axes labeling appear on top
             ax[weekday_plot].tick_params(top=True, bottom=False,labeltop=True, labelbottom=False)
 
         for timeslot in self.timeslots:
-            # full time table plot
+            # fill time table plot
             activity = list(timeslot.activities.values())[0]
             event = activity.course.name + "\n" + activity.act_type
             room = ROOMS.index(timeslot.room.name) - 0.48
@@ -95,7 +94,6 @@ class Heatmap:
     def heatmap(self, row_labels, col_labels, ax, cbarlabel ="", **kwargs):
         """Creates heatmap with labels and colorbar"""
         # Initialize Axes, colorbar dictionary, colorbar label
-        # ax = plt.gca()
         
         # Plot heatmap without zeros
         data_masked = np.ma.masked_where(self.data == 0, self.data)
@@ -130,7 +128,7 @@ class Heatmap:
         return im, cbar
 
     def annotate_heatmap(self, im, textcolors=("black", "white"), threshold=None, **textkw):
-
+        """Adds values to every pixel in heatmap"""
         # Normalize the threshold to the images color range.
         if threshold is not None:
             threshold = im.norm(threshold)
@@ -159,11 +157,12 @@ class Heatmap:
         return texts
 
     def plot_heatmap(self):
+        """Plots heatmap using correct dimensions"""
         output_path = f"output/heatmap.png"
         plt.rcParams["figure.figsize"] = [10, 3.50]
         plt.rcParams["figure.autolayout"] = True
         fig, ax = plt.subplots()
-        im, cbar = self.heatmap(PERIODS, ROOMS*5, ax, cmap="rainbow", vmin=0, vmax=300, cbarlabel="conflict [score/period]")
+        im, cbar = self.heatmap(PERIODS, ROOMS*5, ax, cmap="rainbow", vmin=0, vmax=20, cbarlabel="conflict [score/period]")
         texts = self.annotate_heatmap(im, size=7)
 
         fig.tight_layout()
@@ -198,7 +197,7 @@ def main(stud_prefs_path: str, courses_path: str, rooms_path: str, n_subset: int
     # Take random sample and rebuild schedule from edges
     sampled_result = random.choice(results_compressed)
     sampled_result.decompress(**data_arguments)
-    last_result = data.load_pickle("output/J1_genetic_HillClimber_119_1499_20230130-143959.pyc")
+    last_result = data.load_pickle("output/J10_genetic_HillClimber_80_14999_20230131-144629.pyc")
     sched_heatmap = Heatmap(last_result.schedule)
 
 if __name__ == "__main__":
