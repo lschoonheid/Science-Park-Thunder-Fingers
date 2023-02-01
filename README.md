@@ -59,7 +59,7 @@ malus punten.
 Verder wordt er een graph.html geopend waarin een multipartite graaf te zien is.
 Hieronder is een voobeeld zichtbaar van de graaf met een subset van de input.
 
-<img src="docs/algorithm performance/graph/subset_solved.png" width="1250"/>
+<img src="docs/graph/subset_solved.png" width="1250"/>
 
 # Experimenteren
 Er zijn 4 verschillende algoritme: Randomizer, Greedy, Hill Climber en Simulated Annealing. 
@@ -96,34 +96,45 @@ Bij Simulated Annealing is gezocht naar een optimum door te kijken naar:
     
 # Classes
 - activity
+    - act_type = hoorcollege, werkcollege of practicum 
+    - capacity_input = aantal studenten die de activiteit (kunnen) volgen
+    - max_timeslots = hoeveel tijdsloten de activiteit heeft 
 - course
+    - name = naam van het vak
+    - num_lec = aantal hoorcolleges
+    - num_tut = aantal werkcolleges
+    - max_stud_tut = aantal studenten per werkcollege
+    - num_prac = aantal practica
+    - max_stud_prac = aantal studenten per practicum
+    - expected_stud = aantal inschrijvingen voor het vak
 - room
+    - name = naam van het lokaal
+    - capacity = capaciteit van het lokaal
 - student
+    - name = voornaam van de student
+    - surmname = achternaam
+    - std_id = studenten id
 - timeslot
-- node
+    - day = dag van het tijdslot
+    - time = tijd van het tijdslot 
+    - moment = dag plus tijd
+    - room = lokaal
 
 # Visualisatie
-- graaf
-- histogram
-- heatmap
+- Visualisatie = graaf en histogram
+- Heatmap
+In de heatmap worden te tijdsloten gescored op de aantal vakconflicten en tussen uren dat ze veroorzaken.
 
 
-- rooster
+- Timetable
+Een voorbeeld van een persoonlijk rooster voor Edin Basting.
 <img src="docs/rooster/Busy schedule.png" width="1250"/>
 
 # Sources:
-
 - https://ah.proglab.nl/cases/lectures-en-lesroosters
 
-# TODO  READMEs bevatten vaak:
-
-V Een beschrijving van het project of de folder waar deze README in staat
-Een beschrijving van de (sub)structuur van de repository
-V Een lijst van gebruikte modules, libraries, of programma’s die nodig zijn om de code in dit project te runnen
-V Een beschrijving van hoe de code in dit project gebruikt kan worden of een kort voorbeeld of referentie naar een voorbeeld van hoe je de code kan gebruiken
-V Een lijst met auteurs
-
-# 
+# Dank woord
+Wij bedankt Okke en Noa voor hun begeleiding en het hele minor programmeren team voor hen begrip en hulp.
 
 # Auteurs:
 - Laszlo Schoonheid
