@@ -2,7 +2,9 @@ import multiprocessing
 import warnings
 from tqdm import tqdm
 from ..classes import Schedule
-from ..classes.data import pickle_cache
+
+# from ....helpers.data import pickle_cache
+from ..helpers.data import pickle_cache
 from ..classes.result import Result
 
 

@@ -1,24 +1,31 @@
-import warnings
+"""
+Individual part
+Class for executing population based algorithms.
 
-from ..classes import Schedule, Timeslot, dump_result
-from .generate import generate_solutions
-from .randomizer import Randomizer
-from .mutator import Mutator
-from .mutationsuppliers import MutationSupplier, DirectedSA, SimulatedAnnealing, HillClimber, Mutation
-from ..classes.result import Result
+Execute from main.py: choose strategy (HillClimber, Simulated Annealing, Directed Simulated Annealing).
+
+Student: Laszlo Schoonheid
+Course: Algoritmen en Heuristieken 2023
+"""
+
 import copy
-from tqdm import tqdm
-import matplotlib
-import numpy as np
-
-import matplotlib.pyplot as plt
-
 import time
 import multiprocessing
+from tqdm import tqdm
+import matplotlib.pyplot as plt
+from .mutationsuppliers import MutationSupplier, SimulatedAnnealing, Mutation
+from ..classes import Schedule
+from .statistics import Statistics
+from .randomizer import Randomizer
+from .generate import generate_solutions
+from ..classes.result import Result
+from ..helpers.data import dump_result
 
 
-# TODO: #14 implement genetic algorithm to combine schedules into children schedules
-class EvolutionSolver(Mutator):
+class EvolutionSolver:
+    """Evolution based algorithm for improving schedule.
+    Takes a solved schedule as input and applies mutations upon it to improve score."""
+
     def __init__(
         self,
         students_input,
@@ -26,10 +33,11 @@ class EvolutionSolver(Mutator):
         rooms_input,
         population_size=5,
         max_generations=30000,
-        method="uniform",
+        method="bias",
         mutation_supplier: MutationSupplier = SimulatedAnnealing(),
         verbose=False,
     ) -> None:
+        # Build initial population with input
         self.students_input = students_input
         self.courses_input = courses_input
         self.rooms_input = rooms_input
@@ -37,13 +45,16 @@ class EvolutionSolver(Mutator):
         self.population_size = population_size
         self.max_generations = max_generations
 
+        # `method` defines solving method for baseline solution
         self.method = method
+        # Select mutation strategy
         self.mutation_supplier = mutation_supplier
 
+        # Show details of solution process
         self.verbose = verbose
 
     def fitness(self, score: float | int):
-        """Get fitness of a result."""
+        """Get fitness score of a result."""
         return 10000 / (1 + score)
 
     def solve(
@@ -55,49 +66,56 @@ class EvolutionSolver(Mutator):
         save_result=True,
         plot=False,
     ):
-        # TODO: hillclimber for first part, then simulated annealing for second part? Forget swapping timeslots third part
+        if i_max is None:
+            i_max = self.max_generations
 
+        # If current solving process is a child of a multithreaded operation, take appropriate space in terminal
         try:
             process_id = multiprocessing.current_process()._identity[0]
         except:
             process_id = 0
 
-        if i_max is None:
-            i_max = self.max_generations
-
-        # Initialize population from prototype
+        # Initialize population from (solved) prototype
         if schedule_seed is None:
             self.population = generate_solutions(
                 Randomizer(self.students_input, self.courses_input, self.rooms_input, method=self.method),
                 n=self.population_size,
-                compress=True,
                 show_progress=False,
                 multithreading=False,
             )
         else:
-            self.population = [Result(copy.deepcopy(schedule_seed)).compress() for i in range(self.population_size)]
+            assert Result(schedule_seed).is_solved, "Can only improve solved schedules."
+            self.population = [
+                Result(schedule_seed).deepcopy(self.students_input, self.courses_input, self.rooms_input)
+                for i in range(self.population_size)
+            ]
 
-        population_sorted: list[Result] = self.sort_objects(self.population, "score")  # type: ignore
+        # Sort population by score to pick best specimen
+        population_sorted: list[Result] = Statistics.sort_objects(self.population, "score")  # type: ignore
         current_best: Result = population_sorted[0].decompress(
             self.students_input, self.courses_input, self.rooms_input
         )
+        # Save backup for repairment in case of errors
         backup_edges = copy.deepcopy(current_best.schedule.edges)
 
-        start_time = time.time()
-        best_fitness = 0
+        # Initialize progress tracking variables
         best_score = None
+        best_fitness = 0
         track_scores: list[float] = []
+        start_time = time.time()
         timestamps = []
         generations = 0
-        # TODO: in a loop: crossover, mutate, select best fit and repeat
+
+        # Each iteration a mutation is applied and score is checked
         pbar = tqdm(range(i_max), position=process_id, leave=False, disable=not show_progress)
         for i in pbar:
             # last_score = current_best.score
 
-            # Check if solution is found
+            # Check if a perfect solution is found
             if current_best.score == 0:
                 break
 
+            # If required, save current best solution to memory
             if self_repair and self.fitness(current_best.score) > best_fitness and current_best.check_solved():
                 backup_edges = copy.deepcopy(current_best.schedule.edges)
                 best_score = current_best.score
@@ -109,24 +127,25 @@ class EvolutionSolver(Mutator):
             # Apply mutation
             mutation.apply()
 
-            # Check if mutation is better
+            # Check whether solution is still valid and an improvement, possibly replace it with last valid solution
             if self_repair and not current_best.check_solved():
                 # If better, keep mutation, else revert
-                # TODO execute inverse of mutation for any mutation
-                current_best = Result(Schedule(self.students_input, self.courses_input, self.rooms_input, backup_edges))
-                # self.mutation_supplier.tried_timeslot_swaps.add(swapped_ids)
+                if mutation.inverse is not None:
+                    mutation.revert()
+                else:
+                    current_best = Result(
+                        Schedule(self.students_input, self.courses_input, self.rooms_input, backup_edges)
+                    )
                 continue
 
-            #  Clear memory of swaps because of new schedule
+            # Clear memory of swaps because of new schedule conditions
             self.mutation_supplier.reset_mutations()
 
             # Save performance by only updating total score every 50 generations
             if not self_repair and i % 50 == 0:
-                current_best.update_score()
-
                 # Describe progress
+                current_best.update_score()
                 pbar.set_description(
-                    # f"{type(self).__name__} ({type(self.mutation_supplier).__name__}) (score: {current_best.score}) (best swap memory {len(self.mutation_supplier.swap_scores_memory) } tried swaps memory {len(self.mutation_supplier.tried_timeslot_swaps) })"
                     f"{process_id}: {type(self).__name__} ({type(self.mutation_supplier).__name__}) (score: {current_best.score})"
                 )
 
@@ -168,7 +187,7 @@ class EvolutionSolver(Mutator):
                 print(f"Saved at {output_path}")
 
         if plot:
-            # Show score over time
+            # Show score over time/iterations
             plt.plot(timestamps, track_scores)
             plt.xlabel("Time (s)")
             plt.ylabel("Score")

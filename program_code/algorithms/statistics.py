@@ -1,7 +1,7 @@
 from typing import Callable
 import operator
 import numpy as np
-from ..classes.nodes import *
+from ..classes import *
 
 
 class Statistics:

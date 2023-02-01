@@ -1,4 +1,9 @@
-from .nodes import *
+from .node import NodeSC
+from .student import Student
+from .course import Course
+from .activity import Activity
+from .room import Room
+from .timeslot import Timeslot
 
 
 class Schedule:

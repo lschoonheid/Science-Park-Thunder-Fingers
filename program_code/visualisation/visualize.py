@@ -4,7 +4,7 @@ import networkx as nx
 from pyvis.network import Network as PyvisNetwork
 from .fix_webpage import fix_webpage
 from ..classes.result import Result
-from ..classes.data import prepare_path
+from ..helpers.data import prepare_path
 
 
 def plot_statistics(results: list[Result]):

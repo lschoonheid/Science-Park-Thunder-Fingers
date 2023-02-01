@@ -12,7 +12,7 @@ import argparse
 import random
 import warnings
 from program_code import (
-    Data,
+    InputData,
     generate_solutions,
     Randomizer,
     Greedy,
@@ -41,7 +41,7 @@ def main(
 ):
     """Interface for executing scheduling program."""
     # Load dataset
-    input_data = Data(stud_prefs_path, courses_path, rooms_path)
+    input_data = InputData(stud_prefs_path, courses_path, rooms_path)
     data_arguments = input_data.__dict__
 
     # Optionally take (random) subset of data

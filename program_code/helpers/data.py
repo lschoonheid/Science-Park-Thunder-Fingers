@@ -6,8 +6,6 @@ from functools import wraps
 from csv import DictReader
 import time
 
-# TODO move to helpers file
-
 
 def prepare_path(path: str):
     """If a directory for `path` doesn't exist, make it."""
@@ -75,8 +73,8 @@ def csv_to_dicts(input_file: str):
         return [row for row in DictReader(file)]
 
 
-class Data:
-    """Wrapper object for data."""
+class InputData:
+    """Wrapper object for input data."""
 
     def __init__(self, stud_prefs_path: str, courses_path: str, rooms_path: str):
         self.students_input, self.courses_input, self.rooms_input = self.load(stud_prefs_path, courses_path, rooms_path)
