@@ -24,18 +24,19 @@ class Randomizer(Solver):
         nodes2: list[NodeSC],
         condition: Callable[
             [NodeSC, NodeSC],
-            bool,
+            bool | int | float,
         ],
         negation=False,
         return_value=False,
-        _recursion_limit=10000,
+        symmetric_condition=True,
+        _recursion_limit=1000,
         _combination_set: set | None = None,
     ):
         """Recursively try to pick two random nodes to satisfy `condition(node1, node2) == True`.
 
-        Recursion appears to be faster than a for-loop because of the random.choice() function being faster than random.suffle()."""
+        Recursion appears to be faster than a for-loop because of the random.choice() function being faster than random.suffle().
+        In profiling tests it was also measured to be faster than comparable for-loop."""
         # TODO try for-loop instead of recursion
-        # assert _recursion_limit > 0, "Reached recursion limit"
         if _recursion_limit == 0:
             raise RecursionError("Recursion depth exceeded")
 
@@ -44,7 +45,9 @@ class Randomizer(Solver):
             _combination_set = set()
 
         max_combinations = len(nodes1) * len(nodes2)
-        # print(f"{1000 - _recursion_limit}/{max_combinations}")
+        # This is the right condition for when the intersection of nodes1, nodes2 both is empty or isn't.
+        if symmetric_condition:
+            max_combinations *= 2
 
         if len(_combination_set) == max_combinations:
             # Reached all possible combinations
@@ -53,14 +56,11 @@ class Randomizer(Solver):
         node1 = random.choice(nodes1)
         node2 = random.choice(nodes2)
 
-        combination = tuple(sorted([node1.id, node2.id]))
-        condition_value = condition(node1, node2)
-        if negation:
-            # If boolean has to be mirrored, mirror it
-            condition_value = not condition_value
+        combination = (node1.id, node2.id)
+        combination_mirror = (node2.id, node1.id)
 
         # TODO: Possibly faster to generate all combinations and iterate?
-        if combination in _combination_set:
+        if combination in _combination_set or (symmetric_condition and combination_mirror in _combination_set):
             # Combination already tried, try again with different combination
             return self.draw_uniform_recursive(
                 nodes1,
@@ -68,11 +68,20 @@ class Randomizer(Solver):
                 condition,
                 negation=negation,
                 return_value=return_value,
+                symmetric_condition=symmetric_condition,
                 _recursion_limit=_recursion_limit - 1,
                 _combination_set=_combination_set,
             )
+
+        condition_value = condition(node1, node2)
+        if negation:
+            # If boolean has to be mirrored, mirror it
+            condition_value = not condition_value
+
         elif condition_value is False:
             _combination_set.add(combination)
+            if symmetric_condition:
+                _combination_set.add(combination_mirror)
             assert len(_combination_set) <= max_combinations, "Combination set out of order"
 
             return self.draw_uniform_recursive(
@@ -81,9 +90,12 @@ class Randomizer(Solver):
                 condition,
                 negation=negation,
                 return_value=return_value,
+                symmetric_condition=symmetric_condition,
                 _recursion_limit=_recursion_limit - 1,
                 _combination_set=_combination_set,
             )
+
+        # If combination meets requirement, return pair
         if return_value:
             return node1, node2, condition_value
         return node1, node2
