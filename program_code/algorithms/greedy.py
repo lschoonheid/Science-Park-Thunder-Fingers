@@ -6,7 +6,6 @@ from warnings import warn
 from .generate import make_prototype
 from .solver import Solver
 
-# from .randomizer import Randomizer
 from ..classes import *
 from ..classes.result import Result
 
@@ -75,12 +74,14 @@ class Greedy(Solver):
                 _combination_set=_combination_set,
             )
 
-        return node1, node2
-
-    def sort_nodes(self, nodes, attr: str, reverse=False):
-        return sorted(nodes, key=operator.attrgetter(attr), reverse=reverse)
+        return node1, node2 
 
     def assign_hoorcollege_to_room(self, schedule: Schedule):
+        """ Seperate the activities into hoorcollege and werkcollege and practica and
+        assign hoorcolleges to timeslot.
+        pre: schedule
+        post: seperated activities
+        """
         activities = list(schedule.activities.values())
         timeslots = list(schedule.timeslots.values())
 
@@ -100,11 +101,13 @@ class Greedy(Solver):
 
         # assign hoorcolleges with max timeslots most efficiently on capacity
         self.assign_activities_timeslots_greedy(schedule, activities_bound, timeslots, reverse=True)
-        # self.rate_timeslots_activity(schedule, activities_free)
 
         return activities_bound, activities_free
 
     def assign_students_to_hc(self, schedule: Schedule, activities_bound: list[Activity]):
+        """ Assign students to the timeslots of the hoorcollege activities
+        pre: schedule, list of activities (hoorcollege)
+        """
         # Get a list of all the students
         aviable_student: list[Student] = list(schedule.students.values())
 
@@ -120,7 +123,13 @@ class Greedy(Solver):
                     schedule.connect_nodes(student, timeslots_linked[0])
 
     def assign_students_wc_p(self, schedule: Schedule, activities_free: list[Activity]):
+        """ Assign students to the timeslots of the werkcollege and practicum activities without using
+        draw uniform recursive. Uniform recursive works better.
+        pre: schedule, list of activities (werkcollege and practicum)
+        post: schedule
+        """
         edges = set()
+        # Necassary for the solve
         i = 1000
 
         for activity in activities_free:
@@ -129,18 +138,25 @@ class Greedy(Solver):
             if not hasattr(activity, "_unassigned_students"):
                 setattr(activity, "_unassigned_students", set(activity.students.values()))
 
+            # Get the students and timeslots linked to the activity
             available_students_linked = list(getattr(activity, "_unassigned_students"))
             timeslots_linked = list(activity.timeslots.values())
 
+            # Go trough al students
             for student in available_students_linked:
                 timeslot_list = []
+                # Go trough the timeslot of the activity
                 for timeslot_chose in timeslots_linked:
+                    # Check if student already has activity during current activity
                     if self.node_has_period(student, timeslot_chose) == False:
                         timeslot_list.append(timeslot_chose)
 
+                    # Current activity does not have a timeslot that allows for no course conflicts
                     if len(timeslot_list) == 0:
+                        # Pick a random timeslot
                         timeslot = random.choice(timeslots_linked)
                     else:
+                        # Pick a random timeslot which has no course conflicts for student
                         timeslot = random.choice(timeslot_list)
 
                     # Skip if timeslot is already linked to student
@@ -156,6 +172,11 @@ class Greedy(Solver):
         return Result(schedule=schedule, iterations=i, solved=True)
 
     def assign_students_wc_p_uniform(self, schedule: Schedule, activities_free: list[Activity]):
+        """ Assign students to the timeslots of the werkcollege and practicum activities without using
+        draw uniform recursive. Uniform recursive works better.
+        pre: schedule, list of activities (werkcollege and practicum)
+        post: schedule
+        """
         i_max = 10000
         available_activities = activities_free
 
@@ -177,6 +198,7 @@ class Greedy(Solver):
             if not hasattr(activity, "_unassigned_students"):
                 setattr(activity, "_unassigned_students", set(activity.students.values()))
 
+            # Get the students linked to the current activity
             available_students_linked = list(getattr(activity, "_unassigned_students"))
             timeslots_linked = list(activity.timeslots.values())
 
@@ -197,13 +219,18 @@ class Greedy(Solver):
             student: Student = draw_student[1]  # type: ignore
 
             timeslot_list = []
+            # Go trough the timeslot of the activity
             for timeslot_chose in timeslots_linked:
+                # Check if the student already has an activity in the current timeslot
                 if self.node_has_period(student, timeslot_chose) == False:
                     timeslot_list.append(timeslot_chose)
 
+            # Activity does not have timeslot that causes no course conflict for the student
             if len(timeslot_list) == 0:
+                # Pick a random timeslot
                 timeslot = random.choice(timeslots_linked)
             else:
+                # Pick a timeslot that causes no course conflict
                 timeslot = random.choice(timeslot_list)
 
             # Skip if timeslot is already linked to student
@@ -231,6 +258,11 @@ class Greedy(Solver):
         return Result(schedule=schedule, iterations=i_max, solved=activities_finished)
 
     def rate_timeslots_activity(self, schedule: Schedule, aviable_activity: list[Activity]):
+        """ Rate the timeslots for the werkcollege and practicum activities and assign the 
+        highest rates timeslots to the activites
+        pre: schedule, list of activities (werkcollege and practicum)
+        post: schedule
+        """
         # Get a list of timeslots and students
         available_timeslots: list[Timeslot] = list(schedule.timeslots.values())
         aviable_student: list[Student] = list(schedule.students.values())
@@ -284,6 +316,10 @@ class Greedy(Solver):
         return Result(schedule=schedule, solved=True)
 
     def greedy_random(self, schedule: Schedule, i_max: int):
+        """ Perform the greedy algorithm
+        pre: schedule
+        post: schedule (solved)
+        """
         activities_bound, activities_free = self.assign_hoorcollege_to_room(schedule)
 
         self.assign_students_to_hc(schedule, activities_bound)
@@ -293,6 +329,10 @@ class Greedy(Solver):
         return self.assign_students_wc_p_uniform(schedule, activities_free)
 
     def solve(self, schedule: Schedule | None = None, i_max: int | None = None, method=None, strict=True):
+        """ Solve function for the algorithm
+        pre: schedule
+        post: schedule (solved)
+        """
         if schedule is None:
             schedule = make_prototype(self.students_input, self.courses_input, self.rooms_input)
         if i_max is None:
