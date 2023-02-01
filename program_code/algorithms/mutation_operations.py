@@ -225,7 +225,7 @@ def move_score_student(result: Result, student: Student, timeslot1: Timeslot, ti
         current_sub_score += result.score_matrix.dot([1, 0, 0, 0, 0])
 
     # Pretend to swap
-    fast_swap(timeslot1, timeslot2)
+    move_node(result.schedule, student, timeslot1, timeslot2)
 
     # Get projected score
     projected_sub_score = result.sub_score(student)
