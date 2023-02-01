@@ -18,7 +18,7 @@ import multiprocessing
 
 
 # TODO: #14 implement genetic algorithm to combine schedules into children schedules
-class GeneticSolver(Mutator):
+class EvolutionSolver(Mutator):
     def __init__(
         self,
         students_input,
@@ -72,6 +72,7 @@ class GeneticSolver(Mutator):
                 n=self.population_size,
                 compress=True,
                 show_progress=False,
+                multithreading=False,
             )
         else:
             self.population = [Result(copy.deepcopy(schedule_seed)).compress() for i in range(self.population_size)]

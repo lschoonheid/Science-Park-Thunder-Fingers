@@ -13,11 +13,10 @@ import random
 import warnings
 from program_code import (
     Data,
-    SolverSC,
     generate_solutions,
     Randomizer,
     Greedy,
-    GeneticSolver,
+    EvolutionSolver,
     HillClimber,
     SimulatedAnnealing,
     DirectedSA,
@@ -25,10 +24,9 @@ from program_code import (
     dump_result,
     plot_statistics,
 )
-from program_code.algorithms.multiprocess import multi_solve
 from sched_csv_output import schedule_to_csv
 
-# TODO: write interface code to execute complete program from command line
+
 def main(
     stud_prefs_path: str,
     courses_path: str,
@@ -36,8 +34,9 @@ def main(
     n_subset: int,
     method: str,
     verbose: bool = False,
-    do_plot: bool = True,
     show_progress=True,
+    do_plot: bool = True,
+    do_save: bool = True,
     **kwargs,
 ):
     """Interface for executing scheduling program."""
@@ -45,57 +44,75 @@ def main(
     input_data = Data(stud_prefs_path, courses_path, rooms_path)
     data_arguments = input_data.__dict__
 
-    # Optionally take subset of data
-    # TODO #40 take random students of subset to prevent overfitting
+    # Optionally take (random) subset of data
     if n_subset:
         if n_subset > len(input_data.students_input):
             warnings.warn("WARNING: Chosen subset size is larger than set size, continuing anyway.")
         else:
             data_arguments["students_input"] = random.sample(input_data.students_input, n_subset)
 
-    # Initialize solver
+    do_multithreading = False
+    do_compression = False
 
+    # Initialize solver with correct strategy
     match method:
         case "baseline":
+            # Baseline algorithm, most random
+            do_compression = True
             solver = Randomizer(**data_arguments, method="uniform")
         case "greedy":
+            # Greedy algorithm
+            do_multithreading = True
             solver = Greedy(**data_arguments)
         case "min_overlap":
+            # Improvement on baseline with bias towards least course conflicts
+            do_compression = True
             solver = Randomizer(**data_arguments, method="min_overlap")
         case "min_gaps":
+            # Improvement on baseline with bias towards least gap hours
+            do_compression = True
             solver = Randomizer(**data_arguments, method="min_gaps")
         case "min_gaps_overlap":
+            # Improvement on baseline with bias towards least gap hours, then least course conflicts
+            do_compression = True
             solver = Randomizer(**data_arguments, method="min_gaps_overlap")
-        case "directed_sa":
-            solver = GeneticSolver(**data_arguments, mutation_supplier=DirectedSA())
-        case "simulated_annealing":
-            solver = GeneticSolver(**data_arguments, mutation_supplier=SimulatedAnnealing())
         case "hillclimber":
-            solver = GeneticSolver(**data_arguments, mutation_supplier=HillClimber())
+            # Population based solver, only helpful mutations
+            do_multithreading = True
+            solver = EvolutionSolver(**data_arguments, mutation_supplier=HillClimber())
+        case "simulated_annealing":
+            # Population based solver, score based mutation acceptance
+            do_multithreading = True
+            solver = EvolutionSolver(**data_arguments, mutation_supplier=SimulatedAnnealing())
+        case "directed_sa":
+            # Population based solver, bias towards mutating highest conflict areas
+            do_multithreading = True
+            warnings.warn("Directed Simulated Annealing not yet fully implemented!")
+            solver = EvolutionSolver(**data_arguments, mutation_supplier=DirectedSA())
         case _:
             raise ValueError("Invalid method chosen.")
 
-    # Generate (compressed) results: only return scorevector and edges
-    # results_compressed = generate_solutions(
-    #     solver,
-    #     show_progress=show_progress,
-    #     **kwargs,
-    # )
-    results_compressed = multi_solve(
+    # Retrieve results
+    results = generate_solutions(
         solver,
         show_progress=show_progress,
+        compress=do_compression,
+        multithreading=do_multithreading,
         **kwargs,
     )
 
-    dumped_loc = dump_result(results_compressed, f"output/results_{method}_{kwargs}_")
-    print("Dumped results to", dumped_loc)
+    # Dump results to disk
+    if do_save:
+        dumped_loc = dump_result(results, f"output/results_{method}_{kwargs}_")
+        print("Dumped results to", dumped_loc)
 
     # Take random sample and rebuild schedule from edges
-    sampled_result = random.choice(results_compressed)
+    sampled_result = random.choice(results)
     sampled_result.decompress(**data_arguments)
 
     # Visualize graph
     if verbose:
+        # Initialize `score_vector`
         sampled_result.score_vector
         print(sampled_result)
 
@@ -107,7 +124,7 @@ def main(
     schedule_to_csv(sampled_result.schedule)
 
     # Visualize score dimensions
-    plot_statistics(results_compressed)
+    plot_statistics(results)
 
 
 if __name__ == "__main__":
@@ -119,13 +136,13 @@ if __name__ == "__main__":
         dest="method",
         choices=[
             "baseline",
+            "greedy",
             "min_overlap",
             "min_gaps",
             "min_gaps_overlap",
-            "directed_sa",
-            "simulated_annealing",
             "hillclimber",
-            "greedy",
+            "simulated_annealing",
+            "directed_sa",
         ],
         default="simulated_annealing",
         help="Choose method.",
@@ -145,6 +162,7 @@ if __name__ == "__main__":
     parser.add_argument("--courses", dest="courses_path", default="data/vakken.csv", help="Path to courses csv.")
     parser.add_argument("--rooms", dest="rooms_path", default="data/zalen.csv", help="Path to rooms csv.")
     parser.add_argument("--no_plot", dest="do_plot", action="store_false", help="Don't show matplotlib plot")
+    parser.add_argument("--discard", dest="do_save", action="store_false", help="Don't save results to disk.")
 
     # Read arguments from command line
     args = parser.parse_args()
