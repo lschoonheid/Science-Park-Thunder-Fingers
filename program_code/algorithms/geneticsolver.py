@@ -53,11 +53,14 @@ class GeneticSolver(Mutator):
         self_repair=False,
         show_progress=True,
         save_result=True,
-        plot=True,
+        plot=False,
     ):
         # TODO: hillclimber for first part, then simulated annealing for second part? Forget swapping timeslots third part
 
-        process_id = multiprocessing.current_process()._identity[0]
+        try:
+            process_id = multiprocessing.current_process()._identity[0]
+        except:
+            process_id = 0
 
         if i_max is None:
             i_max = self.max_generations
