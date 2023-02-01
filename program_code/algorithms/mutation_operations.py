@@ -219,7 +219,7 @@ def swap_random_timeslots(result: Result, tried_swaps: set | None = None):
 def move_score_student(result: Result, student: Student, timeslot1: Timeslot, timeslot2: Timeslot):
     """Calculate score difference for moving student from `timeslot1` to `timeslot2`."""
     # Get current score
-    current_sub_score = result.sub_score(student)
+    current_sub_score = result.sub_score(timeslot1) + result.sub_score(timeslot2)
     if timeslot1.period == 4 and timeslot1.enrolled_students == 1:
         # Virtually emptied evening timeslot, remove penalty
         current_sub_score += result.score_matrix.dot([1, 0, 0, 0, 0])
@@ -230,8 +230,8 @@ def move_score_student(result: Result, student: Student, timeslot1: Timeslot, ti
     # Get projected score
     projected_sub_score = result.sub_score(student)
 
-    # Revert swap
-    fast_swap(timeslot1, timeslot2)
+    # Revert move
+    move_node(result.schedule, student, timeslot2, timeslot1)
 
     # Calculate difference
     diff_sub_score = projected_sub_score - current_sub_score
@@ -317,18 +317,18 @@ def swap_score_student(
 ):
     """Calculate score difference for swapping `student1` and `student2` between `timeslot1` and `timeslot2`."""
     # Get current score
-    current_sub_score = result.sub_score(student1) + result.sub_score(student2)
+    current_sub_score = result.sub_score(timeslot1) + result.sub_score(timeslot2)
 
     # Try swap
-    fast_swap(timeslot1, timeslot2)
-    # swap_students_timeslots(result.schedule, student1, student2, timeslot1, timeslot2)
+    # fast_swap(timeslot1, timeslot2)
+    swap_students_timeslots(result.schedule, student1, student2, timeslot1, timeslot2)
 
     # Calculate projected score
-    projected_sub_score = result.sub_score(student1) + result.sub_score(student2)
+    projected_sub_score = result.sub_score(timeslot1) + result.sub_score(timeslot2)
 
     # Revert swap
-    fast_swap(timeslot1, timeslot2)
-    # swap_students_timeslots(result.schedule, student1, student2, timeslot1, timeslot2)
+    # fast_swap(timeslot1, timeslot2)
+    swap_students_timeslots(result.schedule, student1, student2, timeslot2, timeslot1)
 
     # Calculate difference
     diff_sub_score = projected_sub_score - current_sub_score

@@ -161,7 +161,6 @@ class Randomizer(Solver):
             # Succesful, add timeslot to activity
             activity: Activity = draw[1]  # type: ignore
             schedule.connect_nodes(activity, timeslot)
-        pass
 
     def assign_students_timeslots(self, schedule: Schedule, i_max=10000, method="uniform"):
         """Assign students to timeslots for their appropriate activities."""
