@@ -42,6 +42,7 @@ class EvolutionSolver:
         self.courses_input = courses_input
         self.rooms_input = rooms_input
 
+        # Set algorithm bounds
         self.population_size = population_size
         self.max_generations = max_generations
 
@@ -95,6 +96,7 @@ class EvolutionSolver:
         current_best: Result = population_sorted[0].decompress(
             self.students_input, self.courses_input, self.rooms_input
         )
+
         # Save backup for repairment in case of errors
         backup_edges = copy.deepcopy(current_best.schedule.edges)
 
@@ -109,8 +111,6 @@ class EvolutionSolver:
         # Each iteration a mutation is applied and score is checked
         pbar = tqdm(range(i_max), position=process_id, leave=False, disable=not show_progress)
         for i in pbar:
-            # last_score = current_best.score
-
             # Check if a perfect solution is found
             if current_best.score == 0:
                 break
