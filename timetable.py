@@ -19,7 +19,7 @@ ROOMS = ["A1.04", "A1.06", "A1.08", "A1.10", "B0.201", "C0.110", "C1.112"]
 COLORS = ["pink", "lightgreen", "lightblue", "wheat", "salmon"]
 
 def csv_timetable(schedule: Schedule, spec: str | None = None):
-    """Interface for executing timetable program."""
+    """Interface for executing timetable program based on specificity."""
     match spec:
         case "-s":
             stud_sched_csv(schedule)
@@ -27,13 +27,14 @@ def csv_timetable(schedule: Schedule, spec: str | None = None):
             course_sched_csv(schedule)
         case "-r":
             room_sched_csv(schedule)
-        # run all three if no specificity is given
+        # run all if no specificity is given
         case None:
             stud_sched_csv(schedule)
             course_sched_csv(schedule)
             room_sched_csv(schedule)
 
 def stud_sched_csv(schedule: Schedule):
+    """"Exports timetable for random student in csv format"""
     # generate student information from random student in schedule
     student = random.choice(schedule.students)
     timeslots = sorted(list(student.timeslots.values()), key=lambda x: x.moment)
@@ -66,6 +67,7 @@ def stud_sched_csv(schedule: Schedule):
         return student
 
 def course_sched_csv(schedule: Schedule):
+    """"Exports timetable for random course in csv format"""
     # generate course information from random course in schedule
     course = random.choice(list(schedule.courses.values()))
     for activity in course.activities.values():
@@ -102,6 +104,7 @@ def course_sched_csv(schedule: Schedule):
     return course
 
 def room_sched_csv(schedule: Schedule):
+    """"Exports timetable for random room in csv format"""
     # generate course information from random course in schedule
     room = random.choice(list(schedule.rooms.values()))
     timeslots = sorted(list(room.timeslots.values()), key=lambda x: x.moment)
@@ -135,27 +138,23 @@ def room_sched_csv(schedule: Schedule):
     return room
 
 def plot_timetable(schedule: Schedule, spec):
+    """"Exports timetable in png format"""
     # type of plot
     if spec == "student":
-        student = random.choice(schedule.students)
-        # student = stud_sched_csv(schedule)
+        student = stud_sched_csv(schedule)
         timeslots = sorted(list(student.timeslots.values()), key=lambda x: x.moment)
         spec = student
     elif spec == "course":
-        course = random.choice(list(schedule.courses.values()))
-        # course = course_sched_csv(schedule.courses)
+        course = course_sched_csv(schedule.courses)
         for activity in course.activities.values():
             for timeslot in activity.timeslots.values():
                 schedule.connect_nodes(course, timeslot)
         timeslots = sorted(list(course.timeslots.values()), key=lambda x: x.moment)
         spec = course
     elif spec == "room":
-        # room = random.choice(list(schedule.rooms.values()))
         room = room_sched_csv(schedule)
         timeslots = sorted(list(room.timeslots.values()), key=lambda x: x.moment)
         spec = room
-
-    # timeslots = sorted(list(schedule.timeslots.values()), key=lambda x: x.moment)
 
     output_path = f"output/{spec}_timetable.png"
 
@@ -169,7 +168,7 @@ def plot_timetable(schedule: Schedule, spec):
         end = period + 2
         plt.fill_between([day, day + 0.96], period, end, color=COLORS[int(round(day))], edgecolor="k", linewidth=0.5)
         plt.text(day + 0.02, period + 0.05, room, va="top", fontsize=7)
-        plt.text(day + 0.48, (period + end) * 0.5, event, ha="center", va="center", fontsize=9)
+        plt.text(day + 0.48, (period + end) * 0.5, event, ha="center", va="center", fontsize=8)
 
     # Set Axis
     ax = plt.subplot()
@@ -177,20 +176,13 @@ def plot_timetable(schedule: Schedule, spec):
     ax.set_xlim(-0.5, len(WEEK_DAYS) - 0.5)
     ax.set_ylim(19.1, 8.9)
     ax.set_xticks(range(0, len(WEEK_DAYS)))
+    ax.tick_params(top=True, bottom=False, labeltop=True, labelbottom=False)
     ax.set_xticklabels(WEEK_DAYS)
     ax.set_yticks(range(9, 21, 2))
     ax.set_ylabel("Time")
 
-    # Set Second Axis
-    ax2 = ax.twiny().twinx()
-    ax2.set_xlim(ax.get_xlim())
-    ax2.set_ylim(ax.get_ylim())
-    ax2.set_xticks(ax.get_xticks())
-    ax2.set_xticklabels(WEEK_DAYS)
-    ax2.set_yticks(range(9, 19, 2))
-    ax2.set_ylabel("Time")
-
     plt.title(spec, y=1.07)
+    print(f"Timetable plot saved to {output_path}")
     plt.savefig(output_path, dpi=200)
 
 """ 
@@ -222,7 +214,7 @@ def main(stud_prefs_path: str, courses_path: str, rooms_path: str, n_subset: int
     sampled_result = random.choice(results_compressed)
     sampled_result.decompress(**data_arguments)
 
-    plot_timetable(sampled_result.schedule, "room")
+    plot_timetable(sampled_result.schedule, "student")
 
 if __name__ == "__main__":
     # Create a command line argument parser
