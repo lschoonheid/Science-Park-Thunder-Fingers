@@ -23,7 +23,8 @@ class Greedy(Solver):
         _recursion_limit=10000,
         _combination_set: set | None = None,
     ):
-        """Recursively try to pick two random nodes to satisfy `condition(node1, node2) == True`."""
+        """Recursively try to pick two random nodes to satisfy `condition(node1, node2) == True`.
+        Recursion appears to be faster than a for-loop because of the random.choice() function being faster than random.suffle()."""
         # assert _recursion_limit > 0, "Reached recursion limit"
         if _recursion_limit == 0:
             print("ERROR: reached recursion depth limit!")
@@ -133,7 +134,7 @@ class Greedy(Solver):
             for student in available_students_linked:
                 timeslot_list = []
                 for timeslot_chose in timeslots_linked:
-                    if self.node_has_period(student, timeslot_chose):
+                    if self.node_has_period(student, timeslot_chose) == False:
                         timeslot_list.append(timeslot_chose)
 
                     if len(timeslot_list) == 0:
@@ -154,7 +155,7 @@ class Greedy(Solver):
         return Result(schedule=schedule, iterations=i, solved=True)
 
 
-    def assign_students_try(self, schedule: Schedule, activities_free: list[Activity]):
+    def assign_students_wc_p_uniform(self, schedule: Schedule, activities_free: list[Activity]):
         i_max = 10000
         available_activities = activities_free
 
@@ -197,7 +198,7 @@ class Greedy(Solver):
 
             timeslot_list = []
             for timeslot_chose in timeslots_linked:
-                if self.node_has_period(student, timeslot_chose):
+                if self.node_has_period(student, timeslot_chose) == False:
                     timeslot_list.append(timeslot_chose)
 
             if len(timeslot_list) == 0:
@@ -253,7 +254,7 @@ class Greedy(Solver):
                     # Check if the students has the activity
                     if activity in student.activities.values():
                         # Check if the student already has activity in the current period
-                        if self.node_has_period(student, timeslot):
+                        if self.node_has_period(student, timeslot) == False:
                             # If studens has no activity in current period increase rating
                             rate += 1
                 # Save the total rating for every timeslot
@@ -289,7 +290,7 @@ class Greedy(Solver):
 
         self.rate_timeslots_activity(schedule, activities_free)
 
-        return self.assign_students_try(schedule, activities_free)
+        return self.assign_students_wc_p_uniform(schedule, activities_free)
 
     def solve(self, schedule: Schedule | None = None, i_max: int | None = None, method=None, strict=True):
         if schedule is None:
