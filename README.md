@@ -61,6 +61,34 @@ Hieronder is een voobeeld zichtbaar van de graaf met een subset van de input.
 
 <img src="docs/graph/subset_solved.png" width="1250"/>
 
+# Algoritmes
+Randomizer:
+- Hoorcollege worden aan tijdsloten verbonden
+    - Beiden gesoorteerd op capiciteit
+- Werkcollege en pracica worden random aan tijdsloten verbonden totdat er genoeg capaciteit is voor alle studenten die de activiteit volgend
+- Overige tijdsloten worden random aan werkcollege en practica verbonden
+- Studenten worden verbonden aan de tijdsloten van de activiteiten de ze volgend
+
+Greedy:
+- Hoorcollege worden aan tijdsloten verbonden
+    - Beiden gesoorteerd op capiciteit
+- Studenten worden verbonden met de hoorcolleges
+- Tijdsloten van werkcolleges en practica worden per activiteit gescored op de hoeveelheid studenten die dat tijdslot nog geen andere activiteit hebben
+- Hoogste gescorde tijdsloten worden verbonden met de activiteit
+- Studenten worden verbonden aan de tijdsloten van de werkcolleges en practica
+
+Hill Climber:
+- Begin met 5 rooster gemaakt door Randomizer
+- Per iteratie vinden er 3 mutaties plaats:
+    - Tijdsloten van activiteiten omwisselen
+    - Studenten omwisselen van werkgroep/practicumgroep
+    - Student assignen aan een andere werkgroep/practicumgroep
+- Ga door met rooster als het een betere score heeft
+
+Simulated Annealing:
+
+
+
 # Experimenteren
 Er zijn 4 verschillende algoritme: Randomizer, Greedy, Hill Climber en Simulated Annealing. 
 Randomizer kun je op 4 verschillende manieren runnen:
