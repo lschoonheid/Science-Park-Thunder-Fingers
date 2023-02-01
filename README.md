@@ -152,7 +152,7 @@ Bij Simulated Annealing is gezocht naar een optimum door te kijken naar:
 - Visualisatie = graaf en histogram
 - Heatmap
 In de heatmap worden te tijdsloten gescored op de aantal vakconflicten en tussen uren dat ze veroorzaken.
-
+<img src="docs/heatmap.png" width="1250"/>
 
 - Timetable
 Een voorbeeld van een persoonlijk rooster voor Edin Basting.
