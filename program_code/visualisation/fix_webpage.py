@@ -1,6 +1,14 @@
-"""The default html generator of pyvis does not offer full functionality of filter menu.
-This program fixes broken links and missing functions.
 """
+Individual part
+Function for repairing pyvis generated webpage.
+
+The default html generator of pyvis does not offer full functionality of filter menu.
+This program fixes broken links and missing functions.
+
+Student: Laszlo Schoonheid
+Course: Algoritmen en Heuristieken 2023
+"""
+
 
 from pyvis.network import Network as PyvisNetwork
 import json
@@ -45,5 +53,6 @@ def fix_webpage(output_folder: str, net: PyvisNetwork):
         visScript = soup.find_all("script")[-1]
         visScript.insert(0, script)
 
+    # Write fixes to generated webpage
     with open(f"{output_folder}/graph.html", "w") as file:
         file.write(str(soup))

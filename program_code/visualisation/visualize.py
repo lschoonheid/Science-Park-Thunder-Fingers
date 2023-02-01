@@ -8,6 +8,7 @@ from ..helpers.data import prepare_path
 
 
 def plot_statistics(results: list[Result]):
+    """Plot histogram of result scores. Seperate plots per score dimension."""
     evening_timeslots = [result.score_vector[0] for result in results]
     student_overbookings = [result.score_vector[1] for result in results]
     gaps_1, gaps_2, gaps_3 = [[result.score_vector[i] for result in results] for i in range(2, 5)]

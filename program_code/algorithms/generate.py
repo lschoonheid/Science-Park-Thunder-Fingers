@@ -2,21 +2,20 @@ import multiprocessing
 import warnings
 from tqdm import tqdm
 from ..classes import Schedule
-
-# from ....helpers.data import pickle_cache
 from ..helpers.data import pickle_cache
 from ..classes.result import Result
 
 
 @pickle_cache
 def make_prototype(students_input, courses_input, rooms_input):
+    """Build prototype schedule from input data."""
     return Schedule(students_input, courses_input, rooms_input)
 
 
-# Necessary to work around
+# Necessary to work around imap function <-> argument mapping
 def solver_wrapper(arguments):
-    solver, kwargs = arguments
     """Execute `solver.solve(schedule, **kwargs)` with `kwargs`."""
+    solver, kwargs = arguments
     return solver.solve(**kwargs)
 
 

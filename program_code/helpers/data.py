@@ -1,3 +1,6 @@
+"""Functions to handle caching, saving and retrieving data."""
+
+
 import os
 import pickle
 import hashlib
