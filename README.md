@@ -183,7 +183,7 @@ Bij SimulatedAnnealing is gezocht naar een optimum door te kijken naar:
 
   <img src="docs/heatmap.png" width="1250"/>
 Animatie van de heatmap van tijdsloten waar het simulated annealing algoritme op werkt:
-  <img src="docs/heatmap_anim.gif" width="1250"/>
+  <img src="docs/heatmap_anim_0-300.gif" width="1250"/>
 
 - Timetable
   Een voorbeeld van een persoonlijk rooster voor Edin Basting.
