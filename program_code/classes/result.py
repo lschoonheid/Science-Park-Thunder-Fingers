@@ -125,6 +125,7 @@ class Result(Statistics):
                 else:
                     sub_gap_periods = (0, 0, 0, 0)
             case "Student":
+                # TODO: improve accuracy
                 # For student: only check own score
                 sub_evening_timeslots = 0
                 sub_students_overbooked = self.student_overbooked(node)

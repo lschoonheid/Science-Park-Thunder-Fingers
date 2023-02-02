@@ -19,7 +19,7 @@ from .statistics import Statistics
 from .randomizer import Randomizer
 from .generate import generate_solutions
 from ..classes.result import Result
-from ..helpers.data import dump_result
+from ..helpers import dump_result
 
 
 class EvolutionSolver:

@@ -20,11 +20,13 @@ from program_code import (
     HillClimber,
     SimulatedAnnealing,
     DirectedSA,
-    GraphVisualization,
     dump_result,
-    plot_statistics,
+    schedule_to_csv,
+    visualize_graph,
+    plot_histogram,
+    Heatmap,
+    plot_timetable,
 )
-from sched_csv_output import schedule_to_csv
 
 
 def main(
@@ -101,30 +103,36 @@ def main(
         **kwargs,
     )
 
-    # Dump results to disk
-    if do_save:
-        dumped_loc = dump_result(results, f"output/results_{method}_{kwargs}_")
-        print("Dumped results to", dumped_loc)
-
     # Take random sample and rebuild schedule from edges
     sampled_result = random.choice(results)
     sampled_result.decompress(**data_arguments)
 
-    # Visualize graph
+    # Dump results to disk
+    if do_save:
+        dumped_loc = dump_result(results, f"output/results_{method}_{kwargs}_")
+        print("Dumped results to", dumped_loc)
+        schedule_to_csv(sampled_result.schedule)
+        print("Dumped a sampled schedule to", "output/schedule.csv")
+
     if verbose:
         # Initialize `score_vector`
         sampled_result.score_vector
-        print(sampled_result)
+        print("Sampled result: ", sampled_result)
 
     if not do_plot:
         return
 
-    G = GraphVisualization(sampled_result.schedule)
-    G.visualize()
-    schedule_to_csv(sampled_result.schedule)
+    # Visualize graph
+    visualize_graph(sampled_result.schedule)
 
     # Visualize score dimensions
-    plot_statistics(results)
+    plot_histogram(results)
+
+    # Plot heatmap of conflict timeslots
+    Heatmap(sampled_result.schedule)
+
+    # Visualizer random student's schedule
+    plot_timetable(sampled_result.schedule, "student")
 
 
 if __name__ == "__main__":

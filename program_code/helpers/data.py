@@ -6,7 +6,7 @@ import pickle
 import hashlib
 from typing import Callable
 from functools import wraps
-from csv import DictReader
+import csv
 import time
 
 
@@ -73,7 +73,38 @@ def pickle_cache(func: Callable, verbose: bool = False):
 
 def csv_to_dicts(input_file: str):
     with open(input_file, "r") as file:
-        return [row for row in DictReader(file)]
+        return [row for row in csv.DictReader(file)]
+
+
+def schedule_to_csv(schedule, output_path: str = "output/Schedule_output.csv", verbose=False):
+    """Program to convert a schedule object into a csv file."""
+    # columns
+    field_names = ["student", "vak", "activiteit", "zaal", "dag", "tijdslot"]
+
+    prepare_path(output_path)
+
+    with open(output_path, "w") as csvfile:
+        writer = csv.writer(csvfile)
+
+        # write the header
+        writer.writerow(field_names)
+
+        # write the data
+        for student in schedule.students.values():
+            for timeslot in student.timeslots.values():
+                for activity in timeslot.activities.values():
+                    data = [
+                        student.name,
+                        activity.course.name,
+                        activity.act_type,
+                        timeslot.room.name,
+                        timeslot.day_names[timeslot.day],
+                        timeslot.period_names[timeslot.period],
+                    ]
+                    writer.writerow(data)
+
+        if verbose:
+            print(f"output saved to {output_path}")
 
 
 class InputData:
