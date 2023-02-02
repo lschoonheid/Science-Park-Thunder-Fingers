@@ -122,7 +122,7 @@ class EvolutionSolver:
                 best_fitness = self.fitness(best_score)
 
             # Get suggestion for possible mutation
-            mutation: Mutation = self.mutation_supplier.suggest_mutation(current_best)
+            mutation: Mutation = self.mutation_supplier.suggest_mutation(current_best, iterations=i, i_max=i_max)
 
             # Apply mutation
             mutation.apply()

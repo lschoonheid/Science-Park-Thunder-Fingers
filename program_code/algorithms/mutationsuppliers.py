@@ -48,7 +48,7 @@ class MutationSupplier(Statistics):
             SwapTimeslots(result, timeslots, self.ceiling, self.tried_timeslot_swaps),
         ]
 
-    def suggest_mutation(self, result: Result, ceiling=0) -> Mutation:
+    def suggest_mutation(self, result: Result, ceiling=0, iterations=0, i_max=1) -> Mutation:
         """Return best possible mutation according to chosen strategy."""
         raise NotImplementedError
 
@@ -70,10 +70,7 @@ class HillClimber(MutationSupplier):
         super().__init__(score_scope, ceiling, tried_timeslot_swaps, swap_scores_memory)
 
     def suggest_mutation(
-        self,
-        result: Result,
-        timeslots=None,
-        _recursion_depth=1000,
+        self, result: Result, timeslots=None, _recursion_depth=1000, iterations=0, i_max=1
     ) -> Mutation:
         """Return best possible mutation according to hillclimber strategy."""
         if _recursion_depth == 0:
@@ -108,40 +105,49 @@ class SimulatedAnnealing(MutationSupplier):
         score_scope: int = 1,
         tried_timeslot_swaps: set[tuple[int, int]] = set(),
         swap_scores_memory: dict[tuple[Timeslot, Timeslot], int | float] = {},
-        T_0: float = 1,
+        T_0: float = 1 / 5,
         ceiling=10,
     ):
         self.T_0 = T_0
         super().__init__(score_scope, ceiling, tried_timeslot_swaps, swap_scores_memory)
 
-    def temperature(self, score: int | float) -> float:
+    def temperature(self, score: int | float, iterations, i_max) -> float:
+        T = self.T_0 * (i_max - iterations) / ((iterations + 1) * i_max)
+        return T
+
+    def temperature_lin(self, score: int | float, iterations, i_max) -> float:
         """Linear temperature schedule."""
         floor = 2
         score_0 = 600 + floor
-        return self.T_0 * (score + floor) / score_0
+        T = self.T_0 * (score + floor) / score_0
+        return T
 
-    def temperature_sqr(self, score: int | float) -> float:
+    def temperature_swq(self, score: int | float, iterations, i_max) -> float:
+
         """Quadratic temperature schedule."""
         floor = 5
         score_0 = 600 + floor
         return self.T_0 * ((score + floor) / score_0) ** 2
 
-    def temperature_exp(self, score: int | float) -> float:
+    def temperature_exp(self, score: int | float, iterations, i_max) -> float:
+
         """Exponential temperature schedule."""
         floor = 5
-        score_0 = 600 - floor
-        ex = np.exp(-score_0 / (score + floor) + 1)
+        score_0 = 600 + floor
+        ex = np.exp(-3 * score_0 / (score + floor) + 1)
         return self.T_0 * ex
 
     def probability(self, diff: int | float, temperature: int | float) -> float:
         """Simulated annealing mutation acceptance probability."""
-        return np.exp(-diff / temperature)
+        # Prevent overflow errors for large differences. If diff is negative, accept mutation.
+        if diff < 0:
+            return 1
+
+        P = np.exp(-diff / temperature)
+        return P
 
     def suggest_mutation(
-        self,
-        result: Result,
-        timeslots: list[Timeslot] | None = None,
-        _recursion_depth=1000,
+        self, result: Result, timeslots: list[Timeslot] | None = None, _recursion_depth=1000, iterations=0, i_max=1
     ) -> Mutation:
         """Return best mutation with simulated annealing."""
         ceiling = self.ceiling
@@ -162,12 +168,10 @@ class SimulatedAnnealing(MutationSupplier):
 
         # Go through mutations and return mutation if acceptance critaria are fulfilled
         for mutation in Statistics.sort_objects(possible_mutations, "score"):
-            P = self.probability(mutation.score, self.temperature(result.score))
+            P = self.probability(mutation.score, self.temperature(mutation.score, iterations, i_max))
             do_mutation = Randomizer.biased_boolean(P)
 
             if do_mutation:
-                if mutation.type == "swap_students_timeslots":
-                    pass
                 return mutation
 
         # Return accepted mutation
