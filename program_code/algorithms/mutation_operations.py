@@ -228,7 +228,7 @@ def move_score_student(result: Result, student: Student, timeslot1: Timeslot, ti
     move_node(result.schedule, student, timeslot1, timeslot2)
 
     # Get projected score
-    projected_sub_score = result.sub_score(student)
+    projected_sub_score = result.sub_score(timeslot1) + result.sub_score(timeslot2)
 
     # Revert move
     move_node(result.schedule, student, timeslot2, timeslot1)
@@ -320,14 +320,12 @@ def swap_score_student(
     current_sub_score = result.sub_score(timeslot1) + result.sub_score(timeslot2)
 
     # Try swap
-    # fast_swap(timeslot1, timeslot2)
     swap_students_timeslots(result.schedule, student1, student2, timeslot1, timeslot2)
 
     # Calculate projected score
     projected_sub_score = result.sub_score(timeslot1) + result.sub_score(timeslot2)
 
     # Revert swap
-    # fast_swap(timeslot1, timeslot2)
     swap_students_timeslots(result.schedule, student1, student2, timeslot2, timeslot1)
 
     # Calculate difference
